@@ -1,5 +1,6 @@
 -- Estrutura do banco de dados do volei;
--- criação do banco de dados + sugestões de queries
+-- criação do banco de dados + 
+-- (?)sugestões de queries(?)
 -- estratégicas baseadas nas demandas do web app;
 ----------------------------------------------------
 -- CRIAÇÃO DA CARTEIRINHA
@@ -28,10 +29,30 @@ ADD data_registro timestamp;
 -- modalidades sem alterar a tabela principal 
 ----------------------------------------------------
 CREATE TABLE inscriçoes(
-id_inscriçao INTEGER PRIMARY KEY generated always as identity,
-esporte VARCHAR(20) CHECK (esporte in ('vôlei','basquete')),
-id_atleta INTEGER,
-FOREIGN KEY (id_atleta) REFERENCES atletas(id));
+  id_inscriçao INTEGER PRIMARY KEY generated always as identity,
+  esporte VARCHAR(20) CHECK (esporte in ('vôlei','basquete')),
+  id_atleta INTEGER,
+  FOREIGN KEY (id_atleta) REFERENCES atletas(id)
+  );
 ----------------------------------------------------
+-- CRIAÇÃO DAS TABELAS (INDEPENDENTES) DE 
+-- CONTATOS;
+----------------------------------------------------
+CREATE TABLE telefones(
+  id_telefone INTEGER generated always as identity,
+  detentor VARCHAR(20) CHECK (detentor in ('atleta','responsavel')),
+  num_telefone VARCHAR(20), 
+  id_atleta INTEGER,
+  FOREIGN KEY (id_atleta) REFERENCES atletas(id)
+  );
+
+CREATE TABLE emails(
+  id_email INTEGER generated always as identity,
+  detentor VARCHAR(20) CHECK (detentor in ('atleta','responsavel')),
+  end_email VARCHAR(50), 
+  id_atleta INTEGER,
+  FOREIGN KEY (id_atleta) REFERENCES atletas(id)
+  );
+
 
 
