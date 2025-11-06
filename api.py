@@ -1,5 +1,5 @@
 from passlib.hash import sha256_crypt
-from flask import Flask, jsonify, render_template, request, session
+from flask import Flask, jsonify, render_template, request, session, flash, redirect, url_for
 import psycopg2
 
 app = Flask(__name__)
@@ -35,61 +35,88 @@ def index():
 
 @app.route('/login', methods=['GET','POST'])
 def login():
+    # Se for GET, apenas renderiza a página
     if request.method == 'GET':
-        return render_template('index.html')
+        # Se já estiver logado, redireciona para o index
+        if 'usuario' in session:
+            return redirect(url_for('index'))
+        return render_template('index.html') # Assumindo que o login está no index
 
-    conn=None
+    # Se for POST, processa o login
+    conn = None
     try:
         usuario = request.form.get('usuario')
         senha = request.form.get('senha')
-        
-#a obrigação de fornecer a senha será colocada ná pagina
 
-        conn = get.db.connection()
+        if not usuario or not senha:
+             return jsonify({'sucesso': False, 'erro': 'Usuário e senha são obrigatórios.'})
+        
+        conn = get_db_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT senha_hash FROM atletas WHERE usuario = %s;", (usuario,))
-            atleta_senha = cursor.fetchone()
-             
-            if atleta_senha:
-                if sha256_crypt.verify(atleta_senha[0],senha):
+            atleta_senha_hash = cursor.fetchone()
+            
+            if atleta_senha_hash:
+                # Ordem correta do verify (senha_plana, hash_do_banco)
+                if sha256_crypt.verify(senha, atleta_senha_hash[0]):
                     session['usuario'] = usuario
-                    return redirect(url_for(''))
-            else: 
-               return jsonify({'erro':'não foi encontrado tal usuario'})
+                    # 3. MUDANÇA (Importante): Retorna JSON para o JavaScript lidar com o redirecionamento
+                    return jsonify({'sucesso': True, 'redirect_url': url_for('index')})
+                else:
+                    return jsonify({'sucesso': False, 'erro': 'Senha incorreta.'})
+            else:  
+                return jsonify({'sucesso': False, 'erro': 'Não foi encontrado tal usuário.'})
                 
-   
     except Exception as e:
-        flash(f'Ocorreu um erro: {e}', 'danger')
-        return redirect(url_for('login'))
+        # Em caso de erro de DB, etc.
+        return jsonify({'sucesso': False, 'erro': f'Ocorreu um erro interno: {e}'})
     
+    finally:
+        if conn:
+            conn.close()
+
 @app.route('/register', methods=['GET','POST'])
 # função que registra o usuário após clicar em "registrar"
 def register():
     if request.method == 'GET':
-        return render_template('index.html')
+        return render_template('index.html') # Assumindo que o registro está no index
     
-    conn=None
+    conn = None
     try:
-        conn = get.db.connection()
+        # 1. CORREÇÃO: Chamada correta da função
+        conn = get_db_connection()
         with conn.cursor() as cursor:
             usuario = request.form.get('usuario')
             senha = request.form.get('senha')
-            cursor.execute("SELECT usuario FROM atletas WHERE usuario=%s;",(usuario,))
+
+            if not usuario or not senha:
+                return jsonify({'sucesso': False, 'erro': 'Usuário e senha são obrigatórios.'})
+
+            cursor.execute("SELECT usuario FROM atletas WHERE usuario=%s;", (usuario,))
             user_db = cursor.fetchone()
-            if not user_db: 
-                senha_hash = sha256_crypt.encrypt(senha)
-                cursor.execute("INSERT INTO atletas(usuario,senha_hash) VALUES (%s,%s);",(usuario,senha_hash))
-                conn.commit()
-                return jsonify({'sucesso':'registrado'})
-            else:
-                return jsonify({'erro':'usuario existente'})
             
+            if not user_db:  
+                senha_hash = sha256_crypt.encrypt(senha)
+                cursor.execute("INSERT INTO atletas(usuario,senha_hash) VALUES (%s,%s);", (usuario, senha_hash))
+                conn.commit()
+                return jsonify({'sucesso': True, 'mensagem': 'Registrado com sucesso!'})
+            else:
+                return jsonify({'sucesso': False, 'erro': 'Usuário já existente.'})
+                
     except Exception as e:
-        flash(f'Ocorreu um erro: {e}', 'danger')
-        return redirect(url_for('login'))
-    
+        return jsonify({'sucesso': False, 'erro': f'Ocorreu um erro interno: {e}'})
+        
     finally:
-        return redirect(url_for('login'))
+        # 2. CORREÇÃO (Crítica): Remover redirect e fechar conexão
+        if conn:
+            conn.close()
+        # O 'return redirect' aqui estava quebrando tudo, pois ele
+        # executa SEMPRE, sobrescrevendo seu 'return jsonify'.
+
+@app.route('/logout')
+def logout():
+    session.pop('usuario', None)
+    return redirect(url_for('index'))
 
 if __name__ == "__main__":
     app.debug = True
