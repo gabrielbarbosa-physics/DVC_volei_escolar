@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVC 0.0.1</title>
+    <link rel="stylesheet" href="../static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+    <div class="container">
+        <div class="form-container">
+            <div class="header-form">
+                <h2 id="form-title">Login</h2>
+            </div>
+            <div class="form-toggle">
+                <button class="toggle-btn active" id="login-toggle">Login</button>
+                <button class="toggle-btn" id="register-toggle">Registro</button>
+            </div>
+
+            <!-- Formulário de Login --><form id="login-form" class="form active">
+                <div class="input-group">
+                    <label for="login-email">Usuário</label>
+                    <input type="text" name="usuario" id="login-usuario" placeholder="seu nome de usuário" required>
+                </div>
+                <div class="input-group">
+                    <label for="login-password">Senha</label>
+                    <input type="password" name="senha" id="login-password" placeholder="********" required>
+                </div>
+                <div class="forgot-password">
+                    <a href="#">Esqueceu a senha?</a>
+                </div>
+                <button type="submit" class="submit-btn">Entrar</button>
+            </form>
+
+            <!-- Formulário de Registro --><form id="register-form" class="form">
+                <div class="input-group">
+                    <label for="register-username">Nome de Usuário</label>
+                    <input type="text" name="usuario" id="register-usuario" placeholder="seu nome de usuário" required>
+                </div>
+		<div class="input-group">
+		    <label for="register-name">Nome Completo</label>
+		    <input type="text" name="nome" id="register-name" placeholder="Nome Completo" required>
+		</div>
+		<div class=input-group>
+		    <label for="role">Vínculo DVC</label>
+		    <select name="vinculo" id="role">
+		    <option value="atleta aluno" >Atleta-Aluno</option>
+		    <option value="atleta" >Atleta</option>
+		    <option value="auxiliar" >Auxiliar</option>
+		    <option value="tecnico" >Técnico</option>
+		    <option value="gerencia" >Gerência</option>
+		    </select>	
+		</div>
+		<div class="input-group">
+                    <label for="register-password">Senha</label>
+                    <input type="password" name="senha" id="register-password" placeholder="********" required>
+                </div>
+                <div class="input-group">
+                    <label for="register-confirm-password">Confirmar Senha</label>
+                    <input type="password" id="register-confirm-password" placeholder="********" required>
+                </div>
+                <button type="submit" class="submit-btn">Registrar</button>
+            </form>
+        </div>
+    </div>
+    <script src="../static/script.js"></script>
+</body>
+</html>
