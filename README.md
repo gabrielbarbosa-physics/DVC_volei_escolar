@@ -7,7 +7,13 @@ execute em um navegador para visualização adequada.
 O arquivo "db_modelo_físico" contém a implementação do banco;
 até o presente momento, integramos somente a carteirinha.
 
-o arquivo manager.py (a construir) contém a API baseada em
-(Py) Flask.
+O arquivo api.py contém as regras de interação entre o front-end e o 
+backend (flask, postgres) do webapp.
+
+Os diretórios /static e /template guardam um frontend -- 
+JS, CSS, HTML --  usado 
+EXCLUSIVAMENTE para testes.
+
+
 
 EQUIPE DVC
