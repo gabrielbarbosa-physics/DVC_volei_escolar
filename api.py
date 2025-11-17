@@ -1,11 +1,33 @@
 from passlib.hash import sha256_crypt
 from flask import Flask, jsonify, render_template, request, session, flash, redirect, url_for
 import psycopg2
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '5fd5f4df5e8f12sf1dv1d5vf'
 
 ##############CONFERIR SENHA
+
+
+
+# função para conferir se o usuario esta logado para acessar a dashboard
+
+#def login_required(f):
+#    """
+#    Um decorator para garantir que um usuário esteja logado
+#    antes de acessar uma página.
+#    """
+#    @wraps(f)
+#    def decorated_function(*args, **kwargs):
+#        # Verifica se 'usuario' NÃO está na sessão
+#        if 'usuario' not in session:
+#            # Se não estiver, redireciona para a página de login (index)
+#            return redirect(url_for('index')) # Assumindo que 'index' é sua rota de login
+#
+#        # Se ESTIVER na sessão, execute a função original (o dashboard)
+#        return f(*args, **kwargs)
+#    return decorated_function
+
 
 # dados de conexão no banco local dev
 DB_HOST = "localhost"
@@ -30,8 +52,14 @@ def get_db_connection():
 @app.route('/')
 def index():
     if 'usuario' in session:
-        return render_template('index.html', usuario_logado = session['usuario'])
+        return render_template('dashboard.html', usuario_logado = session['usuario'])
     return render_template('index.html', usuario_logado = None)
+
+@app.route('/dashboard')
+def dashboard():
+    if 'usuario' in session:
+        return render_template('dashboard.html', usuario_logado = session['usuario'])
+    return render_template('index.html', usuario_logado= None)
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -45,8 +73,9 @@ def login():
     # Se for POST, processa o login
     conn = None
     try:
-        usuario = request.form.get('usuario')
-        senha = request.form.get('senha')
+        data_json = request.json
+        usuario = data_json.get('usuario')
+        senha = data_json.get('senha')
 
         if not usuario or not senha:
              return jsonify({'sucesso': False, 'erro': 'Usuário e senha são obrigatórios.'})
@@ -54,14 +83,15 @@ def login():
         conn = get_db_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT senha_hash FROM atletas WHERE usuario = %s;", (usuario,))
-            atleta_senha_hash = cursor.fetchone()
+            resultado_query=cursor.fetchone()
+            if resultado_query:
+                atleta_senha_hash_memory_view = resultado_query[0]
+                atleta_senha_hash = atleta_senha_hash_memory_view.tobytes()
             
-            if atleta_senha_hash:
-                # Ordem correta do verify (senha_plana, hash_do_banco)
-                if sha256_crypt.verify(senha, atleta_senha_hash[0]):
+                if sha256_crypt.verify(senha, atleta_senha_hash):
                     session['usuario'] = usuario
                     # 3. MUDANÇA (Importante): Retorna JSON para o JavaScript lidar com o redirecionamento
-                    return jsonify({'sucesso': True, 'redirect_url': url_for('index')})
+                    return jsonify({'sucesso': True, 'redirect_url': url_for('dashboard')})
                 else:
                     return jsonify({'sucesso': False, 'erro': 'Senha incorreta.'})
             else:  
@@ -83,21 +113,23 @@ def register():
     
     conn = None
     try:
-        # 1. CORREÇÃO: Chamada correta da função
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            usuario = request.form.get('usuario')
-            senha = request.form.get('senha')
+            data_json = request.json
+            usuario = data_json.get('usuario')
+            senha = data_json.get('senha')
+            nome = data_json.get('nome')
+            vinculo = data_json.get('vinculo')
 
-            if not usuario or not senha:
-                return jsonify({'sucesso': False, 'erro': 'Usuário e senha são obrigatórios.'})
+            #if not usuario or not senha:
+            #    return jsonify({'sucesso': False, 'erro': 'Usuário e senha são obrigatórios.'})
 
             cursor.execute("SELECT usuario FROM atletas WHERE usuario=%s;", (usuario,))
             user_db = cursor.fetchone()
             
             if not user_db:  
-                senha_hash = sha256_crypt.encrypt(senha)
-                cursor.execute("INSERT INTO atletas(usuario,senha_hash) VALUES (%s,%s);", (usuario, senha_hash))
+                senha_hash = sha256_crypt.hash(senha)
+                cursor.execute("INSERT INTO atletas(usuario,senha_hash,nome,vinculo,data_registro) VALUES (%s,%s,%s,%s,CURRENT_DATE);", (usuario, senha_hash,nome,vinculo,))
                 conn.commit()
                 return jsonify({'sucesso': True, 'mensagem': 'Registrado com sucesso!'})
             else:
