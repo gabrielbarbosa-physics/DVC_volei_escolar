@@ -1,22 +1,31 @@
-# DVC_volei_escolar
-Projeto completo do web app do Drummond Voleibol Clube.
+# DVC Voleibol Escolar
 
-O arquivo "db_modelo_físico" contém a implementação
-PARCIAL do banco de dados até o presente momento -- 
-LOG/REG somente com 'nome', 'usuario', 'vinculo' e 
-'senha_hash' NOT NULL.
-
-O arquivo api.py contém as regras de interação entre o 
-front-end e o backend (flask, postgres) do webapp; 
-porém, os critérios de segurança ainda devem ser
-EXAUSTIVAMENTE analisados.
-
-Os diretórios /static e /template guardam um frontend -- 
-JS, CSS, HTML --  usado EXCLUSIVAMENTE para testes;
-no entanto, as rotas, endpoints, e respostas JSON
-podem ser facilmente integrados com quaisquer outras
-arquiteturas de frontend.
+Sistema de gerenciamento web para o **Drummond Voleibol Clube**.
 
 
+## Sobre o Projeto
 
-EQUIPE DVC
+Este repositório contém o código-fonte do web app do DVC. O projeto consiste em uma API RESTful desenvolvida em Flask que se comunica com um banco de dados PostgreSQL.
+
+O foco atual é fornecer uma estrutura de backend sólida que entrega respostas JSON, permitindo que o frontend seja substituido/integrado.
+
+---
+
+## Avisos Importantes
+
+Os critérios de segurança e autenticação **ainda não foram auditados**. O código atual requer uma análise exaustiva antes de ser considerado para ambiente de produção.
+
+Os diretórios `/static` e `/template` contêm uma interface de teste (HTML/CSS/JS). Eles servem apenas para validar os endpoints da API.
+
+## Estrutura e Arquivos
+
+### `api.py`
+Contém a lógica central da aplicação.
+* Define as regras de interação entre frontend e backend.
+* Gerencia conexões com o banco de dados.
+* Rotas e endpoints da API.
+
+### `db_modelo_físico`
+Implementação **parcial** do banco de dados.
+
+---
