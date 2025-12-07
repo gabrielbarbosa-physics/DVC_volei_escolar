@@ -89,10 +89,10 @@ def login():
             conn.close()
 
 @app.route('/register', methods=['GET','POST'])
-# função que registra o usuário após clicar em "registrar"
+# Função que registra o usuário no banco de dados.
 def register():
     if request.method == 'GET':
-        return render_template('index.html') # Assumindo que o registro está no index
+        return render_template('index.html')
     
     conn = None
     try:
@@ -103,9 +103,6 @@ def register():
             senha = data_json.get('senha')
             nome = data_json.get('nome')
             vinculo = data_json.get('vinculo')
-
-            #if not usuario or not senha:
-            #    return jsonify({'sucesso': False, 'erro': 'Usuário e senha são obrigatórios.'})
 
             cursor.execute("SELECT usuario FROM atletas WHERE usuario=%s;", (usuario,))
             user_db = cursor.fetchone()
