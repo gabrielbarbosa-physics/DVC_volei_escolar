@@ -119,12 +119,9 @@ def register():
         return jsonify({'sucesso': False, 'erro': f'Ocorreu um erro interno: {e}'})
         
     finally:
-        # 2. CORREÇÃO (Crítica): Remover redirect e fechar conexão
         if conn:
             conn.close()
-        # O 'return redirect' aqui estava quebrando tudo, pois ele
-        # executa SEMPRE, sobrescrevendo seu 'return jsonify'.
-
+        
 @app.route('/logout')
 def logout():
     session.pop('usuario', None)
