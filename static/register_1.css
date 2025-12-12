@@ -1,0 +1,151 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    background-color: white;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Botões de aba (Login/Cadastro) */
+.toggle-buttons {
+    display: flex;
+}
+
+.toggle-buttons button {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    background-color: #f1f1f1;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    color: #555;
+    transition: 0.3s;
+}
+
+.toggle-buttons button.active {
+    background-color: white;
+    color: #1e3c72;
+    border-bottom: 2px solid #1e3c72;
+}
+
+/* Conteúdo do Formulário */
+.form-content {
+    padding: 30px;
+    animation: fadeIn 0.5s;
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+    font-size: 14px;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    border-color: #1e3c72;
+    outline: none;
+}
+
+/* Agrupamento em linha (duas colunas) */
+.row {
+    display: flex;
+    gap: 10px;
+}
+.row .input-group {
+    flex: 1;
+}
+
+/* Fieldset para agrupar dados do responsável */
+fieldset {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+fieldset legend {
+    font-size: 12px;
+    color: #1e3c72;
+    padding: 0 5px;
+    font-weight: bold;
+}
+
+/* Checkboxes */
+.checkbox-group {
+    display: flex;
+    gap: 15px;
+}
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+/* Botão de Enviar */
+.submit-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #1e3c72;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin-top: 10px;
+}
+
+.submit-btn:hover {
+    background-color: #162c55;
+}
+
+/* Utilitários */
+.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
