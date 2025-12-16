@@ -61,7 +61,7 @@ def get_db_connection():
 def index():
     if 'usuario' in session:
         return render_template('dashboard.html', usuario_logado=session['usuario'])
-    return render_template('register_2.html', usuario_logado=None)
+    return render_template('register.html', usuario_logado=None)
 
 
 # Se o usuário recarregar a página dashboard sem estar logado, ele retorna para a página index.
@@ -69,7 +69,7 @@ def index():
 def dashboard():
     if 'usuario' in session:
         return render_template('dashboard.html', usuario_logado=session['usuario'])
-    return render_template('register_2.html', usuario_logado=None)
+    return render_template('register.html', usuario_logado=None)
 
 
 # Método de login.
@@ -80,7 +80,7 @@ def login():
         # Se já estiver logado, redireciona para o index.
         if 'usuario' in session:
             return redirect(url_for('dashboard'))
-        return render_template('register_2.html')
+        return render_template('register.html')
 
         # Se for POST, processa o login.
     conn = None
@@ -128,7 +128,7 @@ def login():
 # Função que registra o usuário no banco de dados.
 def register():
     if request.method == 'GET':
-        return render_template('register_2.html')
+        return render_template('register.html')
 
     conn = None
     try:
