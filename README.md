@@ -13,7 +13,7 @@ O foco atual é fornecer uma estrutura de backend sólida que entrega respostas 
 
 ## Avisos Importantes
 
-Os critérios de segurança e autenticação **ainda não foram auditados**. O código atual requer uma análise exaustiva antes de ser considerado para ambiente de produção.
+Os critérios de segurança e autenticação **ainda não foram auditados**. O código atual requer uma análise exaustiva antes de ser considerado para um PE.
 
 Os diretórios `/static` e `/template` contêm uma interface de teste (HTML/CSS/JS). Eles servem apenas para a versão de teste - Test Environment (TE); 
 A versão final - Product Environment (PE) - ainda necessita de ajustes na plataforma Flask e no CSS.
