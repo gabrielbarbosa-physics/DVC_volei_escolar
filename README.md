@@ -15,7 +15,8 @@ O foco atual é fornecer uma estrutura de backend sólida que entrega respostas 
 
 Os critérios de segurança e autenticação **ainda não foram auditados**. O código atual requer uma análise exaustiva antes de ser considerado para ambiente de produção.
 
-Os diretórios `/static` e `/template` contêm uma interface de teste (HTML/CSS/JS). Eles servem apenas para validar os endpoints da API.
+Os diretórios `/static` e `/template` contêm uma interface de teste (HTML/CSS/JS). Eles servem apenas para a versão de teste (Test Environment); 
+A versão final (Product Environment) ainda necessita de ajustes na plataforma Flask e no CSS.
 
 ## Estrutura e Arquivos
 
