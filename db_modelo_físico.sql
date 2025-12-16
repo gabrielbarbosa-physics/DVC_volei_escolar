@@ -14,7 +14,7 @@ id INT PRIMARY KEY generated always as identity,
   vinculo VARCHAR(20) NOT NULL CHECK(vinculo in ('atleta aluno','atleta','tecnico','auxiliar','gerencia')),
   modalidade VARCHAR(20),
   foto_path VARCHAR(100),
-  status VARCHAR(20) CHECK (modalidade in ('em dia','em atraso','suspenso')),
+  status VARCHAR(20) CHECK (status in ('em dia','em atraso','suspenso')),
   data_registro timestamp
   );
 ----------------------------------------------------
