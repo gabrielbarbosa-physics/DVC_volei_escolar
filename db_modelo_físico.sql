@@ -8,19 +8,15 @@
 CREATE TABLE atletas(
 id INT PRIMARY KEY generated always as identity,
   nome VARCHAR(50) NOT NULL,
-  email VARCHAR(30) NOT NULL,
+  email VARCHAR(50) NOT NULL,
   senha_hash BYTEA NOT NULL,
   endereço VARCHAR(100),
   vinculo VARCHAR(20) NOT NULL CHECK(vinculo in ('atleta aluno','atleta','tecnico','auxiliar','gerencia')),
-  modalidade VARCHAR(20) CHECK(modalidade in ('masculino','feminino')),
-  status VARCHAR(20) CHECK (modalidade in ('em dia','em atraso','suspenso'))
+  modalidade VARCHAR(20),
+  foto_path VARCHAR(100),
+  status VARCHAR(20) CHECK (modalidade in ('em dia','em atraso','suspenso')),
+  data_registro timestamp
   );
-----------------------------------------------------
--- Por padrão, incluímos a DATA COMPLETA de registro 
--- do atleta no banco de dados
-----------------------------------------------------
-ALTER TABLE atletas
-ADD data_registro timestamp;
 ----------------------------------------------------
 -- CRIAÇÃO DO VÍNCULO ENTRE ATLETA E ESPORTE;
 ----------------------------------------------------
@@ -40,7 +36,7 @@ CREATE TABLE inscriçoes(
 ----------------------------------------------------
 CREATE TABLE telefones(
   id_telefone INTEGER generated always as identity,
-  detentor VARCHAR(20) CHECK (detentor in ('atleta','responsavel')),
+  detentor VARCHAR(50),
   num_telefone VARCHAR(20), 
   id_atleta INTEGER,
   FOREIGN KEY (id_atleta) REFERENCES atletas(id)
@@ -48,11 +44,8 @@ CREATE TABLE telefones(
 
 CREATE TABLE emails(
   id_email INTEGER generated always as identity,
-  detentor VARCHAR(20) CHECK (detentor in ('atleta','responsavel')),
+  detentor VARCHAR(50),
   end_email VARCHAR(50), 
   id_atleta INTEGER,
   FOREIGN KEY (id_atleta) REFERENCES atletas(id)
   );
-
-
-
