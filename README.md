@@ -31,4 +31,9 @@ Implementação **parcial** do banco de dados.
 ## Requerimentos
 
 No arquivo "requirements.txt" se encontram as bibliotecas python necessárias para a instalação.
+
+## Dockerfile
+
+O arquivo "Dockerfile" auxilia na criação de uma imagem da versão de testes dvc:1.0.
+
 ---
