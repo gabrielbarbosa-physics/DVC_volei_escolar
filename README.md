@@ -28,4 +28,7 @@ Contém a lógica central da aplicação.
 ### `db_modelo_físico`
 Implementação **parcial** do banco de dados.
 
+## Requerimentos
+
+No arquivo "requirements.txt" se encontram as bibliotecas python necessárias para a instalação.
 ---
