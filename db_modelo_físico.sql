@@ -41,7 +41,7 @@ CREATE TABLE inscriçoes(
 ----------------------------------------------------
 CREATE TABLE telefones(
   id_telefone INTEGER generated always as identity,
-  detentor VARCHAR(20) CHECK (detentor in ('atleta','responsavel')),
+  detentor VARCHAR(50),
   num_telefone VARCHAR(20), 
   id_atleta INTEGER,
   FOREIGN KEY (id_atleta) REFERENCES atletas(id)
@@ -49,7 +49,7 @@ CREATE TABLE telefones(
 
 CREATE TABLE emails(
   id_email INTEGER generated always as identity,
-  detentor VARCHAR(20) CHECK (detentor in ('atleta','responsavel')),
+  detentor VARCHAR(50),
   end_email VARCHAR(50), 
   id_atleta INTEGER,
   FOREIGN KEY (id_atleta) REFERENCES atletas(id)
