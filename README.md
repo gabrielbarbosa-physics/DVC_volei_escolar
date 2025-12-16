@@ -21,9 +21,8 @@ A versão final - Product Environment (PE) - ainda necessita de ajustes na plata
 ## Estrutura e Arquivos
 
 ### `api.py`
-Contém a lógica central da aplicação.
-* Define as regras de interação entre frontend e backend.
-* Gerencia conexões com o banco de dados.
+Contém a lógica central da aplicação Server-Side (SS).
+* Gerencia conexões com o banco de dados POSTGRES SQL.
 * Rotas e endpoints da API.
 
 ### `db_modelo_físico`
