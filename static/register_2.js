@@ -245,7 +245,6 @@ registerForm.addEventListener('submit', async(e) => {
         // para a url enviada pelo servidor.
         if(responseFromAPIreturn_reg.sucesso) {
             showScreen('success');
-            window.location.href = responseFromAPIreturn_reg.redirect_url;
         } else {
             alert('Erro: ' + responseFromAPIreturn_reg.erro);
         }
