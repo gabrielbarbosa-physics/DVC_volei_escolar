@@ -15,8 +15,8 @@ O foco atual é fornecer uma estrutura de backend sólida que entrega respostas 
 
 Os critérios de segurança e autenticação **ainda não foram auditados**. O código atual requer uma análise exaustiva antes de ser considerado para ambiente de produção.
 
-Os diretórios `/static` e `/template` contêm uma interface de teste (HTML/CSS/JS). Eles servem apenas para a versão de teste (Test Environment); 
-A versão final (Product Environment) ainda necessita de ajustes na plataforma Flask e no CSS.
+Os diretórios `/static` e `/template` contêm uma interface de teste (HTML/CSS/JS). Eles servem apenas para a versão de teste - Test Environment (TE); 
+A versão final - Product Environment (PE) - ainda necessita de ajustes na plataforma Flask e no CSS.
 
 ## Estrutura e Arquivos
 
@@ -31,11 +31,11 @@ Implementação **parcial** do banco de dados.
 
 ## Requerimentos
 
-No arquivo "requirements.txt" se encontram as bibliotecas python necessárias para a instalação.
+No arquivo "requirements.txt" se encontram as bibliotecas python necessárias para a instalação do TE.
 
 ## Dockerfile
 
-O arquivo "Dockerfile" auxilia na criação de uma imagem da versão de testes dvc:1.0.
+O arquivo "Dockerfile" auxilia na criação de uma imagem do dvc:1.0 TE.
 
 Para mais informações consulte: https://docs.docker.com/.
 
