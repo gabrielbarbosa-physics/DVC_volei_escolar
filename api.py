@@ -1,3 +1,5 @@
+# RESOLVER PROBLEMAS DE UPLOADS E A PÁGINA DASHBOARD.
+
 import email
 import os
 
@@ -18,7 +20,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
 
-# CORRIGIR SISTEMA DE UPLOAD DE ARQUIVOS DE IMAGEM!
 @app.route('/upload_photo', methods=['GET', 'POST'])
 def upload_photo():
     if request.method == 'POST':
@@ -100,7 +101,7 @@ def login():
             cursor.execute("SELECT senha_hash FROM atletas WHERE email = %s", (email,))
             resultado_query = cursor.fetchone()
             if resultado_query:
-                usuario = resultado_query[0]
+                usuario = email
                 atleta_senha_hash_memory_view = resultado_query[0]
                 atleta_senha_hash = atleta_senha_hash_memory_view.tobytes()
                 # Compara o hash da senha com o hash do banco.
@@ -154,18 +155,16 @@ def register():
                     "VALUES (%s,%s,%s,%s,%s,CURRENT_DATE);",
                     (nome,email_reg,senha_hash,vinculo,modalidade))
                 conn.commit()
-
-                # CORRIGIR QUERIES!
                 cursor.execute("INSERT INTO emails(detentor,end_email,id_atleta) "
-                               "VALUES (%s,%s,(SELECT id_atleta FROM atletas "
+                               "VALUES (%s,%s,(SELECT id FROM atletas "
                                "WHERE email=%s))",(nome_res,email_res,email_reg))
                 conn.commit()
                 cursor.execute("INSERT INTO telefones(detentor,num_telefone,id_atleta) "
-                               "VALUES (%s,%s,(SELECT id_atleta FROM atletas "
+                               "VALUES (%s,%s,(SELECT id FROM atletas "
                                "WHERE email=%s))", (nome_res, tel_res, email_reg))
                 conn.commit()
                 cursor.execute("INSERT INTO telefones(detentor,num_telefone,id_atleta) "
-                               "VALUES %s,%s,(SELECT id_atleta FROM atletas "
+                               "VALUES (%s,%s,(SELECT id FROM atletas "
                                "WHERE email=%s))", (nome, tel, email_reg))
                 conn.commit()
                 return jsonify({'sucesso': True, 'mensagem': 'Registrado com sucesso!'})
@@ -178,6 +177,7 @@ def register():
     finally:
         if conn:
             conn.close()
+
 
 @app.route('/logout')
 def logout():
