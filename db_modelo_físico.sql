@@ -8,7 +8,7 @@
 CREATE TABLE atletas(
 id INT PRIMARY KEY generated always as identity,
   nome VARCHAR(50) NOT NULL,
-  usuario VARCHAR(20) NOT NULL,
+  email VARCHAR(50) NOT NULL,
   senha_hash BYTEA NOT NULL,
   endereço VARCHAR(100),
   vinculo VARCHAR(20) NOT NULL CHECK(vinculo in ('atleta aluno','atleta','tecnico','auxiliar','gerencia')),
