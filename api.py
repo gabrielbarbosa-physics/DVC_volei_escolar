@@ -1,3 +1,4 @@
+import email
 import os
 
 from passlib.hash import sha256_crypt
@@ -17,6 +18,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
 
+# CORRIGIR SISTEMA DE UPLOAD DE ARQUIVOS DE IMAGEM!
 @app.route('/upload_photo', methods=['GET', 'POST'])
 def upload_photo():
     if request.method == 'POST':
@@ -37,7 +39,7 @@ def upload_photo():
 DB_HOST = "localhost"
 DB_NAME = "volei"
 DB_USER = "postgres"
-DB_PASSWORD = "1728"
+DB_PASSWORD = "+1Gabriel@1911"
 DB_PORT = 5432
 
 
@@ -58,7 +60,7 @@ def get_db_connection():
 def index():
     if 'usuario' in session:
         return render_template('dashboard.html', usuario_logado=session['usuario'])
-    return render_template('index.html', usuario_logado=None)
+    return render_template('register_2.html', usuario_logado=None)
 
 
 # Se o usuário recarregar a página dashboard sem estar logado, ele retorna para a página index.
@@ -66,7 +68,7 @@ def index():
 def dashboard():
     if 'usuario' in session:
         return render_template('dashboard.html', usuario_logado=session['usuario'])
-    return render_template('index.html', usuario_logado=None)
+    return render_template('register_2.html', usuario_logado=None)
 
 
 # Método de login.
@@ -77,30 +79,32 @@ def login():
         # Se já estiver logado, redireciona para o index.
         if 'usuario' in session:
             return redirect(url_for('dashboard'))
-        return render_template('index.html')
+        return render_template('register_2.html')
 
         # Se for POST, processa o login.
     conn = None
     # Cria um objeto request que recebe um JSON enviado para o servidor.
     try:
         data_json = request.json
-        usuario = data_json.get('usuario')
-        senha = data_json.get('senha')
+        email = data_json.get('email')
+        password = data_json.get('password')
         # Se o usuário tentar enviar uma requisição com faltas, o servidor responde sem sucesso.
-        if not usuario or not senha:
+        if not email or not password:
             return jsonify({'sucesso': False, 'erro': 'Usuário e senha são obrigatórios.'})
         # Cria uma conexão com o banco.
         conn = get_db_connection()
 
         with conn.cursor() as cursor:
-            # Busca via (SQL query) os dados de login do usuário; caso não encontre nenhum, devolve um erro.
-            cursor.execute("SELECT senha_hash FROM atletas WHERE usuario = %s;", (usuario,))
+            # Busca via (SQL query) os dados de login do usuário a partir do email;
+            # caso não encontre nenhum, devolve um erro.
+            cursor.execute("SELECT senha_hash FROM atletas WHERE email = %s", (email,))
             resultado_query = cursor.fetchone()
             if resultado_query:
+                usuario = resultado_query[0]
                 atleta_senha_hash_memory_view = resultado_query[0]
                 atleta_senha_hash = atleta_senha_hash_memory_view.tobytes()
                 # Compara o hash da senha com o hash do banco.
-                if sha256_crypt.verify(senha, atleta_senha_hash):
+                if sha256_crypt.verify(password, atleta_senha_hash):
                     session['usuario'] = usuario
                     # Retorna bool(sucesso) como um JSON para o usuário.
                     return jsonify({'sucesso': True, 'redirect_url': url_for('dashboard')})
@@ -123,30 +127,50 @@ def login():
 # Função que registra o usuário no banco de dados.
 def register():
     if request.method == 'GET':
-        return render_template('index.html')
+        return render_template('register_2.html')
 
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
             data_json = request.json
-            usuario = data_json.get('usuario')
-            senha = data_json.get('senha')
             nome = data_json.get('nome')
+            email_reg = data_json.get('email_reg')
+            tel = data_json.get('tel')
+            nome_res = data_json.get('nome_res')
+            email_res = data_json.get('email_res')
+            tel_res = data_json.get('tel_res')
             vinculo = data_json.get('vinculo')
+            modalidade = data_json.get('modalidade')
+            password = data_json.get('pass')
 
-            cursor.execute("SELECT usuario FROM atletas WHERE usuario=%s;", (usuario,))
+            cursor.execute("SELECT email FROM atletas WHERE email=%s;", (email_reg,))
             user_db = cursor.fetchone()
 
             if not user_db:
-                senha_hash = sha256_crypt.hash(senha)
+                senha_hash = sha256_crypt.hash(password)
                 cursor.execute(
-                    "INSERT INTO atletas(usuario,senha_hash,nome,vinculo,data_registro) VALUES (%s,%s,%s,%s,CURRENT_DATE);",
-                    (usuario, senha_hash, nome, vinculo,))
+                    "INSERT INTO atletas(nome,email,senha_hash,vinculo,modalidade,data_registro) "
+                    "VALUES (%s,%s,%s,%s,%s,CURRENT_DATE);",
+                    (nome,email_reg,senha_hash,vinculo,modalidade))
+                conn.commit()
+
+                # CORRIGIR QUERIES!
+                cursor.execute("INSERT INTO emails(detentor,end_email,id_atleta) "
+                               "VALUES (%s,%s,(SELECT id_atleta FROM atletas "
+                               "WHERE email=%s))",(nome_res,email_res,email_reg))
+                conn.commit()
+                cursor.execute("INSERT INTO telefones(detentor,num_telefone,id_atleta) "
+                               "VALUES (%s,%s,(SELECT id_atleta FROM atletas "
+                               "WHERE email=%s))", (nome_res, tel_res, email_reg))
+                conn.commit()
+                cursor.execute("INSERT INTO telefones(detentor,num_telefone,id_atleta) "
+                               "VALUES %s,%s,(SELECT id_atleta FROM atletas "
+                               "WHERE email=%s))", (nome, tel, email_reg))
                 conn.commit()
                 return jsonify({'sucesso': True, 'mensagem': 'Registrado com sucesso!'})
             else:
-                return jsonify({'sucesso': False, 'erro': 'Usuário já existente.'})
+                return jsonify({'sucesso': False, 'erro': 'Email já cadastrado.'})
 
     except Exception as e:
         return jsonify({'sucesso': False, 'erro': f'Ocorreu um erro interno: {e}'})
@@ -154,7 +178,6 @@ def register():
     finally:
         if conn:
             conn.close()
-
 
 @app.route('/logout')
 def logout():
@@ -164,4 +187,4 @@ def logout():
 
 if __name__ == "__main__":
     app.debug = True
-    app.run(host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=5000)
