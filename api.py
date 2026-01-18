@@ -40,7 +40,7 @@ def upload_photo():
 DB_HOST = "localhost"
 DB_NAME = "volei"
 DB_USER = "postgres"
-DB_PASSWORD = "+1Gabriel@1911"
+DB_PASSWORD = ""
 DB_PORT = 5432
 
 
