@@ -8,7 +8,7 @@ import {
     escaparHtml,
     safeEditParam,
     renderBadgeDVC
-} from "./utils.js";
+} from "./utils.
 
 // Helper functions for roles and cache clearing from window context
 const usuarioEhADM = () => typeof window.usuarioEhADM === 'function' ? window.usuarioEhADM() : false;
