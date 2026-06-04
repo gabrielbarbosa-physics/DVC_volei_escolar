@@ -22,6 +22,7 @@ import {
     getDocs, 
     addDoc 
 } from "./firebase.js";
+import { formatarDataSeguraDVC, obterTimestampDataSeguraDVC } from "./utils.js";
 
 // Safe getters for window-scoped variables
 const get_modoTestePerfilEmail = () => window.modoTestePerfilEmail;
@@ -1633,9 +1634,14 @@ async function toggleHistoricoTecnicoDVC(detailsEl, email) {
             return;
         }
 
-        registros.sort((a, b) => new Date(a.data) - new Date(b.data));
+        registros.sort((a, b) =>
+            obterTimestampDataSeguraDVC(a.data || a.registradoEm || a.criadoEm) -
+            obterTimestampDataSeguraDVC(b.data || b.registradoEm || b.criadoEm)
+        );
 
-        const labels = registros.map(r => new Date(r.data).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }));
+        const labels = registros.map(r =>
+            formatarDataSeguraDVC(r.data || r.registradoEm || r.criadoEm, "Data não registrada", { month: "short", year: "numeric" })
+        );
         const dataGeral = registros.map(r => r.scoreGeral || 0);
 
         container.innerHTML = corrigirHtmlVisualPerfilDVC(`
@@ -2651,12 +2657,35 @@ async function gerarAvaliacoesPendentesHtml() {
 }
 
 async function aplicarAvaliacaoPendenteAtleta(evId, docAvaliacao) {
+    const avaliacaoId = docAvaliacao.id;
+    const avaliacaoRef = docAvaliacao.ref || doc(db, "events", evId, "avaliacoesTecnicasPendentes", avaliacaoId);
     const av = docAvaliacao.data();
     const emailAtleta = av.email || docAvaliacao.id;
     const criterios = av.criterios || {};
     const agora = new Date().toISOString();
     const analisadorNome = window.currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica";
     const analisadorEmail = auth.currentUser?.email || "";
+
+    if (av.impactoAplicado === true) {
+        console.warn("[DVC Avaliacoes] Impacto ja aplicado. Ignorando reaplicacao.", avaliacaoId);
+
+        await setDoc(avaliacaoRef, {
+            status: "Aprovada",
+            analisadoEm: av.analisadoEm || agora,
+            analisadoPor: av.analisadoPor || analisadorNome,
+            analisadoPorEmail: av.analisadoPorEmail || analisadorEmail,
+            validadoEm: av.validadoEm || av.analisadoEm || agora,
+            validadoPor: av.validadoPor || av.analisadoPor || analisadorNome,
+            validadoPorEmail: av.validadoPorEmail || av.analisadoPorEmail || analisadorEmail
+        }, { merge: true });
+
+        return false;
+    }
+
+    if (String(av.status || "Pendente").trim().toLowerCase() !== "pendente") {
+        console.warn("[DVC Avaliacoes] Avaliacao nao esta pendente. Ignorando aplicacao.", avaliacaoId, av.status);
+        return false;
+    }
 
     const userRef = doc(db, "users", emailAtleta);
     const userSnap = await getDoc(userRef);
@@ -2717,14 +2746,27 @@ async function aplicarAvaliacaoPendenteAtleta(evId, docAvaliacao) {
         analisadoPorEmail: analisadorEmail,
         aprovadoPor: analisadorNome,
         aprovadoPorEmail: analisadorEmail,
-        aprovadoEm: agora
+        aprovadoEm: agora,
+        validadoEm: agora,
+        validadoPor: analisadorNome,
+        validadoPorEmail: analisadorEmail,
+        impactoAplicado: true,
+        impactoAplicadoEm: agora,
+        impactoAplicadoPor: analisadorEmail || analisadorNome,
+        avaliacaoOriginalId: avaliacaoId
     }, { merge: true });
 
-    await setDoc(docAvaliacao.ref || doc(db, "events", evId, "avaliacoesTecnicasPendentes", docAvaliacao.id), {
+    await setDoc(avaliacaoRef, {
         status: "Aprovada",
         analisadoEm: agora,
         analisadoPor: analisadorNome,
-        analisadoPorEmail: analisadorEmail
+        analisadoPorEmail: analisadorEmail,
+        validadoEm: agora,
+        validadoPor: analisadorNome,
+        validadoPorEmail: analisadorEmail,
+        impactoAplicado: true,
+        impactoAplicadoEm: agora,
+        impactoAplicadoPor: analisadorEmail || analisadorNome
     }, { merge: true });
 
     return true;

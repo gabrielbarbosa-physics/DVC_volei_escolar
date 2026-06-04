@@ -278,6 +278,66 @@ function formatarDataCurtaFinanceira(data) {
     });
 }
 
+function obterDataSeguraDVC(valor) {
+    if (!valor) return null;
+
+    try {
+        if (valor instanceof Date) {
+            return isNaN(valor.getTime()) ? null : valor;
+        }
+
+        if (valor && typeof valor.toDate === "function") {
+            const data = valor.toDate();
+            return isNaN(data.getTime()) ? null : data;
+        }
+
+        if (valor && typeof valor.seconds === "number") {
+            const data = new Date(valor.seconds * 1000);
+            return isNaN(data.getTime()) ? null : data;
+        }
+
+        if (typeof valor === "number") {
+            const data = new Date(valor);
+            return isNaN(data.getTime()) ? null : data;
+        }
+
+        if (typeof valor === "string") {
+            const texto = valor.trim();
+            if (!texto) return null;
+
+            const data = new Date(texto);
+            return isNaN(data.getTime()) ? null : data;
+        }
+
+        return null;
+    } catch (e) {
+        console.warn("[DVC Avaliacoes] Data invalida no historico:", valor, e);
+        return null;
+    }
+}
+
+function obterTimestampDataSeguraDVC(valor) {
+    const data = obterDataSeguraDVC(valor);
+    return data ? data.getTime() : 0;
+}
+
+function formatarDataSeguraDVC(valor, fallback = "Data não registrada", opcoes = {}) {
+    const data = obterDataSeguraDVC(valor);
+
+    if (!data) return fallback;
+
+    const { incluirHora = false, ...formatacao } = opcoes || {};
+
+    if (incluirHora) {
+        const formato = Object.keys(formatacao).length
+            ? formatacao
+            : { dateStyle: "short", timeStyle: "short" };
+        return data.toLocaleString("pt-BR", formato);
+    }
+
+    return data.toLocaleDateString("pt-BR", formatacao);
+}
+
 function formatarPontuacaoRankingDVC(valor, tipo = "tecnico", oculto = false) {
     if (oculto) return "Oculto";
     if (valor === null || valor === undefined || Number.isNaN(Number(valor))) return "Sem dados";
@@ -722,6 +782,9 @@ window.formatarDataHoraFinanceira = formatarDataHoraFinanceira;
 window.formatarÚltimoAcesso = formatarÚltimoAcesso;
 window.formatarDataChaveFinanceira = formatarDataChaveFinanceira;
 window.formatarDataCurtaFinanceira = formatarDataCurtaFinanceira;
+window.obterDataSeguraDVC = obterDataSeguraDVC;
+window.obterTimestampDataSeguraDVC = obterTimestampDataSeguraDVC;
+window.formatarDataSeguraDVC = formatarDataSeguraDVC;
 window.formatarPontuacaoRankingDVC = formatarPontuacaoRankingDVC;
 window.formatarContatoFinanceiro = formatarContatoFinanceiro;
 window.formatarPlacarTreino = formatarPlacarTreino;
@@ -774,6 +837,9 @@ export {
     formatarÚltimoAcesso,
     formatarDataChaveFinanceira,
     formatarDataCurtaFinanceira,
+    obterDataSeguraDVC,
+    obterTimestampDataSeguraDVC,
+    formatarDataSeguraDVC,
     formatarPontuacaoRankingDVC,
     formatarContatoFinanceiro,
     formatarPlacarTreino,

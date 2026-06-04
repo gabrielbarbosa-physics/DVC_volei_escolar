@@ -17,7 +17,9 @@ import {
     normalizarEmailIdDVC,
     normalizarFuncaoTecnica,
     normalizarHabilidadesDVC,
-    renderBadgeDVC
+    renderBadgeDVC,
+    formatarDataSeguraDVC,
+    obterTimestampDataSeguraDVC
 } from "./utils.js";
 
 function ehResponsavelTecnico(user = {}) {
@@ -426,11 +428,9 @@ window.salvarAvaliacao = async (email) => {
             });
         });
 
-        registros.sort((a, b) => {
-            const dataA = new Date(a.registradoEm || 0);
-            const dataB = new Date(b.registradoEm || 0);
-            return dataB - dataA;
-        });
+        registros.sort((a, b) =>
+            obterTimestampDataSeguraDVC(b.registradoEm) - obterTimestampDataSeguraDVC(a.registradoEm)
+        );
 
         registros = registros.slice(0, 3);
 
@@ -463,7 +463,7 @@ window.salvarAvaliacao = async (email) => {
                                         ${reg.origem || "Atualização"}
                                     </p>
                                     <p class="text-[8px] text-gray-400 font-semibold">
-                                        ${reg.registradoEm ? new Date(reg.registradoEm).toLocaleDateString("pt-BR") : ""}
+                                        ${formatarDataSeguraDVC(reg.registradoEm)}
                                     </p>
                                 </div>
 
@@ -1683,7 +1683,9 @@ window.renderAutoAvaliacoesPendentes = async () => {
             });
         });
 
-        pendentes.sort((a, b) => new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0));
+        pendentes.sort((a, b) =>
+            obterTimestampDataSeguraDVC(b.criadoEm) - obterTimestampDataSeguraDVC(a.criadoEm)
+        );
 
         const html = `
             <div class="bg-white border rounded-2xl p-4 shadow-sm mb-5">
@@ -1711,7 +1713,7 @@ window.renderAutoAvaliacoesPendentes = async () => {
                                     <div class="min-w-0">
                                         <p class="text-xs font-black uppercase text-gray-900 truncate">${av.nome || av.email || "Atleta"}</p>
                                         <p class="text-[8px] font-bold text-gray-400 truncate">${av.email || ""}</p>
-                                        <p class="text-[8px] font-bold text-gray-400 uppercase mt-1">${av.criadoEm ? new Date(av.criadoEm).toLocaleString("pt-BR") : ""}</p>
+                                        <p class="text-[8px] font-bold text-gray-400 uppercase mt-1">${formatarDataSeguraDVC(av.criadoEm, "Data não registrada", { incluirHora: true })}</p>
                                     </div>
                                     <div class="text-right shrink-0">
                                         <p class="text-[8px] font-black uppercase text-gray-400">Score</p>

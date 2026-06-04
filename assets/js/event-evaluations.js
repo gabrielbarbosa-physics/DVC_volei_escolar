@@ -453,6 +453,9 @@ async function salvarAvaliacaoEvento(evId, tipoEvento) {
                 avaliadorEmail: avaliadorEmail,
                 avaliadorNome: avaliadorNome,
                 status: "Pendente",
+                impactoAplicado: false,
+                impactoAplicadoEm: "",
+                impactoAplicadoPor: "",
                 criadoEm: new Date().toISOString()
             });
 
