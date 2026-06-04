@@ -1,0 +1,6 @@
+node_modules/
+pyjsparser-master/
+__pycache__/
+*.log
+.codex-edge-quick-*
+.edge-profile-*

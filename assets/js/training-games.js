@@ -1,0 +1,2426 @@
+/**
+ * ============================================================================
+ * Módulo: TRAINING-GAMES
+ * ============================================================================
+ * Responsabilidade: Gerencia funcionalidades relacionadas a training-games.
+ * Este arquivo faz parte do sistema modular do DVC App.
+ * Todos os códigos principais aqui agrupados seguem as diretrizes do projeto.
+ * ============================================================================
+ */
+
+﻿// TRAINING GAMES MODULE DVC APP
+
+import { auth, db, doc, getDoc, updateDoc } from "./firebase.js";
+import { currentUserData } from "./state.js";
+
+import {
+    escaparHtml,
+    safeEditParam,
+    normalizarStatusJogoTreinoDVC,
+    getValorNumericoPlacarTreino,
+    formatarPlacarTreino,
+    getStatusVisualJogoTreino,
+    renderBadgeDVC,
+    renderBadgesAtletaDVC,
+    normalizarHabilidadesDVC,
+    normalizarSexoSorteioTreino,
+    normalizarFuncaoVoleiSorteio,
+    getNomeFuncaoVoleiDVC,
+    corrigirMojibakeDVC
+} from "./utils.js";
+
+const TODAS_HABILIDADES_DVC = window.TODAS_HABILIDADES_DVC || [];
+
+function calcularScoreGeralDVC(habilidades = {}) {
+    return typeof window.calcularScoreGeralDVC === "function"
+        ? window.calcularScoreGeralDVC(habilidades)
+        : 0;
+}
+
+function usuarioEhEquipeTecnica() {
+    return typeof window.usuarioEhEquipeTecnica === "function"
+        ? window.usuarioEhEquipeTecnica()
+        : false;
+}
+
+async function carregarEventosCacheMockDVC(force = false) {
+    if (typeof window.carregarEventosCacheMockDVC === "function") {
+        return window.carregarEventosCacheMockDVC(force);
+    }
+
+    return { forEach() {} };
+}
+
+async function carregarEventosCacheDVC(force = false) {
+    if (typeof window.carregarEventosCacheDVC === "function") {
+        return window.carregarEventosCacheDVC(force);
+    }
+
+    if (typeof window.carregarEventosCache === "function") {
+        return window.carregarEventosCache(force);
+    }
+
+    return [];
+}
+
+async function carregarEventosCache(forcar = false) {
+    if (typeof window.carregarEventosCache === "function") {
+        return window.carregarEventosCache(forcar);
+    }
+
+    return [];
+}
+
+async function carregarPresencasEventoDVC(eventId, force = false) {
+    return typeof window.carregarPresencasEventoDVC === "function"
+        ? window.carregarPresencasEventoDVC(eventId, force)
+        : [];
+}
+
+async function carregarConvocadosEventoDVC(eventId, force = false) {
+    return typeof window.carregarConvocadosEventoDVC === "function"
+        ? window.carregarConvocadosEventoDVC(eventId, force)
+        : [];
+}
+
+async function obterUsuarioCacheDVC(email, force = false) {
+    return typeof window.obterUsuarioCacheDVC === "function"
+        ? window.obterUsuarioCacheDVC(email, force)
+        : null;
+}
+
+function usuarioPodeSerEscaladoComoAtleta(user = {}) {
+    return typeof window.usuarioPodeSerEscaladoComoAtleta === "function"
+        ? window.usuarioPodeSerEscaladoComoAtleta(user)
+        : true;
+}
+
+function usuarioTemStatusConvocavel(user = {}) {
+    return typeof window.usuarioTemStatusConvocavel === "function"
+        ? window.usuarioTemStatusConvocavel(user)
+        : true;
+}
+
+function usuarioPodeSerConvocadoPorFinanceiro(user = {}) {
+    return typeof window.usuarioPodeSerConvocadoPorFinanceiro === "function"
+        ? window.usuarioPodeSerConvocadoPorFinanceiro(user)
+        : true;
+}
+
+function limparCacheDados(tipo = "todos") {
+    if (typeof window.limparCacheDados === "function") {
+        return window.limparCacheDados(tipo);
+    }
+}
+
+function chamadaTemAlteracoesPendentes(evId) {
+    if (typeof window.chamadaTemAlteracoesPendentes === "function") {
+        return window.chamadaTemAlteracoesPendentes(evId);
+    }
+
+    const temp = window.chamadaTempDVC?.[evId];
+    const salva = window.chamadaSalvaDVC?.[evId];
+    if (!temp || !salva) return false;
+    if (temp.size !== salva.size) return true;
+    for (const email of temp) {
+        if (!salva.has(email)) return true;
+    }
+    return false;
+}
+
+function presencaEhPresenteTreinoDVC(presenca = {}) {
+    return presenca.presente === true || presenca.presente === undefined;
+}
+
+function presencaParticipaDoSorteioTreinoDVC(presenca = {}) {
+    return presencaEhPresenteTreinoDVC(presenca) &&
+        presenca.ativoNoTreino !== false &&
+        presenca.saiuMaisCedo !== true;
+}
+
+function getResumoPresencasSorteioTreinoDVC(presencas = []) {
+    const presentes = presencas.filter(presencaEhPresenteTreinoDVC);
+    const ativos = presentes.filter(presencaParticipaDoSorteioTreinoDVC);
+
+    return {
+        presentes: presentes.length,
+        ativos: ativos.length,
+        foraSorteio: presentes.length - ativos.length
+    };
+}
+
+function getTextoForaSorteioTreinoDVC(qtd = 0) {
+    if (qtd <= 0) return "";
+    return `${qtd} atleta${qtd === 1 ? "" : "s"} presente${qtd === 1 ? "" : "s"} ${qtd === 1 ? "está" : "estão"} fora do sorteio porque ${qtd === 1 ? "saiu" : "saíram"} antes do fim.`;
+}
+
+function renderMural() {
+    if (typeof window.renderMural === "function") {
+        return window.renderMural();
+    }
+}
+
+function renderCalendar() {
+    if (typeof window.renderCalendar === "function") {
+        return window.renderCalendar();
+    }
+}
+
+function limparCacheDVC(chave = null) {
+    if (typeof window.limparCacheDVC === "function") {
+        return window.limparCacheDVC(chave);
+    }
+}
+
+
+async function abrirAvaliacaoAtletasDoTreino(eventId) {
+    if (typeof window.abrirAvaliacaoAtletasDoTreino === "function") {
+        return window.abrirAvaliacaoAtletasDoTreino(eventId);
+    }
+}
+
+window.graficosTimesTreino = window.graficosTimesTreino || {};
+
+// ============================================================================
+// SECAO 09A - JOGOS/TREINOS DO MURAL: RENDERIZACAO E LEITURA
+// ============================================================================
+function jogoTreinoEncerradoDVC(rodada = {}) {
+    const status = normalizarStatusJogoTreinoDVC(rodada.status);
+    return status === "concluido" || status === "finalizado" || status === "cancelado";
+}
+
+function jogoTreinoConcluidoDVC(rodada = {}) {
+    return normalizarStatusJogoTreinoDVC(rodada.status) === "concluido";
+}
+
+function treinoEstaFinalizadoDVC(evento = {}) {
+  const status = String(evento.statusTreino || evento.status || "").trim().toLowerCase();
+
+  if (evento.finalizadoEm) return true;
+
+  if (
+    status === "finalizado" ||
+    status === "concluido" ||
+    status === "concluído"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function eventoTreinoSorteioFinalizadoDVC(evento = {}, rodadasTreino = []) {
+    if (rodadasTreino && rodadasTreino.length > 0 && !evento.rodadasTreino) {
+        evento.rodadasTreino = rodadasTreino;
+    }
+    return treinoEstaFinalizadoDVC(evento);
+}
+window.treinoEstaFinalizadoDVC = treinoEstaFinalizadoDVC;
+
+function obterTimePorIdSorteio(times = [], timeId = "") {
+    return times.find(time => time.id === timeId) || null;
+}
+
+function getProximoJogoPendenteTreino(rodadasTreino = []) {
+    return [...rodadasTreino]
+        .filter(r => !jogoTreinoEncerradoDVC(r))
+        .sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0))[0] || null;
+}
+
+function calcularMediaHabilidadesTime(atletas = []) {
+    const atletasValidos = Array.isArray(atletas) ? atletas : [];
+    const totais = {};
+
+    TODAS_HABILIDADES_DVC.forEach(skill => {
+        totais[skill.id] = 0;
+    });
+
+    if (atletasValidos.length === 0) {
+        const mediaVazia = {};
+
+        TODAS_HABILIDADES_DVC.forEach(skill => {
+            mediaVazia[skill.id] = 0;
+        });
+
+        return {
+            mediaHabilidades: mediaVazia,
+            scoreMedio: 0
+        };
+    }
+
+    atletasValidos.forEach(atleta => {
+        const habilidades = normalizarHabilidadesDVC(atleta.habilidades || {});
+
+        TODAS_HABILIDADES_DVC.forEach(skill => {
+            totais[skill.id] += Number(habilidades[skill.id] || 0);
+        });
+    });
+
+    const mediaHabilidades = {};
+
+    TODAS_HABILIDADES_DVC.forEach(skill => {
+        mediaHabilidades[skill.id] = Number((totais[skill.id] / atletasValidos.length).toFixed(1));
+    });
+
+    const somaScores = atletasValidos.reduce((total, atleta) => {
+        const score = Number(atleta.scoreGeral);
+        return total + (Number.isFinite(score) ? score : calcularScoreGeralDVC(atleta.habilidades || {}));
+    }, 0);
+
+    return {
+        mediaHabilidades,
+        scoreMedio: Number((somaScores / atletasValidos.length).toFixed(1))
+    };
+}
+
+window.calcularMediaHabilidadesTime = calcularMediaHabilidadesTime;
+
+function renderizarRadarComparativoTimes(timeA, timeB, canvasId) {
+    if (typeof Chart === "undefined") {
+        console.warn("Chart.js nao carregado para o radar de times.");
+        return;
+    }
+
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    window.graficosTimesTreino = window.graficosTimesTreino || {};
+
+    if (window.graficosTimesTreino[canvasId]) {
+        window.graficosTimesTreino[canvasId].destroy();
+        delete window.graficosTimesTreino[canvasId];
+    }
+
+    const labels = TODAS_HABILIDADES_DVC.map(skill => skill.nome || skill.id);
+    const dadosA = TODAS_HABILIDADES_DVC.map(skill => Number(timeA?.mediaHabilidades?.[skill.id] || 0));
+    const dadosB = TODAS_HABILIDADES_DVC.map(skill => Number(timeB?.mediaHabilidades?.[skill.id] || 0));
+
+    window.graficosTimesTreino[canvasId] = new Chart(canvas, {
+        type: "radar",
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: timeA?.nome || "Time A",
+                    data: dadosA,
+                    backgroundColor: "rgba(153,0,0,0.14)",
+                    borderColor: "#990000",
+                    borderWidth: 2,
+                    pointBackgroundColor: "#990000"
+                },
+                {
+                    label: timeB?.nome || "Time B",
+                    data: dadosB,
+                    backgroundColor: "rgba(17,24,39,0.12)",
+                    borderColor: "#111827",
+                    borderWidth: 2,
+                    pointBackgroundColor: "#111827"
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        font: {
+                            size: 9,
+                            weight: "bold"
+                        }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    min: 0,
+                    max: 5,
+                    ticks: {
+                        stepSize: 1,
+                        font: {
+                            size: 8
+                        }
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 8,
+                            weight: "bold"
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+window.renderizarRadarComparativoTimes = renderizarRadarComparativoTimes;
+
+function calcularClassificacaoTreino(timesSorteados = [], rodadasTreino = []) {
+    const tabela = {};
+
+    timesSorteados.forEach(time => {
+        tabela[time.id] = {
+            timeId: time.id,
+            nome: time.nome || time.id,
+            jogos: 0,
+            vitorias: 0,
+            derrotas: 0,
+            pontosFeitos: 0,
+            pontosSofridos: 0,
+            saldo: 0,
+            aproveitamento: 0
+        };
+    });
+
+    rodadasTreino.forEach(rodada => {
+        if (!jogoTreinoConcluidoDVC(rodada)) return;
+
+        const pontosA = getValorNumericoPlacarTreino(rodada.pontosA);
+        const pontosB = getValorNumericoPlacarTreino(rodada.pontosB);
+
+        if (pontosA === null || pontosB === null) return;
+        if (!tabela[rodada.timeAId] || !tabela[rodada.timeBId]) return;
+
+        const timeA = tabela[rodada.timeAId];
+        const timeB = tabela[rodada.timeBId];
+
+        timeA.jogos += 1;
+        timeB.jogos += 1;
+
+        timeA.pontosFeitos += pontosA;
+        timeA.pontosSofridos += pontosB;
+        timeB.pontosFeitos += pontosB;
+        timeB.pontosSofridos += pontosA;
+
+        const vencedorId = rodada.vencedorId || (pontosA > pontosB ? rodada.timeAId : rodada.timeBId);
+
+        if (vencedorId === rodada.timeAId) {
+            timeA.vitorias += 1;
+            timeB.derrotas += 1;
+        } else if (vencedorId === rodada.timeBId) {
+            timeB.vitorias += 1;
+            timeA.derrotas += 1;
+        }
+    });
+
+    Object.values(tabela).forEach(item => {
+        item.saldo = item.pontosFeitos - item.pontosSofridos;
+        item.aproveitamento = item.jogos > 0
+            ? Number(((item.vitorias / item.jogos) * 100).toFixed(1))
+            : 0;
+    });
+
+    return Object.values(tabela).sort((a, b) => {
+        if (b.vitorias !== a.vitorias) return b.vitorias - a.vitorias;
+        if (b.saldo !== a.saldo) return b.saldo - a.saldo;
+        if (b.pontosFeitos !== a.pontosFeitos) return b.pontosFeitos - a.pontosFeitos;
+        if (a.pontosSofridos !== b.pontosSofridos) return a.pontosSofridos - b.pontosSofridos;
+        return a.nome.localeCompare(b.nome);
+    });
+}
+
+window.calcularClassificacaoTreino = calcularClassificacaoTreino;
+
+function renderizarClassificacaoTreinoHtml(classificacao = [], finalizado = false) {
+    if (!classificacao.length) {
+        return `
+            <div class="bg-white border border-dashed rounded-2xl p-3 text-center">
+                <p class="text-[9px] font-black text-gray-400 uppercase">Classificacao ainda sem jogos.</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="space-y-2">
+            ${classificacao.map((item, index) => `
+                <div class="${index === 0 && finalizado ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'} border rounded-2xl p-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="${index === 0 ? 'bg-[#990000] text-white' : 'bg-gray-100 text-gray-600'} w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0">
+                            ${index + 1}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-black uppercase text-gray-900 truncate">${item.nome}</p>
+                            <p class="text-[8px] font-bold uppercase text-gray-400">
+                                ${item.vitorias}V ${item.derrotas}D - Saldo ${item.saldo}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-xs font-black text-[#990000]">${item.aproveitamento}%</p>
+                        <p class="text-[8px] font-black uppercase text-gray-400">${item.pontosFeitos}/${item.pontosSofridos}</p>
+                    </div>
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
+function renderizarCardJogoTreinoMural(evento, jogo, proximoPendente) {
+    const status = getStatusVisualJogoTreino(jogo.status);
+    const destaqueProximo = proximoPendente && proximoPendente.id === jogo.id;
+    const bloqueado = normalizarStatusJogoTreinoDVC(jogo.status) === "pendente" && proximoPendente && proximoPendente.id !== jogo.id;
+    const placar = formatarPlacarTreino(jogo);
+
+    return `
+        <button onclick="abrirModalJogoTreino('${safeEditParam(evento.id)}', '${safeEditParam(jogo.id)}')" class="w-full text-left ${destaqueProximo ? 'bg-gray-950 text-white border-[#990000] shadow-lg' : 'bg-white text-gray-900 border-gray-100'} ${bloqueado ? 'opacity-70' : ''} border rounded-2xl p-3 shadow-sm active:scale-[0.99] transition">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[8px] font-black uppercase ${destaqueProximo ? 'text-red-100' : 'text-[#990000]'}">Rodada ${jogo.rodada} - Jogo ${jogo.ordem}</p>
+                    <p class="text-xs font-black uppercase truncate mt-1">${escaparHtml(jogo.timeANome)} x ${escaparHtml(jogo.timeBNome)}</p>
+                </div>
+                <span class="inline-flex items-center justify-center shrink-0 whitespace-nowrap leading-none text-[8px] font-black uppercase border px-2.5 py-1 rounded-full ${destaqueProximo ? 'bg-white text-[#990000] border-white' : status.classe}">
+                    ${destaqueProximo ? 'Proximo' : status.texto}
+                </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-3">
+                <div class="${destaqueProximo ? 'bg-white/10 border-white/10' : 'bg-gray-50 border-gray-100'} border rounded-xl p-2 text-center">
+                    <p class="text-[8px] font-black uppercase ${destaqueProximo ? 'text-white/55' : 'text-gray-400'}">Placar</p>
+                    <p class="text-sm font-black">${placar}</p>
+                </div>
+                <div class="${destaqueProximo ? 'bg-white/10 border-white/10' : 'bg-gray-50 border-gray-100'} border rounded-xl p-2 text-center">
+                    <p class="text-[8px] font-black uppercase ${destaqueProximo ? 'text-white/55' : 'text-gray-400'}">Status</p>
+                    <p class="text-[9px] font-black uppercase">${status.texto}</p>
+                </div>
+            </div>
+        </button>
+    `;
+}
+
+window.mostrarHistoricoCompletoTreinosDVC = window.mostrarHistoricoCompletoTreinosDVC || false;
+window.toggleHistoricoTreinosDVC = () => {
+    window.mostrarHistoricoCompletoTreinosDVC = !window.mostrarHistoricoCompletoTreinosDVC;
+    if (window.__abaAtualDVC === "calendar") {
+        renderCalendar();
+    } else {
+        renderMural();
+    }
+};
+
+function getStatusAvaliacaoTreinoDVC(evento = {}) {
+    const status = String(evento.avaliacaoTecnicaStatus || "").trim();
+    const normalizado = status
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+    if (normalizado === "aprovada" || normalizado === "realizada" || normalizado === "concluida" || normalizado === "concluido") {
+        return { texto: "Avaliação realizada", tipo: "verde" };
+    }
+
+    if (normalizado === "pendente" || normalizado === "aberta") {
+        return { texto: "Avaliação pendente", tipo: "amarelo" };
+    }
+
+    if (normalizado === "rejeitada" || normalizado === "recusada") {
+        return { texto: "Avaliação recusada", tipo: "amarelo" };
+    }
+
+    return { texto: "Avaliação pendente", tipo: "amarelo" };
+}
+
+function renderizarEventoJogosTreinoMural(evento, finalizado = false) {
+    const podeGerenciar = usuarioEhEquipeTecnica();
+    const times = Array.isArray(evento.timesSorteados) ? evento.timesSorteados : [];
+    const rodadas = Array.isArray(evento.rodadasTreino) ? [...evento.rodadasTreino] : [];
+    rodadas.sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
+
+    const classificacao = Array.isArray(evento.classificacaoTreino) && evento.classificacaoTreino.length
+        ? evento.classificacaoTreino
+        : calcularClassificacaoTreino(times, rodadas);
+    const proximo = finalizado ? null : getProximoJogoPendenteTreino(rodadas);
+    const campeao = finalizado ? classificacao[0] : null;
+    const statusAvaliacao = getStatusAvaliacaoTreinoDVC(evento);
+    const acaoPartidasTreino = proximo
+        ? `<button onclick="abrirModalJogoTreino('${safeEditParam(evento.id)}', '${safeEditParam(proximo.id)}')" class="w-full bg-gray-900 text-white py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm"><i class="fa-solid fa-forward-step mr-1"></i> Próximo jogo</button>`
+        : `<button onclick="abrirModalTimesTreino('${safeEditParam(evento.id)}')" class="w-full bg-gray-900 text-white py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm"><i class="fa-solid fa-list-check mr-1"></i> Ver partidas</button>`;
+
+    return `
+        <div class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm overflow-hidden">
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="min-w-0">
+                    <p class="text-[8px] font-black uppercase text-gray-400">${finalizado ? 'Classificação final' : 'Classificação parcial'}</p>
+                    <h4 class="text-sm font-black uppercase text-gray-900 truncate">${escaparHtml(evento.titulo || "Treino DVC")}</h4>
+                    <p class="text-[9px] font-bold text-gray-400 uppercase mt-1">
+                        ${evento.data ? new Date(evento.data).toLocaleString("pt-BR") : "Data não informada"}
+                    </p>
+                </div>
+                <div class="shrink-0 flex flex-col items-end gap-1">
+                    ${renderBadgeDVC(finalizado ? "Finalizado" : "Em andamento", finalizado ? "verde" : "vermelho")}
+                    ${finalizado ? renderBadgeDVC(statusAvaliacao.texto, statusAvaliacao.tipo) : ""}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <button onclick="abrirModalTimesTreino('${safeEditParam(evento.id)}')" class="bg-gray-950 text-white py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm">
+                    <i class="fa-solid fa-people-group mr-1"></i> Ver times
+                </button>
+                ${finalizado && podeGerenciar ? `
+                    <button onclick="abrirAvaliacaoAtletasDoTreino('${safeEditParam(evento.id)}')" class="bg-[#990000] text-white py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm">
+                        <i class="fa-solid fa-clipboard-check mr-1"></i> Avaliar atletas
+                    </button>
+                ` : `
+                    <button onclick="abrirModalTimesTreino('${safeEditParam(evento.id)}')" class="bg-red-50 text-[#990000] border border-red-100 py-2.5 rounded-2xl text-[9px] font-black uppercase">
+                        Times sorteados
+                    </button>
+                `}
+            </div>
+
+            ${campeao ? `
+                <div class="bg-[#990000] text-white rounded-2xl p-3 mb-3 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[8px] font-black uppercase text-white/60">Campeão do treino</p>
+                        <p class="text-xs font-black uppercase">${escaparHtml(campeao.nome)}</p>
+                    </div>
+                    <i class="fa-solid fa-trophy text-lg text-red-100"></i>
+                </div>
+            ` : ''}
+
+            <div class="mb-3">
+                ${renderizarClassificacaoTreinoHtml(classificacao, finalizado)}
+            </div>
+
+            <details class="bg-gray-50 border border-gray-100 rounded-2xl shadow-sm overflow-hidden mb-3">
+                <summary class="cursor-pointer list-none p-3 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-[#990000]">Jogos do treino</p>
+                        <p class="text-[9px] font-bold text-gray-400 uppercase">Toque para ver partidas e placares</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-gray-400"></i>
+                </summary>
+                <div class="px-3 pb-3 space-y-2">
+                    ${rodadas.map(jogo => renderizarCardJogoTreinoMural(evento, jogo, proximo)).join("")}
+                </div>
+            </details>
+
+            ${!finalizado ? `
+                <div class="${podeGerenciar ? 'grid grid-cols-2' : 'grid grid-cols-1'} gap-2 mt-3">
+                    ${acaoPartidasTreino}
+                    ${podeGerenciar ? `
+                        <button onclick="abrirModalConfigSorteioTreino('${safeEditParam(evento.id)}')" class="w-full bg-[#990000] text-white py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm">
+                            <i class="fa-solid fa-shuffle mr-1"></i> Sortear novamente com presentes
+                        </button>
+                    ` : ''}
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function avaliacaoTreinoPendenteDVC(evento = {}) {
+    const statusAvaliacao = getStatusAvaliacaoTreinoDVC(evento);
+    return corrigirMojibakeDVC(statusAvaliacao.texto)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .includes("pendente");
+}
+
+function renderizarCardTreinoFinalizadoCompactoDVC(evento = {}) {
+    const podeGerenciar = usuarioEhEquipeTecnica();
+    const statusAvaliacao = getStatusAvaliacaoTreinoDVC(evento);
+    const avaliacaoPendente = avaliacaoTreinoPendenteDVC(evento);
+    const dataFormatada = evento.data
+        ? new Date(evento.data).toLocaleString("pt-BR")
+        : "Data não informada";
+
+    return `
+        <article class="bg-gray-50 border border-gray-100 rounded-2xl p-3">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h4 class="text-xs font-black uppercase text-gray-900 truncate">${escaparHtml(evento.titulo || "Treino DVC")}</h4>
+                    <p class="text-[9px] font-bold text-gray-400 uppercase mt-1">${dataFormatada}</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        ${renderBadgeDVC("Finalizado", "verde")}
+                        ${renderBadgeDVC(statusAvaliacao.texto, statusAvaliacao.tipo)}
+                    </div>
+                </div>
+                <i class="fa-solid fa-check-circle text-green-500 text-lg shrink-0 mt-1"></i>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-3">
+                <button onclick="abrirResumoTreinoFinalizadoDVC('${safeEditParam(evento.id)}')" class="bg-white border border-gray-200 text-gray-700 py-2.5 rounded-xl text-[8px] font-black uppercase shadow-sm">
+                    Ver resumo
+                </button>
+                ${podeGerenciar && avaliacaoPendente ? `
+                    <button onclick="abrirAvaliacaoAtletasDoTreino('${safeEditParam(evento.id)}')" class="bg-[#990000] text-white py-2.5 rounded-xl text-[8px] font-black uppercase shadow-sm">
+                        Avaliar atletas
+                    </button>
+                ` : `
+                    <button onclick="abrirModalTimesTreino('${safeEditParam(evento.id)}')" class="bg-red-50 text-[#990000] border border-red-100 py-2.5 rounded-xl text-[8px] font-black uppercase">
+                        Ver times
+                    </button>
+                `}
+            </div>
+        </article>
+    `;
+}
+
+async function carregarJogosTreinoNoMural() {
+    try {
+        const el = document.getElementById("mural-sequencia-jogos");
+        if (!el) return;
+
+        el.classList.add("hidden");
+        el.innerHTML = "";
+
+        const eventosSnap = await carregarEventosCacheMockDVC();
+        const eventosComJogos = [];
+
+        eventosSnap.forEach(eventoDoc => {
+            const ev = eventoDoc.data();
+            const rodadas = Array.isArray(ev.rodadasTreino) ? ev.rodadasTreino : [];
+
+            if (ev.sorteioTimesAtivo === true || ev.sorteioTimesFinalizado === true || rodadas.length > 0) {
+                eventosComJogos.push({
+                    id: eventoDoc.id,
+                    ...ev,
+                    rodadasTreino: rodadas
+                });
+            }
+        });
+
+        eventosComJogos.sort((a, b) => {
+            const dataA = new Date(a.sorteioTimesCriadoEm || a.data || 0);
+            const dataB = new Date(b.sorteioTimesCriadoEm || b.data || 0);
+            return dataB - dataA;
+        });
+
+        if (eventosComJogos.length === 0) {
+            return;
+        }
+
+        el.classList.remove("hidden");
+        const eventosNormalizados = eventosComJogos.map(evento => {
+            const rodadas = Array.isArray(evento.rodadasTreino) ? [...evento.rodadasTreino] : [];
+            rodadas.sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
+
+            return {
+                ...evento,
+                rodadasTreino: rodadas,
+                finalizadoTreinoDVC: eventoTreinoSorteioFinalizadoDVC(evento, rodadas)
+            };
+        });
+
+        const eventosAtivos = eventosNormalizados.filter(evento => !evento.finalizadoTreinoDVC);
+        const eventosFinalizados = eventosNormalizados.filter(evento => evento.finalizadoTreinoDVC);
+        const eventosFinalizadosComAvaliacaoPendente = eventosFinalizados.filter(evento => avaliacaoTreinoPendenteDVC(evento));
+        const historicoVisivel = window.mostrarHistoricoCompletoTreinosDVC
+            ? eventosFinalizados
+            : eventosFinalizados.slice(0, 3);
+
+        el.innerHTML = `
+            ${eventosAtivos.length ? `
+                <p class="text-[10px] font-black text-[#990000] uppercase mb-2">
+                    <i class="fa-solid fa-list-ol mr-1"></i> Jogos do Treino
+                </p>
+
+                <div class="space-y-4">
+                    ${eventosAtivos.map(evento => renderizarEventoJogosTreinoMural(evento, false)).join("")}
+                </div>
+            ` : ''}
+
+            ${eventosFinalizados.length ? `
+                ${usuarioEhEquipeTecnica() && eventosFinalizadosComAvaliacaoPendente.length ? `
+                    <div class="${eventosAtivos.length ? 'mt-5' : ''} bg-yellow-50 border border-yellow-100 rounded-2xl p-3 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-[9px] font-black uppercase text-yellow-900">
+                                ${eventosFinalizadosComAvaliacaoPendente.length} treino(s) finalizado(s) com avaliação pendente
+                            </p>
+                            <p class="text-[8px] font-bold uppercase text-yellow-700/80 mt-1 truncate">
+                                Avalie os presentes quando for possível.
+                            </p>
+                        </div>
+                        <button onclick="abrirAvaliacaoAtletasDoTreino('${safeEditParam(eventosFinalizadosComAvaliacaoPendente[0].id)}')" class="shrink-0 bg-[#990000] text-white px-3 py-2 rounded-full text-[8px] font-black uppercase shadow-sm">
+                            Avaliar atletas
+                        </button>
+                    </div>
+                ` : ''}
+
+                <details class="${eventosAtivos.length || eventosFinalizadosComAvaliacaoPendente.length ? 'mt-3' : ''} bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden" ${window.mostrarHistoricoCompletoTreinosDVC ? "open" : ""}>
+                    <summary class="cursor-pointer list-none p-4 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-black text-[#990000] uppercase">
+                                <i class="fa-solid fa-clock-rotate-left mr-1"></i> Treinos finalizados
+                            </p>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase">
+                                ${window.mostrarHistoricoCompletoTreinosDVC ? 'Histórico completo' : 'ÚÚltimos 3 registros'}
+                            </p>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-gray-400 text-xs shrink-0"></i>
+                    </summary>
+
+                    <div class="px-4 pb-4 space-y-3">
+                        ${historicoVisivel.map(evento => renderizarCardTreinoFinalizadoCompactoDVC(evento)).join("")}
+
+                        ${eventosFinalizados.length > 3 ? `
+                            <button onclick="event.stopPropagation(); toggleHistoricoTreinosDVC()" class="w-full bg-gray-100 text-gray-600 border border-gray-200 px-3 py-2.5 rounded-full text-[8px] font-black uppercase whitespace-nowrap">
+                                ${window.mostrarHistoricoCompletoTreinosDVC ? 'Ocultar histórico' : 'Ver mais'}
+                            </button>
+                        ` : ''}
+                    </div>
+                </details>
+            ` : ''}
+        `;
+
+    } catch (e) {
+        console.error("Erro ao carregar jogos do treino no muralá", e);
+    }
+}
+
+window.carregarJogosTreinoNoMural = carregarJogosTreinoNoMural;
+
+function renderizarListaAtletasTimeTreino(time) {
+    const atletas = Array.isArray(time?.atletas) ? time.atletas : [];
+
+    if (!atletas.length) {
+        return `<p class="text-[9px] font-bold text-gray-400 uppercase">Nenhum atleta neste time.</p>`;
+    }
+
+    return atletas.map((atleta, index) => `
+        <div class="flex items-start justify-between gap-2 border-b border-gray-100 last:border-b-0 py-2">
+            <div class="min-w-0">
+                <p class="text-[10px] font-bold text-gray-800 truncate">${index + 1}. ${atleta.nome || atleta.email}</p>
+                ${renderBadgesAtletaDVC(atleta)}
+            </div>
+            <span class="inline-flex items-center justify-center whitespace-nowrap leading-none text-[9px] font-black text-[#990000] shrink-0">${Number(atleta.scoreGeral || 0).toFixed(1)}</span>
+        </div>
+    `).join("");
+}
+
+
+
+// ============================================================================
+// SECAO 09C - SORTEIO DE TIMES, FINALIZACAO E SEQUENCIA DE JOGOS
+// ============================================================================
+async function carregarSequenciaJogosMural() {
+    try {
+        const el = document.getElementById('mural-sequencia-jogos');
+        if (!el) return;
+        el.classList.add("hidden");
+        el.innerHTML = "";
+        const eventsSnap = await carregarEventosCacheMockDVC();
+
+        let eventosComSequencia = [];
+
+        eventsSnap.forEach(eventoDoc => {
+            const ev = eventoDoc.data();
+
+            if (ev.sequenciaJogosAtiva === true && ev.sequenciaJogosFinalizada !== true) {
+                eventosComSequencia.push({
+                    id: eventoDoc.id,
+                    ...ev
+                });
+            }
+        });
+
+        eventosComSequencia.sort((a, b) => {
+            const dataA = new Date(a.sequenciaJogosCriadaEm || a.data || 0);
+            const dataB = new Date(b.sequenciaJogosCriadaEm || b.data || 0);
+            return dataB - dataA;
+        });
+
+                    if (eventosComSequencia.length === 0) {
+                        el.classList.add("hidden");
+                        el.innerHTML = "";
+                        return;
+            }
+    
+        const evento = eventosComSequencia[0];
+        const rodadas = evento.sequenciaJogosRodadas || [];
+        const proxima = rodadas.find(r => r.status !== "Concluido");
+
+        const pendentes = rodadas.filter(r => r.status !== "Concluido");
+        const concluidas = rodadas.filter(r => r.status === "Concluido");
+
+        const podeGerenciar = usuarioEhEquipeTecnica();
+
+        if (!proxima) {
+            el.classList.remove("hidden");
+            el.innerHTML = `
+                <p class="text-[10px] font-black text-[#990000] uppercase mb-2">
+                    <i class="fa-solid fa-list-ol mr-1"></i> Sequência de jogos do treino
+                </p>
+
+                <div class="bg-white border border-green-100 rounded-3xl p-4 text-center shadow-sm">
+                    <div class="mx-auto w-11 h-11 rounded-full bg-green-50 text-green-700 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-check text-sm"></i>
+                    </div>
+
+                    <p class="text-xs font-black text-green-800 uppercase">
+                        Todos os jogos foram concluídos.
+                    </p>
+
+                    ${podeGerenciar ? `
+                        <button 
+                            onclick="carregarJogosTreinoNoMural()"
+                            class="mt-3 w-full bg-green-700 text-white py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm active:scale-[0.99] transition">
+                            Ver partidas
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            return;
+        }
+        const proximosHtml = pendentes.slice(1, 4).map(jogo => `
+            <div class="bg-white border border-gray-100 rounded-2xl p-3 flex justify-between items-center shadow-sm">
+                <div class="min-w-0">
+                    <p class="text-[9px] font-black text-[#990000] uppercase">
+                        Jogo ${jogo.ordem}
+                    </p>
+                    <p class="text-xs font-black text-gray-900 uppercase truncate">
+                        ${jogo.timeA} x ${jogo.timeB}
+                    </p>
+                </div>
+
+                <span class="shrink-0 text-[8px] font-black text-gray-700 bg-gray-50 border border-gray-100 px-2 py-1 rounded-full uppercase">
+                    Aguardando
+                </span>
+            </div>
+        `).join('');
+            el.classList.remove("hidden");
+            el.innerHTML = `
+                <p class="text-[10px] font-black text-[#990000] uppercase mb-2">
+                    <i class="fa-solid fa-list-ol mr-1"></i> Sequência de jogos do treino
+                </p>
+
+            <div class="bg-gray-950 text-white rounded-3xl p-4 shadow-lg mb-3 border border-red-900/30 relative overflow-hidden">
+                <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(153,0,0,0.22),transparent_45%)] pointer-events-none"></div>
+                <span class="absolute top-3 right-3 bg-[#990000] border border-red-300/20 text-white text-[8px] font-black px-2.5 py-1 rounded-full uppercase shadow-sm">
+                    Rodada ${proxima.ciclo || 1}
+                </span>
+
+                <div class="relative z-10">
+                    <p class="text-[9px] font-black uppercase text-red-100/80">
+                        Próximo jogo
+                    </p>
+
+                    <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-4">
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-3 text-center min-w-0">
+                            <p class="text-[10px] font-black uppercase text-white truncate">${proxima.timeA}</p>
+                        </div>
+
+                        <div class="text-center">
+                            <p class="text-2xl font-black text-red-200 leading-none">VS</p>
+                            <p class="text-[8px] font-black uppercase text-white/50 mt-1">Jogo ${proxima.ordem}</p>
+                        </div>
+
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-3 text-center min-w-0">
+                            <p class="text-[10px] font-black uppercase text-white truncate">${proxima.timeB}</p>
+                        </div>
+                    </div>
+
+                    <p class="text-[9px] font-bold text-white/70 mt-3 truncate">
+                        ${evento.titulo || "Treino DVC"}
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-2 mt-4">
+                    <div class="bg-white/10 border border-white/10 rounded-2xl p-2 text-center">
+                        <p class="text-[8px] font-black uppercase text-white/60">
+                            Concluídos
+                        </p>
+                        <p class="text-lg font-black">
+                            ${concluidas.length}
+                        </p>
+                    </div>
+
+                    <div class="bg-white/10 border border-white/10 rounded-2xl p-2 text-center">
+                        <p class="text-[8px] font-black uppercase text-white/60">
+                            Restantes
+                        </p>
+                        <p class="text-lg font-black">
+                            ${pendentes.length}
+                        </p>
+                    </div>
+                </div>
+
+                ${podeGerenciar ? `
+                    <button 
+                        onclick="marcarJogoSequenciaConcluido('${evento.id}', '${proxima.id}')"
+                        class="mt-4 w-full bg-white text-[#990000] py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm active:scale-[0.99] transition">
+                        Marcar jogo realizado
+                    </button>
+                ` : ''}
+                </div>
+            </div>
+
+            ${proximosHtml ? `
+                <p class="text-[9px] font-black text-gray-400 uppercase mb-2">
+                    Próximos jogos
+                </p>
+
+                <div class="space-y-2 mb-3">
+                    ${proximosHtml}
+                </div>
+            ` : ''}
+
+            ${podeGerenciar ? `
+                <button 
+                    onclick="carregarJogosTreinoNoMural()"
+                    class="w-full bg-gray-900 text-white py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm active:scale-[0.99] transition">
+                    Ver partidas
+                </button>
+            ` : ''}
+        `;
+
+    } catch (e) {
+        console.error("Erro ao carregar sequência de jogos no mural", e);
+    }
+}
+
+async function marcarJogoSequenciaConcluido(evId, rodadaId) {
+    try {
+        const eventoRef = doc(db, "events", evId);
+        const eventoSnap = await getDoc(eventoRef);
+
+        if (!eventoSnap.exists()) {
+            return alert("Evento não encontrado.");
+        }
+
+        const evento = eventoSnap.data();
+        const rodadas = evento.sequenciaJogosRodadas || [];
+
+        const novasRodadas = rodadas.map(r => {
+            if (r.id === rodadaId) {
+                return {
+                    ...r,
+                    status: "Concluido",
+                    concluidoEm: new Date().toISOString(),
+                    concluidoPor: currentUserData?.nome || auth.currentUser.email
+                };
+            }
+
+            return r;
+        });
+
+        const aindaTemPendentes = novasRodadas.some(r => r.status !== "Concluido");
+
+        await updateDoc(eventoRef, {
+            sequenciaJogosRodadas: novasRodadas,
+            sequenciaJogosAtiva: aindaTemPendentes,
+            sequenciaJogosFinalizada: !aindaTemPendentes
+        });
+
+        await carregarSequenciaJogosMural();
+
+    } catch (e) {
+        console.error("Erro ao marcar jogo como realizado:", e);
+        alert("Não foi possível marcar o jogo como realizado.");
+    }
+}
+
+async function finalizarSequenciaJogos(evId) {
+    try {
+        if (!confirm("Cancelar as rodadas restantes dos jogos internos?")) {
+            return;
+        }
+
+        const eventoRef = doc(db, "events", evId);
+        const eventoSnap = await getDoc(eventoRef);
+
+        if (!eventoSnap.exists()) {
+            return alert("Evento não encontrado.");
+        }
+
+        const evento = eventoSnap.data();
+        const rodadas = evento.sequenciaJogosRodadas || [];
+
+        const novasRodadas = rodadas.map(r => {
+            if (r.status === "Concluido") return r;
+
+            return {
+                ...r,
+                status: "Cancelado",
+                canceladoEm: new Date().toISOString()
+            };
+        });
+
+        await updateDoc(eventoRef, {
+            sequenciaJogosRodadas: novasRodadas,
+            sequenciaJogosAtiva: false,
+            sequenciaJogosFinalizada: true,
+            sequenciaJogosFinalizadaEm: new Date().toISOString(),
+            sequenciaJogosFinalizadaPor: currentUserData?.nome || auth.currentUser.email
+        });
+
+        await carregarSequenciaJogosMural();
+
+    } catch (e) {
+        console.error("Erro ao finalizar sequência de jogos:", e);
+        alert("Não foi possível encerrar a sequência de jogos.");
+    }
+}
+
+async function sortearTimesEquilibradosLegadoDVC(evId) {
+    try {
+        const resultadoDiv = document.getElementById(`times-sorteados-${evId}`);
+
+        if (!resultadoDiv) {
+            alert("Área de sorteio não encontrada.");
+            return;
+        }
+
+        const selectQtd = document.getElementById(`qtd-times-${evId}`);
+        const qtdTimes = Math.min(5, Math.max(2, Number(selectQtd?.value || 2)));
+        
+        resultadoDiv.innerHTML = `
+            <p class="text-[10px] text-gray-400 font-bold text-center">
+                Sorteando ${qtdTimes} times...
+            </p>
+        `;
+
+        // 1. Usa somente quem segue ativo na chamada do treino
+        const presencasTodas = await carregarPresencasEventoDVC(evId);
+        const resumoPresencasSorteio = getResumoPresencasSorteioTreinoDVC(presencasTodas);
+        const presencas = presencasTodas.filter(presencaParticipaDoSorteioTreinoDVC);
+
+        if (presencas.length === 0) {
+            resultadoDiv.innerHTML = `
+                <p class="text-[10px] text-red-600 font-bold text-center">
+                    Nenhum atleta ativo marcado na chamada para o sorteio.
+                </p>
+            `;
+            return;
+        }
+
+        // 2. Função para calcular o score técnico
+        const calcularScoreTecnicoLocal = (habilidades) => {
+                    return calcularScoreGeralDVC(habilidades || {});
+                };
+                const BONUS_EQUILIBRIO_MASCULINO = 0.4;
+                const normalizarSexoAtleta = (sexo) => {
+                    const s = String(sexo || "").toUpperCase();
+
+                    if (s === "M" || s.includes("MASC")) return "M";
+                    if (s === "F" || s.includes("FEM")) return "F";
+
+                    return "N/I";
+                };
+                const calcularScoreEquilibrio = (scoreTecnico, sexo) => {
+                    const score = Number(scoreTecnico || 0);
+                    const sexoNormalizado = normalizarSexoAtleta(sexo);
+
+                    if (sexoNormalizado === "M") {
+                        return Number((score + BONUS_EQUILIBRIO_MASCULINO).toFixed(1));
+                    }
+
+                    return score;
+                };
+        // 3. Busca os dados completos dos atletas presentes
+
+        let atletasPresentes = [];
+
+        const buscasUsuarios = presencas.map(async presDoc => {
+            const emailAtleta = presDoc.id;
+            const userDataCache = await obterUsuarioCacheDVC(emailAtleta); 
+            const userSnap = userDataCache ? { exists: () => true, data: () => userDataCache } : await getDoc(doc(db, "users", emailAtleta));
+
+            if (userSnap.exists()) {
+                const dadosAtleta = userSnap.data(); // NOME ALTERADO AQUI
+                const sexoAtleta = normalizarSexoAtleta(dadosAtleta.sexo || "-"); // ALTERADO AQUI
+                const scoreTecnico = calcularScoreTecnicoLocal(dadosAtleta.habilidades || {}); // ALTERADO AQUI
+                const scoreEquilibrio = calcularScoreEquilibrio(scoreTecnico, sexoAtleta);
+
+                atletasPresentes.push({
+                    email: emailAtleta,
+                    nome: dadosAtleta.nome || presDoc.data().nome || emailAtleta, // ALTERADO AQUI
+                    sexo: sexoAtleta,
+                    score: scoreTecnico,
+                    scoreEquilibrio: scoreEquilibrio
+                });
+            } else {
+                atletasPresentes.push({
+                email: emailAtleta,
+                nome: presDoc.data().nome || emailAtleta,
+                sexo: "N/I",
+                score: 0,
+                scoreEquilibrio: 0
+                });
+            }
+        });
+
+        await Promise.allSettled(buscasUsuarios);
+
+        if (atletasPresentes.length < qtdTimes) {
+            resultadoDiv.innerHTML = `
+                <p class="text-[10px] text-red-600 font-bold text-center">
+                    Há ${atletasPresentes.length} atleta(s) presente(s). Para sortear ${qtdTimes} times, é necessário pelo menos ${qtdTimes} atletas.
+                </p>
+            `;
+            return;
+        }
+
+        // 4. Ordena do maior score para o menor
+        atletasPresentes.sort((a, b) => b.scoreEquilibrio - a.scoreEquilibrio);
+
+        // 5. Cria os times dinamicamente
+        const calcularLimitesPorGrupo = (total, qtdTimes) => {
+        const base = Math.floor(total / qtdTimes);
+        const sobra = total % qtdTimes;
+
+            return Array.from({ length: qtdTimes }, (_, index) => {
+                return base + (index < sobra ? 1 : 0);
+            });
+        };
+
+        const totalMeninos = atletasPresentes.filter(a => a.sexo === "M").length;
+        const totalMeninas = atletasPresentes.filter(a => a.sexo === "F").length;
+
+        const limitesMeninos = calcularLimitesPorGrupo(totalMeninos, qtdTimes);
+        const limitesMeninas = calcularLimitesPorGrupo(totalMeninas, qtdTimes);
+
+        let times = Array.from({ length: qtdTimes }, (_, index) => ({
+            nome: `Time ${index + 1}`,
+            atletas: [],
+            soma: 0,
+            somaEquilibrio: 0,
+            limite: 0,
+            sexoContagem: {
+                M: 0,
+                F: 0,
+                "N/I": 0
+            },
+            limiteSexo: {
+                M: limitesMeninos[index] || 0,
+                F: limitesMeninas[index] || 0
+            }
+        }));
+
+        // 6. Define quantos atletas cada time deve ter
+        const base = Math.floor(atletasPresentes.length / qtdTimes);
+        const sobra = atletasPresentes.length % qtdTimes;
+
+        times = times.map((time, index) => ({
+            ...time,
+            limite: base + (index < sobra ? 1 : 0)
+        }));
+
+        // 7. Distribui tentando equilibrar a soma dos scores
+        atletasPresentes.forEach(atleta => {
+            let timesComVaga = times.filter(time => time.atletas.length < time.limite);
+
+            let timesComVagaSexoIdeal = timesComVaga.filter(time => {
+                if (atleta.sexo === "M" || atleta.sexo === "F") {
+                    return time.sexoContagem[atleta.sexo] < time.limiteSexo[atleta.sexo];
+                }
+
+                return true;
+            });
+
+            const candidatos = timesComVagaSexoIdeal.length > 0
+                ? timesComVagaSexoIdeal
+                : timesComVaga;
+
+            candidatos.sort((a, b) => {
+                if (a.somaEquilibrio !== b.somaEquilibrio) {
+                    return a.somaEquilibrio - b.somaEquilibrio;
+                }
+
+                const sexoA = a.sexoContagem[atleta.sexo] || 0;
+                const sexoB = b.sexoContagem[atleta.sexo] || 0;
+
+                if (sexoA !== sexoB) {
+                    return sexoA - sexoB;
+                }
+
+                return a.atletas.length - b.atletas.length;
+            });
+
+            const timeEscolhido = candidatos[0];
+
+            timeEscolhido.atletas.push(atleta);
+            timeEscolhido.soma += atleta.score;
+            timeEscolhido.somaEquilibrio += atleta.scoreEquilibrio;
+            timeEscolhido.sexoContagem[atleta.sexo] = (timeEscolhido.sexoContagem[atleta.sexo] || 0) + 1;
+        });
+
+        // 8. Calcula médias gerais
+        const medias = times.map(time => {
+            return time.atletas.length > 0
+                ? Number((time.somaEquilibrio / time.atletas.length).toFixed(1))
+                : 0;
+        });
+
+        const maiorMedia = Math.max(...medias);
+        const menorMedia = Math.min(...medias);
+        const diferencaMedias = Number((maiorMedia - menorMedia).toFixed(1));
+
+        let nivelEquilibrio = "Equilibrado";
+        let corEquilibrio = "text-green-700 bg-green-100 border-green-200";
+
+        if (diferencaMedias >= 1) {
+            nivelEquilibrio = "Desequilibrado";
+            corEquilibrio = "text-red-700 bg-red-100 border-red-200";
+        } else if (diferencaMedias >= 0.5) {
+            nivelEquilibrio = "Atenção";
+            corEquilibrio = "text-yellow-700 bg-yellow-100 border-yellow-200";
+        }
+
+        const coresTimes = [
+            "text-blue-700",
+            "text-red-700",
+            "text-green-700",
+            "text-purple-700",
+            "text-yellow-700"
+        ];
+
+        const renderTime = (time, index) => {
+            const media = time.atletas.length > 0 
+                        ? (time.somaEquilibrio / time.atletas.length).toFixed(1) 
+                        : "0.0";
+
+            return `
+                <div class="bg-white border rounded-xl p-3 shadow-sm">
+                    <div class="flex justify-between items-center mb-2 border-b pb-2">
+                        <p class="text-[10px] font-black uppercase ${coresTimes[index] || 'text-gray-700'}">
+                            Time ${index + 1}
+                        </p>
+
+                        <span class="text-[9px] font-black text-gray-500">
+                            Média ${media}
+                        </span>
+                    </div>
+
+                    <div class="space-y-1">
+                        ${time.atletas.map((atleta, i) => `
+                    <div class="flex justify-between items-center text-[10px] border-b py-1 gap-2">
+                        <div class="min-w-0">
+                            <p class="font-semibold text-gray-700 truncate">
+                                ${i + 1}. ${atleta.nome}
+                            </p>
+
+                            <p class="text-[8px] font-bold text-gray-400 uppercase">
+                                ${atleta.sexo === "M" ? "Masculino" : atleta.sexo === "F" ? "Feminino" : "Não informado"}
+                            </p>
+                        </div>
+
+                        <span class="font-black text-gray-500">
+                            ${atleta.score}
+                        </span>
+                    </div>
+                `).join('')}
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                    <span class="bg-blue-50 text-blue-700 border border-blue-100 text-[8px] font-black px-2 py-1 rounded-full uppercase">
+                        M: ${time.sexoContagem.M || 0}
+                    </span>
+
+                    <span class="bg-pink-50 text-pink-700 border border-pink-100 text-[8px] font-black px-2 py-1 rounded-full uppercase">
+                        F: ${time.sexoContagem.F || 0}
+                    </span>
+                </div>
+                    <p class="text-[8px] text-gray-400 font-bold uppercase mt-2">
+                        Score: ${time.soma.toFixed(1)} • Equilíbrio: ${time.somaEquilibrio.toFixed(1)}
+                    </p>
+                </div>
+            `;
+        };
+        await salvarSequenciaJogosEvento(evId, times);
+        resultadoDiv.innerHTML = `
+            <div class="mt-3 space-y-3">
+                <div class="bg-purple-50 border border-purple-200 p-3 rounded-xl text-center shadow-sm">
+                    <p class="text-[10px] font-black text-purple-800 uppercase">
+                        Times equilibrados
+                    </p>
+
+                    <p class="text-[9px] text-purple-700 font-semibold mt-1">
+                        Times sorteados apenas com atletas ativos no treino.
+                    </p>
+                    ${resumoPresencasSorteio.foraSorteio > 0 ? `
+                        <p class="mt-2 text-[8px] font-bold uppercase text-amber-800 bg-amber-50 border border-amber-100 rounded-lg p-2">
+                            ${getTextoForaSorteioTreinoDVC(resumoPresencasSorteio.foraSorteio)}
+                        </p>
+                    ` : ''}
+
+                    <div class="grid grid-cols-3 gap-2 mt-3">
+                        <div class="bg-white rounded-lg p-2 border">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Presentes</p>
+                            <p class="text-sm font-black text-gray-800">${atletasPresentes.length}</p>
+                        </div>
+
+                        <div class="bg-white rounded-lg p-2 border">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Diferença</p>
+                            <p class="text-sm font-black text-gray-800">${diferencaMedias}</p>
+                        </div>
+
+                        <div class="bg-white rounded-lg p-2 border ${corEquilibrio}">
+                            <p class="text-[8px] font-black uppercase">Nível</p>
+                            <p class="text-[10px] font-black uppercase">${nivelEquilibrio}</p>
+                        </div>
+                    </div>
+
+                    <p class="text-[8px] text-purple-700 font-bold uppercase mt-3">
+                        ${atletasPresentes.length} atletas divididos em ${qtdTimes} times
+                    </p>
+                </div>
+
+                ${times.map((time, index) => renderTime(time, index)).join('')}
+            </div>
+        `;
+
+    } catch (e) {
+        console.error("Erro ao sortear times:", e);
+        alert("Não foi possível sortear os times agora.");
+    }
+}
+
+        function gerarSequenciaJogos(times) {
+    const listaTimes = times.map((time, index) => ({
+        id: `time_${index + 1}`,
+        nome: `Time ${index + 1}`,
+        atletas: time.atletas || [],
+        soma: Number(time.soma || 0),
+        media: time.atletas && time.atletas.length > 0
+            ? Number((time.soma / time.atletas.length).toFixed(1))
+            : 0
+    }));
+
+    let pares = [];
+
+    for (let i = 0; i < listaTimes.length; i++) {
+        for (let j = i + 1; j < listaTimes.length; j++) {
+            pares.push({
+                timeAId: listaTimes[i].id,
+                timeBId: listaTimes[j].id,
+                timeA: listaTimes[i].nome,
+                timeB: listaTimes[j].nome
+            });
+        }
+    }
+
+    let ultimaRodada = {};
+    let jogosRealizados = {};
+    let rodadas = [];
+    let contadorRodada = 0;
+
+    listaTimes.forEach(time => {
+        ultimaRodada[time.id] = -999;
+        jogosRealizados[time.id] = 0;
+    });
+
+    while (pares.length > 0) {
+        pares.sort((a, b) => {
+            const esperaA = Math.min(
+                contadorRodada - ultimaRodada[a.timeAId],
+                contadorRodada - ultimaRodada[a.timeBId]
+            );
+
+            const esperaB = Math.min(
+                contadorRodada - ultimaRodada[b.timeAId],
+                contadorRodada - ultimaRodada[b.timeBId]
+            );
+
+            if (esperaA !== esperaB) return esperaB - esperaA;
+
+            const jogosA = jogosRealizados[a.timeAId] + jogosRealizados[a.timeBId];
+            const jogosB = jogosRealizados[b.timeAId] + jogosRealizados[b.timeBId];
+
+            return jogosA - jogosB;
+        });
+
+        const jogo = pares.shift();
+
+        rodadas.push({
+            id: `jogo_${contadorRodada + 1}`,
+            ordem: contadorRodada + 1,
+            timeAId: jogo.timeAId,
+            timeBId: jogo.timeBId,
+            timeA: jogo.timeA,
+            timeB: jogo.timeB,
+            status: "Pendente"
+        });
+
+        ultimaRodada[jogo.timeAId] = contadorRodada;
+        ultimaRodada[jogo.timeBId] = contadorRodada;
+
+        jogosRealizados[jogo.timeAId]++;
+        jogosRealizados[jogo.timeBId]++;
+
+        contadorRodada++;
+    }
+
+    return {
+        times: listaTimes,
+        rodadas
+    };
+}
+async function salvarSequenciaJogosEvento(evId, times) {
+    try {
+        const sequencia = gerarSequenciaJogos(times);
+
+        if (!sequencia.rodadas || sequencia.rodadas.length === 0) {
+            return;
+        }
+
+        await updateDoc(doc(db, "events", evId), {
+            sequenciaJogosAtiva: true,
+            sequenciaJogosFinalizada: false,
+            sequenciaJogosCriadaEm: new Date().toISOString(),
+            sequenciaJogosCriadaPor: currentUserData?.nome || auth.currentUser.email,
+            sequenciaJogosTimes: sequencia.times,
+            sequenciaJogosRodadas: sequencia.rodadas
+        });
+
+    } catch (e) {
+        console.error("Erro ao salvar sequência de jogos:", e);
+        alert("Os times foram sorteados, mas não foi possível enviar a sequência para o mural.");
+    }
+}
+window.salvarSequenciaJogosEvento = salvarSequenciaJogosEvento;
+
+function calcularLimitesDistribuicaoTreino(total, grupos) {
+    const base = Math.floor(total / grupos);
+    const sobra = total % grupos;
+
+    return Array.from({ length: grupos }, (_, index) => base + (index < sobra ? 1 : 0));
+}
+
+function montarTimesEquilibradosTreino(atletas = [], atletasPorTime = 6) {
+    const totalAtletas = atletas.length;
+    const tamanhoBase = Math.max(2, Number(atletasPorTime || 6));
+    const qtdTimes = Math.min(totalAtletas, Math.max(2, Math.ceil(totalAtletas / tamanhoBase)));
+    const limites = calcularLimitesDistribuicaoTreino(totalAtletas, qtdTimes);
+    const cores = ["vermelho", "preto", "branco", "azul", "verde", "amarelo", "cinza", "roxo"];
+
+    const totaisSexo = atletas.reduce((acc, atleta) => {
+        acc[atleta.sexo] = (acc[atleta.sexo] || 0) + 1;
+        return acc;
+    }, {});
+
+    const totaisFuncao = atletas.reduce((acc, atleta) => {
+        acc[atleta.funcaoVolei] = (acc[atleta.funcaoVolei] || 0) + 1;
+        return acc;
+    }, {});
+
+    const alvosSexo = {};
+    const alvosFuncao = {};
+
+    Object.keys(totaisSexo).forEach(sexo => {
+        alvosSexo[sexo] = calcularLimitesDistribuicaoTreino(totaisSexo[sexo], qtdTimes);
+    });
+
+    Object.keys(totaisFuncao).forEach(funcao => {
+        alvosFuncao[funcao] = calcularLimitesDistribuicaoTreino(totaisFuncao[funcao], qtdTimes);
+    });
+
+    const times = Array.from({ length: qtdTimes }, (_, index) => ({
+        id: `time_${index + 1}`,
+        nome: `Time ${index + 1}`,
+        cor: cores[index] || "cinza",
+        atletas: [],
+        somaScore: 0,
+        limite: limites[index],
+        sexoContagem: {},
+        funcaoContagem: {}
+    }));
+
+    const ordenados = [...atletas].sort((a, b) => {
+        if (b.scoreGeral !== a.scoreGeral) return b.scoreGeral - a.scoreGeral;
+        return a.nome.localeCompare(b.nome);
+    });
+
+    ordenados.forEach(atleta => {
+        const candidatos = times.filter(time => time.atletas.length < time.limite);
+
+        candidatos.sort((a, b) => {
+            const indexA = Number(a.id.replace("time_", "")) - 1;
+            const indexB = Number(b.id.replace("time_", "")) - 1;
+            const sexoA = a.sexoContagem[atleta.sexo] || 0;
+            const sexoB = b.sexoContagem[atleta.sexo] || 0;
+            const alvoSexoA = alvosSexo[atleta.sexo]?.[indexA] || 0;
+            const alvoSexoB = alvosSexo[atleta.sexo]?.[indexB] || 0;
+
+            const funcaoA = a.funcaoContagem[atleta.funcaoVolei] || 0;
+            const funcaoB = b.funcaoContagem[atleta.funcaoVolei] || 0;
+            const alvoFuncaoA = alvosFuncao[atleta.funcaoVolei]?.[indexA] || 0;
+            const alvoFuncaoB = alvosFuncao[atleta.funcaoVolei]?.[indexB] || 0;
+
+            const estourouSexoA = sexoA >= alvoSexoA ? 1 : 0;
+            const estourouSexoB = sexoB >= alvoSexoB ? 1 : 0;
+            if (estourouSexoA !== estourouSexoB) return estourouSexoA - estourouSexoB;
+
+            const estourouFuncaoA = funcaoA >= alvoFuncaoA ? 1 : 0;
+            const estourouFuncaoB = funcaoB >= alvoFuncaoB ? 1 : 0;
+            if (estourouFuncaoA !== estourouFuncaoB) return estourouFuncaoA - estourouFuncaoB;
+
+            const mediaA = a.atletas.length > 0 ? a.somaScore / a.atletas.length : 0;
+            const mediaB = b.atletas.length > 0 ? b.somaScore / b.atletas.length : 0;
+            if (mediaA !== mediaB) return mediaA - mediaB;
+
+            if (a.somaScore !== b.somaScore) return a.somaScore - b.somaScore;
+
+            return a.atletas.length - b.atletas.length;
+        });
+
+        const escolhido = candidatos[0];
+        escolhido.atletas.push(atleta);
+        escolhido.somaScore += Number(atleta.scoreGeral || 0);
+        escolhido.sexoContagem[atleta.sexo] = (escolhido.sexoContagem[atleta.sexo] || 0) + 1;
+        escolhido.funcaoContagem[atleta.funcaoVolei] = (escolhido.funcaoContagem[atleta.funcaoVolei] || 0) + 1;
+    });
+
+    return times.map(time => {
+        const media = calcularMediaHabilidadesTime(time.atletas);
+
+        return {
+            id: time.id,
+            nome: time.nome,
+            cor: time.cor,
+            atletas: time.atletas,
+            mediaHabilidades: media.mediaHabilidades,
+            scoreMedio: media.scoreMedio
+        };
+    });
+}
+
+function ordenarParesRodadasTreino(pares = [], times = []) {
+    const ultimaRodada = {};
+    const jogosRealizados = {};
+    const ordenados = [];
+    let contador = 0;
+
+    times.forEach(time => {
+        ultimaRodada[time.id] = -999;
+        jogosRealizados[time.id] = 0;
+    });
+
+    const fila = [...pares];
+
+    while (fila.length > 0) {
+        fila.sort((a, b) => {
+            const esperaA = Math.min(contador - ultimaRodada[a.timeAId], contador - ultimaRodada[a.timeBId]);
+            const esperaB = Math.min(contador - ultimaRodada[b.timeAId], contador - ultimaRodada[b.timeBId]);
+
+            if (esperaA !== esperaB) return esperaB - esperaA;
+
+            const jogosA = jogosRealizados[a.timeAId] + jogosRealizados[a.timeBId];
+            const jogosB = jogosRealizados[b.timeAId] + jogosRealizados[b.timeBId];
+
+            return jogosA - jogosB;
+        });
+
+        const jogo = fila.shift();
+        ordenados.push(jogo);
+        ultimaRodada[jogo.timeAId] = contador;
+        ultimaRodada[jogo.timeBId] = contador;
+        jogosRealizados[jogo.timeAId] += 1;
+        jogosRealizados[jogo.timeBId] += 1;
+        contador += 1;
+    }
+
+    return ordenados;
+}
+
+function gerarParesTodosContraTodosTreino(times = []) {
+    const pares = [];
+
+    for (let i = 0; i < times.length; i++) {
+        for (let j = i + 1; j < times.length; j++) {
+            pares.push({
+                rodada: 0,
+                timeAId: times[i].id,
+                timeBId: times[j].id,
+                timeANome: times[i].nome,
+                timeBNome: times[j].nome
+            });
+        }
+    }
+
+    return ordenarParesRodadasTreino(pares, times).map((par, index) => ({
+        ...par,
+        rodada: index + 1,
+        jogoNaRodada: 1
+    }));
+}
+
+function gerarParesRodadasSimplesTreino(times = [], limiteRodadas = 2) {
+    const participantes = [...times];
+    const pares = [];
+
+    if (participantes.length % 2 !== 0) {
+        participantes.push({ id: "folga", nome: "Folga" });
+    }
+
+    const totalRodadas = Math.min(Math.max(1, limiteRodadas), participantes.length - 1);
+    let rodadaAtual = [...participantes];
+
+    for (let rodada = 1; rodada <= totalRodadas; rodada++) {
+        let jogoNaRodada = 1;
+
+        for (let i = 0; i < rodadaAtual.length / 2; i++) {
+            const timeA = rodadaAtual[i];
+            const timeB = rodadaAtual[rodadaAtual.length - 1 - i];
+
+            if (timeA.id !== "folga" && timeB.id !== "folga") {
+                pares.push({
+                    rodada,
+                    jogoNaRodada,
+                    timeAId: timeA.id,
+                    timeBId: timeB.id,
+                    timeANome: timeA.nome,
+                    timeBNome: timeB.nome
+                });
+                jogoNaRodada += 1;
+            }
+        }
+
+        const fixo = rodadaAtual[0];
+        const rotacionados = rodadaAtual.slice(1);
+        rotacionados.unshift(rotacionados.pop());
+        rodadaAtual = [fixo, ...rotacionados];
+    }
+
+    return pares;
+}
+
+function gerarRodadasTreino(timesSorteados = [], todosContraTodos = true) {
+    const usarTodosContraTodos = timesSorteados.length <= 5 || todosContraTodos === true;
+    const pares = usarTodosContraTodos
+        ? gerarParesTodosContraTodosTreino(timesSorteados)
+        : gerarParesRodadasSimplesTreino(timesSorteados, 2);
+
+    return pares.map((par, index) => ({
+        id: `rodada_${par.rodada}_jogo_${par.jogoNaRodada || index + 1}`,
+        rodada: par.rodada,
+        ordem: index + 1,
+        timeAId: par.timeAId,
+        timeBId: par.timeBId,
+        timeANome: par.timeANome,
+        timeBNome: par.timeBNome,
+        pontosA: null,
+        pontosB: null,
+        vencedorId: "",
+        status: "Pendente",
+        iniciadoEm: "",
+        concluidoEm: "",
+        concluidoPor: ""
+    }));
+}
+
+async function buscarAtletasParticipantesTreino(eventId, evento = {}) {
+    const fontesPorEmail = new Map();
+
+    const adicionarFonte = (email, dados = {}) => {
+        const emailLimpo = String(email || dados.email || "").trim().toLowerCase();
+        if (!emailLimpo) return;
+
+        if (!fontesPorEmail.has(emailLimpo)) {
+            fontesPorEmail.set(emailLimpo, {
+                email: emailLimpo,
+                nome: dados.nome || emailLimpo
+            });
+        }
+    };
+
+    const presencasCache = await carregarPresencasEventoDVC(eventId);
+    const resumoPresencasSorteio = getResumoPresencasSorteioTreinoDVC(presencasCache);
+    const presencasAtivasSorteio = presencasCache.filter(presencaParticipaDoSorteioTreinoDVC);
+    window.resumoUltimoSorteioTreinoDVC = window.resumoUltimoSorteioTreinoDVC || {};
+    window.resumoUltimoSorteioTreinoDVC[eventId] = resumoPresencasSorteio;
+    presencasAtivasSorteio.forEach(presenca => adicionarFonte(presenca.id, presenca));
+
+    const participantes = [];
+    const buscas = Array.from(fontesPorEmail.values()).map(async fonte => {
+        const userDataCache = await obterUsuarioCacheDVC(fonte.email); 
+        const userSnap = userDataCache ? { exists: () => true, data: () => userDataCache } : await getDoc(doc(db, "users", fonte.email));
+
+        if (!userSnap.exists()) return;
+
+        // NOME ALTERADO: de userData para dadosAtleta para evitar conflito global
+        const dadosAtleta = userSnap.data();
+        const email = String(dadosAtleta.email || fonte.email).trim().toLowerCase();
+
+        // ATUALIZAÇÕES PARA LER A VARIÁVEL CORRETA
+        if (typeof usuarioPodeSerEscaladoComoAtleta === "function" && !usuarioPodeSerEscaladoComoAtleta(dadosAtleta)) return;
+        if (typeof usuarioTemStatusConvocavel === "function" && !usuarioTemStatusConvocavel(dadosAtleta)) return;
+        if (typeof usuarioPodeSerConvocadoPorFinanceiro === "function" && !usuarioPodeSerConvocadoPorFinanceiro(dadosAtleta)) return;
+
+        const habilidades = normalizarHabilidadesDVC(dadosAtleta.habilidades || {});
+        const funcaoVolei = normalizarFuncaoVoleiSorteio(
+            dadosAtleta.funcaoVolei || dadosAtleta.posicaoVolei || dadosAtleta.posicao || dadosAtleta.funcaoVoleiDVC || ""
+        );
+        const scoreGeral = calcularScoreGeralDVC(habilidades);
+
+        participantes.push({
+            email,
+            nome: String(dadosAtleta.nome || fonte.nome || email).trim(),
+            sexo: normalizarSexoSorteioTreino(dadosAtleta.sexo || ""),
+            funcaoVolei,
+            funcaoVoleiNome: getNomeFuncaoVoleiDVC(funcaoVolei),
+            habilidades,
+            scoreGeral
+        });
+    });
+    await Promise.allSettled(buscas);
+    return participantes.sort((a, b) => a.nome.localeCompare(b.nome));
+}
+
+async function atualizarTelasDepoisSorteioTreino(preferirMural = false) {
+    limparCacheDados("eventos");
+    await carregarEventosCache(true);
+
+    if (preferirMural || window.__abaAtualDVC === "mural") {
+        await renderMural();
+        return;
+    }
+
+    if (window.__abaAtualDVC === "calendar") {
+        await renderCalendar();
+        return;
+    }
+
+    await carregarJogosTreinoNoMural();
+}
+window.atualizarTelasDepoisSorteioTreino = atualizarTelasDepoisSorteioTreino;
+
+window.abrirModalConfigSorteioTreino = async (eventId) => {
+    if (!usuarioEhEquipeTecnica()) {
+        return alert("Apenas ADM, Treinador ou Auxiliar podem gerar sorteio.");
+    }
+
+    if (chamadaTemAlteracoesPendentes(eventId)) {
+        return alert("Salve a chamada antes de sortear os times.");
+    }
+
+    document.getElementById("modal-config-sorteio-treino")?.remove();
+    const presencasCacheModal = window.DVC_CACHE?.presencasPorEvento?.[eventId]?.dados || [];
+    const resumoPresencasModal = getResumoPresencasSorteioTreinoDVC(presencasCacheModal);
+    const avisoForaSorteioModal = getTextoForaSorteioTreinoDVC(resumoPresencasModal.foraSorteio);
+
+    const modal = `
+        <div id="modal-config-sorteio-treino" class="fixed inset-0 z-[100] bg-black/75 p-4 flex items-center justify-center">
+            <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000] text-white p-4 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[8px] font-black uppercase text-white/60">Treino DVC</p>
+                        <h3 class="text-sm font-black uppercase">Sortear Times</h3>
+                    </div>
+                    <button onclick="document.getElementById('modal-config-sorteio-treino')?.remove()" class="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="p-4 space-y-3">
+                    <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
+                        <p class="text-[9px] font-black uppercase text-amber-900">Times sorteados apenas com atletas ativos no treino.</p>
+                        ${avisoForaSorteioModal ? `<p class="text-[8px] font-bold uppercase text-amber-700 mt-1">${avisoForaSorteioModal}</p>` : ''}
+                    </div>
+
+                    <div>
+                        <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">Atletas por time</label>
+                        <input id="sorteio-atletas-por-time" type="number" min="2" max="12" value="6" class="w-full p-3 rounded-2xl border border-gray-200 text-sm font-black bg-gray-50 outline-none">
+                    </div>
+
+                    <label class="flex items-center justify-between gap-3 bg-gray-50 border border-gray-100 rounded-2xl p-3">
+                        <span>
+                            <span class="block text-[9px] font-black uppercase text-gray-700">Todos contra todos</span>
+                            <span class="block text-[8px] font-bold uppercase text-gray-400 mt-0.5">Ate 5 times e sempre usado automaticamente</span>
+                        </span>
+                        <input id="sorteio-todos-contra-todos" type="checkbox" checked class="w-5 h-5 accent-[#990000]">
+                    </label>
+
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button onclick="document.getElementById('modal-config-sorteio-treino')?.remove()" class="bg-white border border-gray-200 text-gray-500 py-3 rounded-xl text-[9px] font-black uppercase">
+                            Cancelar
+                        </button>
+                        <button onclick="gerarSorteioTimesTreino('${safeEditParam(eventId)}')" class="bg-[#990000] text-white py-3 rounded-xl text-[9px] font-black uppercase shadow-sm">
+                            Sortear com presentes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML("beforeend", modal);
+};
+
+        // [Autoavaliacoes module code extracted to js/evaluations.js]
+
+window.gerarSorteioTimesTreino = async (eventId, config = {}) => {
+    if (!usuarioEhEquipeTecnica()) {
+        return alert("Apenas ADM, Treinador ou Auxiliar podem gerar sorteio.");
+    }
+
+    try {
+        const eventoRef = doc(db, "events", eventId);
+        const eventoSnap = await getDoc(eventoRef);
+
+        if (!eventoSnap.exists()) {
+            return alert("Evento nao encontrado.");
+        }
+
+        const evento = eventoSnap.data();
+
+        if ((evento.sorteioTimesAtivo || Array.isArray(evento.timesSorteados) || Array.isArray(evento.rodadasTreino)) && !config.substituirConfirmado) {
+            const confirmar = confirm("Este treino ja possui sorteio ou rodadas salvas. Deseja substituir o sorteio anterior?");
+            if (!confirmar) return;
+        }
+
+        const inputAtletasPorTime = document.getElementById("sorteio-atletas-por-time");
+        const checkTodosContraTodos = document.getElementById("sorteio-todos-contra-todos");
+        const atletasPorTime = Math.max(2, Number(config.atletasPorTime || inputAtletasPorTime?.value || 6));
+        const todosContraTodos = config.todosContraTodos !== undefined
+            ? config.todosContraTodos
+            : (checkTodosContraTodos ? checkTodosContraTodos.checked : true);
+
+        const participantes = await buscarAtletasParticipantesTreino(eventId, evento);
+        const resumoPresencasSorteio = window.resumoUltimoSorteioTreinoDVC?.[eventId] || {};
+        const avisoForaSorteio = getTextoForaSorteioTreinoDVC(Number(resumoPresencasSorteio.foraSorteio || 0));
+
+        if (participantes.length < 2) {
+            return alert("Marque pelo menos 2 atletas presentes e ativos na chamada para gerar o sorteio.");
+        }
+
+        const timesSorteados = montarTimesEquilibradosTreino(participantes, atletasPorTime);
+        const rodadasTreino = gerarRodadasTreino(timesSorteados, todosContraTodos);
+
+        if (rodadasTreino.length === 0) {
+            return alert("Nao foi possivel gerar rodadas para os times sorteados.");
+        }
+
+        const classificacaoTreino = calcularClassificacaoTreino(timesSorteados, rodadasTreino);
+
+        const atualizacaoSorteio = {
+            sorteioTimesAtivo: true,
+            sorteioTimesFinalizado: false,
+            sorteioTimesCriadoEm: new Date().toISOString(),
+            sorteioTimesCriadoPor: currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica",
+            sorteioTimesAtletasPorTime: atletasPorTime,
+            sorteioTimesTodosContraTodos: timesSorteados.length <= 5 || todosContraTodos === true,
+            timesSorteados,
+            rodadasTreino,
+            classificacaoTreino,
+            sequenciaJogosAtiva: false,
+            sequenciaJogosFinalizada: true
+        };
+
+        if (!treinoEstaFinalizadoDVC(evento)) {
+            atualizacaoSorteio.finalizadoEm = "";
+            atualizacaoSorteio.statusTreino = "Em andamento";
+            atualizacaoSorteio.status = "ativo";
+        }
+
+        await updateDoc(eventoRef, atualizacaoSorteio);
+
+        document.getElementById("modal-config-sorteio-treino")?.remove();
+
+        alert(`Sorteio gerado com ${timesSorteados.length} times e ${rodadasTreino.length} jogo(s).${avisoForaSorteio ? `\n${avisoForaSorteio}` : ""}`);
+        await atualizarTelasDepoisSorteioTreino(window.__abaAtualDVC === "mural");
+
+    } catch (e) {
+        console.error("Erro ao gerar sorteio de times:", e);
+        alert("Nao foi possivel gerar o sorteio dos times agora.");
+    }
+};
+
+// Jogos/Treinos do Mural - renderizacao/listagem extraida para js/training-games.js
+
+
+// Jogos/Treinos do Mural - modais, placar e resumo extraidos para js/training-games.js
+
+
+window.finalizarTreinoSorteio = async (eventId) => {
+    if (!usuarioEhEquipeTecnica()) {
+        return alert("Apenas ADM, Treinador ou Auxiliar podem gerenciar jogos do treino.");
+    }
+
+    if (!confirm("Cancelar jogos pendentes deste sorteio? A conclusão oficial do treino continua na Agenda.")) {
+        return;
+    }
+
+    try {
+        const eventoRef = doc(db, "events", eventId);
+        const eventoSnap = await getDoc(eventoRef);
+
+        if (!eventoSnap.exists()) {
+            return alert("Evento nao encontrado.");
+        }
+
+        const evento = eventoSnap.data();
+        const times = Array.isArray(evento.timesSorteados) ? evento.timesSorteados : [];
+        const rodadas = Array.isArray(evento.rodadasTreino) ? evento.rodadasTreino : [];
+
+        const novasRodadas = rodadas.map(r => {
+            if (jogoTreinoConcluidoDVC(r)) return r;
+
+            return {
+                ...r,
+                status: "Cancelado",
+                canceladoEm: new Date().toISOString(),
+                canceladoPor: currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica"
+            };
+        });
+
+        await updateDoc(eventoRef, {
+            rodadasTreino: novasRodadas,
+            classificacaoTreino: calcularClassificacaoTreino(times, novasRodadas),
+            sorteioTimesFinalizado: true,
+            sorteioTimesAtivo: false,
+            jogosTreinoFinalizadosEm: new Date().toISOString(),
+            jogosTreinoFinalizadosPor: currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica"
+        });
+
+        await atualizarTelasDepoisSorteioTreino(window.__abaAtualDVC === "mural");
+        alert("Jogos internos encerrados. Para concluir oficialmente o treino, use Concluir na Agenda.");
+
+    } catch (e) {
+        console.error("Erro ao encerrar jogos do treino:", e);
+        alert("Nao foi possivel encerrar os jogos do treino.");
+    }
+};
+
+window.carregarSequenciaJogosMural = carregarSequenciaJogosMural;
+window.marcarJogoSequenciaConcluido = marcarJogoSequenciaConcluido;
+window.finalizarSequenciaJogos = finalizarSequenciaJogos;
+window.sortearTimesEquilibrados = async (evId) => window.abrirModalConfigSorteioTreino(evId);
+// ============================================================================
+// SECAO 09B - MODAIS, PLACAR E RESUMO DE TREINO
+// ============================================================================
+function getIdsModalJogoTreino(eventId, rodadaId) {
+    const base = `${eventId}-${rodadaId}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+    return {
+        modalId: `modal-jogo-treino-${base}`,
+        canvasId: `radar-times-treino-${base}`,
+        pontosAId: `placar-time-a-${base}`,
+        pontosBId: `placar-time-b-${base}`
+    };
+}
+
+window.abrirModalTimesTreino = async (eventId) => {
+    try {
+        const eventoSnap = await getDoc(doc(db, "events", eventId));
+
+        if (!eventoSnap.exists()) {
+            return alert("Evento não encontrado.");
+        }
+
+        const evento = eventoSnap.data();
+        const times = Array.isArray(evento.timesSorteados) ? evento.timesSorteados : [];
+        const rodadas = Array.isArray(evento.rodadasTreino) ? [...evento.rodadasTreino] : [];
+        rodadas.sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
+
+        if (!times.length) {
+            return alert("Este treino ainda não tem times sorteados.");
+        }
+
+        const finalizado = eventoTreinoSorteioFinalizadoDVC(evento, rodadas);
+        const classificacao = Array.isArray(evento.classificacaoTreino) && evento.classificacaoTreino.length
+            ? evento.classificacaoTreino
+            : calcularClassificacaoTreino(times, rodadas);
+        const statusAvaliacao = getStatusAvaliacaoTreinoDVC(evento);
+        const campeaoTreino = finalizado && classificacao.length ? classificacao[0] : null;
+
+        document.getElementById("m-times-treino-dvc")?.remove();
+
+        const modal = `
+            <div id="m-times-treino-dvc" class="fixed inset-0 z-[100] bg-black/80 p-4 flex items-center justify-center">
+                <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl max-h-[88vh] overflow-y-auto">
+                    <div class="sticky top-0 z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000] text-white p-4 flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-[8px] font-black uppercase text-white/60">Times sorteados</p>
+                            <h3 class="text-sm font-black uppercase truncate">${escaparHtml(evento.titulo || "Treino DVC")}</h3>
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                ${renderBadgeDVC(finalizado ? "Finalizado" : "Em andamento", finalizado ? "verde" : "vermelho")}
+                                ${finalizado ? renderBadgeDVC(statusAvaliacao.texto, statusAvaliacao.tipo) : ""}
+                            </div>
+                        </div>
+                        <button onclick="document.getElementById('m-times-treino-dvc')?.remove()" class="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-4 space-y-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-center">
+                                <p class="text-[8px] font-black uppercase text-gray-400">Times</p>
+                                <p class="text-lg font-black text-[#990000]">${times.length}</p>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-center">
+                                <p class="text-[8px] font-black uppercase text-gray-400">Jogos</p>
+                                <p class="text-lg font-black text-[#990000]">${rodadas.length}</p>
+                            </div>
+                        </div>
+
+                        ${campeaoTreino ? `
+                            <div class="bg-[#990000] text-white rounded-2xl p-3 flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-[8px] font-black uppercase text-white/60">Campeão do treino</p>
+                                    <p class="text-sm font-black uppercase">${escaparHtml(campeaoTreino.nome || "Time DVC")}</p>
+                                </div>
+                                <i class="fa-solid fa-trophy text-xl text-red-100"></i>
+                            </div>
+                        ` : ""}
+
+                        <div class="space-y-3">
+                            ${times.map(time => `
+                                <article class="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm">
+                                    <div class="flex items-center justify-between gap-3 mb-2">
+                                        <div class="min-w-0">
+                                            <p class="text-xs font-black uppercase text-gray-900 truncate">${escaparHtml(time.nome || "Time")}</p>
+                                            <p class="text-[8px] font-bold uppercase text-gray-400">${(time.atletas || []).length} atleta(s)</p>
+                                        </div>
+                                        ${renderBadgeDVC(`Score ${Number(time.scoreMedio || 0).toFixed(1)}`, "vermelho")}
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-100 rounded-xl p-2">
+                                        ${renderizarListaAtletasTimeTreino(time)}
+                                    </div>
+                                </article>
+                            `).join("")}
+                        </div>
+
+                        <section>
+                            <p class="text-[10px] font-black uppercase text-[#990000] mb-2">Classificação</p>
+                            ${renderizarClassificacaoTreinoHtml(classificacao, finalizado)}
+                        </section>
+
+                        <section>
+                            <p class="text-[10px] font-black uppercase text-[#990000] mb-2">Rodadas</p>
+                            <div class="space-y-2">
+                                ${rodadas.map(jogo => `
+                                    <button onclick="document.getElementById('m-times-treino-dvc')?.remove(); abrirModalJogoTreino('${safeEditParam(eventId)}', '${safeEditParam(jogo.id)}')" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-3 text-left">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <p class="text-[9px] font-black uppercase text-gray-800 truncate">Rodada ${jogo.rodada}: ${escaparHtml(jogo.timeANome)} x ${escaparHtml(jogo.timeBNome)}</p>
+                                            ${renderBadgeDVC(getStatusVisualJogoTreino(jogo.status).texto, jogoTreinoConcluidoDVC(jogo) ? "verde" : "neutro")}
+                                        </div>
+                                        <p class="text-[9px] font-bold text-gray-400 uppercase mt-1">${formatarPlacarTreino(jogo)}</p>
+                                    </button>
+                                `).join("")}
+                            </div>
+                        </section>
+
+                        ${finalizado && usuarioEhEquipeTecnica() ? `
+                            <button onclick="document.getElementById('m-times-treino-dvc')?.remove(); abrirAvaliacaoAtletasDoTreino('${safeEditParam(eventId)}')" class="w-full bg-[#990000] text-white py-3 rounded-2xl text-[9px] font-black uppercase shadow-sm">
+                                <i class="fa-solid fa-clipboard-check mr-1"></i> Avaliar atletas do treino
+                            </button>
+                        ` : ""}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML("beforeend", modal);
+    } catch (e) {
+        console.error("Erro ao abrir times do treino:", e);
+        alert("Não foi possível abrir os times deste treino.");
+    }
+};
+
+window.abrirResumoTreinoFinalizadoDVC = async (eventId) => {
+    try {
+        const eventos = await carregarEventosCacheDVC();
+        const eventoDoc = eventos.find(d => d.id === eventId);
+        if (!eventoDoc) return alert("Treino não encontrado no histórico.");
+        
+        const evento = { ...eventoDoc };
+        const rodadas = Array.isArray(evento.rodadasTreino) ? [...evento.rodadasTreino] : [];
+        rodadas.sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
+        
+        const times = Array.isArray(evento.timesSorteados) ? evento.timesSorteados : [];
+        const classificacao = Array.isArray(evento.classificacaoTreino) && evento.classificacaoTreino.length
+            ? evento.classificacaoTreino
+            : calcularClassificacaoTreino(times, rodadas);
+            
+        const campeao = classificacao[0];
+        const statusAvaliacao = getStatusAvaliacaoTreinoDVC(evento);
+        const podeGerenciar = usuarioEhEquipeTecnica();
+        const avaliacaoPendente = avaliacaoTreinoPendenteDVC(evento);
+        const dataFormatada = evento.data ? new Date(evento.data).toLocaleString("pt-BR") : "Data não informada";
+        
+        const modalId = `modal-resumo-treino-${eventId}`;
+        document.getElementById(modalId)?.remove();
+
+        const htmlModal = `
+            <div id="${modalId}" class="fixed inset-0 bg-gray-950/60 z-[100] flex flex-col justify-end sm:justify-center sm:p-4 animate-fade-in" onclick="if(event.target===this) this.remove()">
+                <div class="bg-gray-50 w-full sm:max-w-md sm:mx-auto rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl animate-slide-up sm:animate-fade-in">
+                    
+                    <div class="p-4 bg-white rounded-t-3xl border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-black uppercase text-[#990000]">Resumo do Treino</p>
+                            <h3 class="text-sm font-black uppercase text-gray-900 truncate">${evento.titulo || "Treino DVC"}</h3>
+                        </div>
+                        <button onclick="document.getElementById('${modalId}').remove()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-400">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-4 overflow-y-auto overflow-x-hidden pb-safe space-y-4">
+                        <div class="flex flex-wrap gap-1 mb-2">
+                            ${renderBadgeDVC("Finalizado", "verde")}
+                            ${renderBadgeDVC(statusAvaliacao.texto, statusAvaliacao.tipo)}
+                            <span class="bg-gray-100 text-gray-500 border border-gray-200 px-2 py-1 rounded-md text-[8px] font-black uppercase">${dataFormatada}</span>
+                        </div>
+
+                        ${campeao ? `
+                            <div class="bg-[#990000] text-white rounded-2xl p-4 flex items-center justify-between gap-3 shadow-sm">
+                                <div>
+                                    <p class="text-[9px] font-black uppercase text-white/60">Campeão do treino</p>
+                                    <p class="text-sm font-black uppercase">${campeao.nome}</p>
+                                </div>
+                                <i class="fa-solid fa-trophy text-2xl text-red-100"></i>
+                            </div>
+                        ` : ''}
+
+                        <div>
+                            <p class="text-[10px] font-black uppercase text-gray-500 mb-2">Classificação Final</p>
+                            ${typeof renderizarClassificacaoTreinoHtml === 'function' ? renderizarClassificacaoTreinoHtml(classificacao, true) : ''}
+                        </div>
+
+                        <div>
+                            <p class="text-[10px] font-black uppercase text-gray-500 mb-2">Jogos Realizados</p>
+                            <div class="space-y-2">
+                                ${rodadas.map(jogo => typeof renderizarCardJogoTreinoMural === 'function' ? renderizarCardJogoTreinoMural(evento, jogo, null) : '').join("")}
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex gap-2">
+                            <button onclick="abrirModalTimesTreino('${evento.id}')" class="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl text-[9px] font-black uppercase shadow-sm">
+                                Ver Times
+                            </button>
+                            ${podeGerenciar && avaliacaoPendente ? `
+                                <button onclick="abrirAvaliacaoAtletasDoTreino('${evento.id}'); document.getElementById('${modalId}').remove();" class="flex-1 bg-[#990000] text-white py-3 rounded-2xl text-[9px] font-black uppercase shadow-sm">
+                                    Avaliar Atletas
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', htmlModal);
+    } catch (err) { console.error(err); }
+};
+
+window.fecharModalJogoTreino = (modalId, canvasId) => {
+    if (canvasId && window.graficosTimesTreino?.[canvasId]) {
+        window.graficosTimesTreino[canvasId].destroy();
+        delete window.graficosTimesTreino[canvasId];
+    }
+
+    document.getElementById(modalId)?.remove();
+};
+
+window.abrirModalJogoTreino = async (eventId, rodadaId) => {
+    try {
+        const eventoSnap = await getDoc(doc(db, "events", eventId));
+
+        if (!eventoSnap.exists()) {
+            return alert("Evento nao encontrado.");
+        }
+
+        const evento = eventoSnap.data();
+        const times = Array.isArray(evento.timesSorteados) ? evento.timesSorteados : [];
+        const rodadas = Array.isArray(evento.rodadasTreino) ? [...evento.rodadasTreino] : [];
+        const rodada = rodadas.find(r => r.id === rodadaId);
+
+        if (!rodada) {
+            return alert("Jogo nao encontrado neste treino.");
+        }
+
+        const timeA = obterTimePorIdSorteio(times, rodada.timeAId) || { nome: rodada.timeANome, atletas: [], mediaHabilidades: {}, scoreMedio: 0 };
+        const timeB = obterTimePorIdSorteio(times, rodada.timeBId) || { nome: rodada.timeBNome, atletas: [], mediaHabilidades: {}, scoreMedio: 0 };
+        const proximo = getProximoJogoPendenteTreino(rodadas);
+        const podeGerenciar = usuarioEhEquipeTecnica();
+        const jogoJaConcluido = jogoTreinoConcluidoDVC(rodada);
+        const jogoDisponivel = jogoJaConcluido || !proximo || proximo.id === rodada.id || rodada.status === "Em andamento";
+        const podeEditar = podeGerenciar && rodada.status !== "Cancelado" && jogoDisponivel;
+        const ids = getIdsModalJogoTreino(eventId, rodadaId);
+
+        window.fecharModalJogoTreino(ids.modalId, ids.canvasId);
+
+        const modal = `
+            <div id="${ids.modalId}" data-modal-jogo-treino="${safeEditParam(rodadaId)}" class="fixed inset-0 z-[100] bg-black/80 p-4 flex items-center justify-center">
+                <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl max-h-[88vh] overflow-y-auto">
+                    <div class="sticky top-0 z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000] text-white p-4 flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-[8px] font-black uppercase text-white/60">${escaparHtml(evento.titulo || "Treino DVC")}</p>
+                            <h3 class="text-sm font-black uppercase truncate">Rodada ${rodada.rodada}</h3>
+                            <p class="text-[9px] font-bold text-white/70 uppercase mt-1">Jogo ${rodada.ordem} - ${getStatusVisualJogoTreino(rodada.status).texto}</p>
+                        </div>
+                        <button onclick="fecharModalJogoTreino('${ids.modalId}', '${ids.canvasId}')" class="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-4 space-y-4">
+                        ${!jogoDisponivel ? `
+                            <div class="bg-yellow-50 border border-yellow-100 text-yellow-800 rounded-2xl p-3">
+                                <p class="text-[9px] font-black uppercase">Este jogo ainda aguarda a conclusao da rodada anterior.</p>
+                            </div>
+                        ` : ''}
+
+                        <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-gray-50 border border-gray-100 rounded-2xl p-3">
+                            <div class="text-center min-w-0">
+                                <p class="text-xs font-black uppercase text-gray-900 truncate">${escaparHtml(timeA.nome)}</p>
+                                <p class="text-[8px] font-bold uppercase text-gray-400">Score ${Number(timeA.scoreMedio || 0).toFixed(1)}</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-gray-950 text-white flex items-center justify-center">
+                                <span class="text-[10px] font-black">VS</span>
+                            </div>
+                            <div class="text-center min-w-0">
+                                <p class="text-xs font-black uppercase text-gray-900 truncate">${escaparHtml(timeB.nome)}</p>
+                                <p class="text-[8px] font-bold uppercase text-gray-400">Score ${Number(timeB.scoreMedio || 0).toFixed(1)}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-white border border-gray-100 rounded-2xl p-3">
+                                <p class="text-[9px] font-black uppercase text-[#990000] mb-2">${escaparHtml(timeA.nome)}</p>
+                                ${renderizarListaAtletasTimeTreino(timeA)}
+                            </div>
+                            <div class="bg-white border border-gray-100 rounded-2xl p-3">
+                                <p class="text-[9px] font-black uppercase text-gray-900 mb-2">${escaparHtml(timeB.nome)}</p>
+                                ${renderizarListaAtletasTimeTreino(timeB)}
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3">
+                            <p class="text-[9px] font-black uppercase text-gray-500 mb-2">Radar medio dos times</p>
+                            <div class="h-64">
+                                <canvas id="${ids.canvasId}"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border border-gray-100 rounded-2xl p-3">
+                            <p class="text-[9px] font-black uppercase text-gray-500 mb-2">Placar</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">${escaparHtml(timeA.nome)}</label>
+                                    <input id="${ids.pontosAId}" type="number" min="0" value="${rodada.pontosA ?? ''}" ${podeEditar ? '' : 'disabled'} class="w-full p-3 rounded-xl border border-gray-200 text-center text-lg font-black bg-gray-50 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">${escaparHtml(timeB.nome)}</label>
+                                    <input id="${ids.pontosBId}" type="number" min="0" value="${rodada.pontosB ?? ''}" ${podeEditar ? '' : 'disabled'} class="w-full p-3 rounded-xl border border-gray-200 text-center text-lg font-black bg-gray-50 outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid ${podeEditar ? 'grid-cols-3' : 'grid-cols-1'} gap-2">
+                            ${podeEditar ? `
+                                <button onclick="salvarPlacarJogoTreino('${safeEditParam(eventId)}', '${safeEditParam(rodadaId)}')" class="bg-[#990000] text-white py-3 rounded-xl text-[9px] font-black uppercase shadow-sm">
+                                    Salvar placar
+                                </button>
+                                <button onclick="salvarPlacarJogoTreino('${safeEditParam(eventId)}', '${safeEditParam(rodadaId)}', true)" class="bg-green-700 text-white py-3 rounded-xl text-[9px] font-black uppercase shadow-sm">
+                                    Concluir jogo
+                                </button>
+                            ` : ''}
+                            <button onclick="fecharModalJogoTreino('${ids.modalId}', '${ids.canvasId}')" class="bg-white border border-gray-200 text-gray-500 py-3 rounded-xl text-[9px] font-black uppercase">
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML("beforeend", modal);
+
+        setTimeout(() => {
+            renderizarRadarComparativoTimes(timeA, timeB, ids.canvasId);
+        }, 80);
+
+    } catch (e) {
+        console.error("Erro ao abrir jogo do treino:", e);
+        alert("Nao foi possivel abrir este jogo.");
+    }
+};
+
+window.salvarPlacarJogoTreino = async (eventId, rodadaId, somenteConcluir = false) => {
+    if (!usuarioEhEquipeTecnica()) {
+        return alert("Apenas ADM, Treinador ou Auxiliar podem salvar placar.");
+    }
+
+    try {
+        const eventoRef = doc(db, "events", eventId);
+        const eventoSnap = await getDoc(eventoRef);
+
+        if (!eventoSnap.exists()) {
+            return alert("Evento nao encontrado.");
+        }
+
+        const evento = eventoSnap.data();
+        const times = Array.isArray(evento.timesSorteados) ? evento.timesSorteados : [];
+        const rodadas = Array.isArray(evento.rodadasTreino) ? evento.rodadasTreino : [];
+        const rodadaAtual = rodadas.find(r => r.id === rodadaId);
+
+        if (!rodadaAtual) {
+            return alert("Jogo nao encontrado.");
+        }
+
+        const ids = getIdsModalJogoTreino(eventId, rodadaId);
+        const inputA = document.getElementById(ids.pontosAId);
+        const inputB = document.getElementById(ids.pontosBId);
+        const pontosA = getValorNumericoPlacarTreino(inputA?.value ?? rodadaAtual.pontosA);
+        const pontosB = getValorNumericoPlacarTreino(inputB?.value ?? rodadaAtual.pontosB);
+
+        if (pontosA === null || pontosB === null) {
+            return alert("Informe os pontos dos dois times.");
+        }
+
+        if (pontosA === pontosB) {
+            return alert("Informe um desempate antes de concluir o jogo.");
+        }
+
+        const vencedorId = pontosA > pontosB ? rodadaAtual.timeAId : rodadaAtual.timeBId;
+
+        const novasRodadas = rodadas.map(r => {
+            if (r.id !== rodadaId) return r;
+
+            return {
+                ...r,
+                pontosA,
+                pontosB,
+                vencedorId,
+                status: "Concluido",
+                iniciadoEm: r.iniciadoEm || new Date().toISOString(),
+                concluidoEm: new Date().toISOString(),
+                concluidoPor: currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica"
+            };
+        });
+
+        const classificacaoTreino = calcularClassificacaoTreino(times, novasRodadas);
+        const todosEncerrados = novasRodadas.length > 0 && novasRodadas.every(jogoTreinoEncerradoDVC);
+        const updates = {
+            rodadasTreino: novasRodadas,
+            classificacaoTreino,
+            sorteioTimesAtualizadoEm: new Date().toISOString()
+        };
+
+        if (todosEncerrados) {
+            updates.sorteioTimesFinalizado = true;
+            updates.sorteioTimesAtivo = false;
+            updates.jogosTreinoFinalizadosEm = new Date().toISOString();
+            updates.jogosTreinoFinalizadosPor = currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica";
+        }
+
+        await updateDoc(eventoRef, updates);
+        limparCacheDVC("events");
+
+        window.fecharModalJogoTreino(ids.modalId, ids.canvasId);
+        await atualizarTelasDepoisSorteioTreino(window.__abaAtualDVC === "mural");
+
+        if (todosEncerrados) {
+            alert("Todos os jogos internos foram concluídos. Para finalizar oficialmente o treino, use Concluir na Agenda.");
+            return;
+        }
+
+        alert(somenteConcluir ? "Jogo concluído." : "Placar salvo.");
+
+    } catch (e) {
+        console.error("Erro ao salvar placar do jogo:", e);
+        alert("Nao foi possivel salvar o placar.");
+    }
+};
+
+window.jogoTreinoEncerradoDVC = jogoTreinoEncerradoDVC;
+window.jogoTreinoConcluidoDVC = jogoTreinoConcluidoDVC;
+window.eventoTreinoSorteioFinalizadoDVC = eventoTreinoSorteioFinalizadoDVC;
+window.obterTimePorIdSorteio = obterTimePorIdSorteio;
+window.getProximoJogoPendenteTreino = getProximoJogoPendenteTreino;
+window.getStatusAvaliacaoTreinoDVC = getStatusAvaliacaoTreinoDVC;
+window.avaliacaoTreinoPendenteDVC = avaliacaoTreinoPendenteDVC;
+window.renderizarClassificacaoTreinoHtml = renderizarClassificacaoTreinoHtml;
+window.renderizarCardJogoTreinoMural = renderizarCardJogoTreinoMural;
+window.renderizarEventoJogosTreinoMural = renderizarEventoJogosTreinoMural;
+window.renderizarCardTreinoFinalizadoCompactoDVC = renderizarCardTreinoFinalizadoCompactoDVC;
+window.renderizarListaAtletasTimeTreino = renderizarListaAtletasTimeTreino;

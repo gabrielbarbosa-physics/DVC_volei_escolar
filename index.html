@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <!-- 
+    ========================================================
+    DVC App - Main Entry
+    ========================================================
+    This is the main HTML file that loads styles and modules.
+    ========================================================
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVC App</title>
+    <link rel="stylesheet" href="assets/css/output.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .hidden-screen { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #990000; border-radius: 10px; }
+        input:disabled, select:disabled { background-color: #f9fafb; color: #9ca3af; cursor: not-allowed; border-bottom: 1px solid #e5e7eb !important; appearance: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-2">
+
+    <div id="app-container" class="w-full max-w-md h-[850px] bg-white rounded-xl shadow-2xl overflow-hidden relative flex flex-col border-4 border-gray-100">
+        
+        <div id="header-app" class="hidden-screen p-4 bg-white border-b flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-3">
+                <div id="user-photo" class="w-10 h-10 rounded-full bg-gray-200 bg-cover bg-center border"></div>
+                <div>
+                    <p id="user-display-name" class="font-bold text-sm text-gray-800"></p>
+                    <p id="user-display-info" class="text-[10px] text-gray-400 font-semibold uppercase"></p>
+                </div>
+            </div>
+            <div id="status-dot" class="w-3 h-3 rounded-full"></div>
+        </div>
+
+        <div id="login-screen" class="flex flex-col h-full p-8 pt-12 fade-in">
+            <div class="flex justify-center mb-12"><img src="logo.webp" alt="DVC logo" style="width:220px; height:auto;"></div>
+            <h2 class="text-2xl font-bold text-center mb-8 text-gray-700">Bem-vindo ao DVC</h2>
+            <button onclick="loginGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-100 py-4 rounded-full font-bold text-gray-700 hover:bg-gray-50 shadow-sm transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083L43.595,20L24,20v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+                Entrar com Google
+            </button>
+            <p id="auth-status" class="text-center text-[10px] text-gray-400 mt-4 font-bold uppercase"></p>
+        </div>
+
+        <div id="register-screen" class="hidden-screen p-6 flex-1 bg-white overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-6 text-[#990000]">Finalizar Cadastro</h2>
+            <div class="space-y-4">
+                <div><label class="text-[10px] font-bold text-gray-400 uppercase">Nome Completo</label><input id="reg-nome" type="text" class="w-full bg-gray-50 p-2 rounded border outline-none"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] font-bold text-gray-400 uppercase">Data Nascimento</label><input id="reg-nascimento" type="date" class="w-full bg-gray-50 p-2 rounded border outline-none"></div>
+                    <div><label class="text-[10px] font-bold text-gray-400 uppercase">Sexo</label>
+                        <select id="reg-sexo" class="w-full bg-gray-50 p-2 rounded border outline-none">
+                            <option value="M">Masculino</option>
+                            <option value="F">Feminino</option>
+                        </select>
+                    </div>
+                </div>
+                <div><label class="text-[10px] font-bold text-gray-400 uppercase">Seu Telefone</label><input id="reg-tel" type="tel" placeholder="(31) 98888-8888" class="w-full bg-gray-50 p-2 rounded border outline-none"></div>
+                <div class="pt-4 border-t"><p class="text-[10px] font-bold text-red-800 uppercase mb-2">Responsável (Se menor de idade)</p>
+                    <input id="reg-resp-nome" type="text" placeholder="Nome do Responsável" class="w-full bg-gray-50 p-2 mb-2 rounded border outline-none">
+                    <input id="reg-resp-tel" type="tel" placeholder="WhatsApp do Responsável" class="w-full bg-gray-50 p-2 rounded border outline-none">
+                </div>
+                <button onclick="salvarCadastro()" class="w-full bg-[#990000] text-white font-bold py-4 rounded-full shadow-lg uppercase mt-4">Concluir</button>
+            </div>
+        </div>
+
+        <div id="main-content" class="hidden-screen flex-1 overflow-y-auto p-4 pb-24 custom-scroll"></div>
+
+        <nav id="nav-bar" class="hidden-screen absolute bottom-0 left-0 right-0 z-50 border-t bg-white px-2 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.10)]">
+    <div class="flex justify-around items-center gap-1">
+
+        <button onclick="changeTab('home')" id="nav-home" class="nav-btn text-gray-400 flex flex-col items-center justify-center px-2 py-1 rounded-xl">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[8px] font-bold uppercase mt-1">Início</span>
+        </button>
+
+        <button onclick="changeTab('mural')" id="nav-mural" class="nav-btn text-gray-400 flex flex-col items-center justify-center px-2 py-1 rounded-xl">
+            <i class="fa-solid fa-bullhorn text-lg"></i>
+            <span class="text-[8px] font-bold uppercase mt-1">Mural</span>
+        </button>
+
+        <button onclick="changeTab('calendar')" id="nav-calendar" class="nav-btn text-gray-400 flex flex-col items-center justify-center px-2 py-1 rounded-xl">
+            <i class="fa-solid fa-calendar-alt text-lg"></i>
+            <span class="text-[8px] font-bold uppercase mt-1">Agenda</span>
+        </button>
+
+        <button onclick="changeTab('profile')" id="nav-profile" class="nav-btn text-gray-400 flex flex-col items-center justify-center px-2 py-1 rounded-xl">
+            <i class="fa-solid fa-user-circle text-lg"></i>
+            <span class="text-[8px] font-bold uppercase mt-1">Perfil</span>
+        </button>
+
+        <button onclick="changeTab('ranking')" id="nav-ranking" class="nav-btn text-gray-400 flex flex-col items-center justify-center px-2 py-1 rounded-xl">
+            <i class="fa-solid fa-trophy text-lg"></i>
+            <span class="text-[8px] font-bold uppercase mt-1">Ranking</span>
+        </button>
+
+        <button onclick="changeTab('finance')" id="nav-finance" class="nav-btn text-gray-400 flex flex-col items-center justify-center px-2 py-1 rounded-xl">
+            <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
+            <span class="text-[8px] font-bold uppercase mt-1">Contrib.</span>
+        </button>
+
+        <button id="nav-more" onclick="abrirMenuMais()" class="hidden nav-btn text-gray-400 flex flex-col items-center justify-center px-2 py-1 rounded-xl">
+            <i class="fa-solid fa-ellipsis text-lg"></i>
+            <span class="text-[8px] font-bold uppercase mt-1">Mais</span>
+        </button>
+
+    </div>
+</nav>
+    </div>
+
+    <script type="module">
+        import "./assets/js/main.js";
+
+        const { 
+            auth, db, provider, 
+            collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, arrayUnion, increment,
+            query, where, orderBy, limit, onSnapshot, serverTimestamp, Timestamp,
+            PROJETO_ATUAL_DVC, COLECAO_CONTRIBUICOES_GLOBAIS, EMAILS_ADM_DVC,
+            DIA_INICIO_CARENCIA_CADASTRO_FIM_MES, DIA_LIMITE_FINANCEIRO_MENSAL, STATUS_FINANCEIRO_CARENCIA,
+            FUNCOES_VOLEI_DVC, PESOS_FUNCAO_VOLEI_DVC, DVC_CACHE, AppCache,
+            corrigirMojibakeDVC, escaparHtml, safeEditParam,
+            normalizarEmailDVC, normalizarIdFinanceiro, normalizarBuscaDVC, normalizarTextoFinanceiro,
+            normalizarFuncaoTecnica, normalizarEmailIdDVC, normalizarEmailChamadaDVC, normalizarTextoRankingDVC,
+            normalizarSexoSorteioTreino, normalizarFuncaoVoleiSorteio, normalizarStatusJogoTreinoDVC, normalizarMesAnoParaValor,
+            formatarDataHoraFinanceira, formatarÚltimoAcesso, formatarDataChaveFinanceira, formatarDataCurtaFinanceira,
+            formatarPontuacaoRankingDVC, formatarContatoFinanceiro, formatarPlacarTreino, getValorNumericoPlacarTreino,
+            obterDataCadastroUsuario, obterFimCarenciaPorDataCadastro, obterFimCarenciaManual, normalizarDataFimCarencia,
+            obterDadosCarenciaCadastro, obterDataNascimentoAtletaDVC, calcularIdadeAtletaDVC, renderBadgeIdadeAtletaDVC,
+            renderBadgeDVC, renderBadgeGeneroDVC, renderBadgeCategoriaEtariaDVC, renderBadgeFuncaoVoleiDVC, renderBadgesAtletaDVC,
+            normalizarHabilidadesDVC, calcularCategoriaEtariaDVC, obterPrimeiroValorRankingDVC, getUnidadeRankingDVC,
+            getMensagemSemDadosRankingDVC, getStatusVisualJogoTreino, getNomeFuncaoVoleiDVC,
+            normalizarGeneroRankingDvc, normalizarGeneroRankingDVC, normalizarCategoriaRankingDvc,
+            normalizarCategoriaRankingDVC, normalizarFuncaoVoleiRankingDvc, normalizarFuncaoVoleiRankingDVC,
+            changeTab, abrirMenuMais, renderHome, marcarHomeDVCVista, toggleHistoriaHomeDVC,
+            renderAvisosMuralDVC, renderGestaoAvisosDVC, abrirModalCriarAvisoDVC, salvarAvisoDVC, desativarAvisoDVC, excluirAvisoDVC,
+            CRITERIOS_AVALIACAO_DVC, GRUPOS_HABILIDADES_DVC, TODAS_HABILIDADES_DVC,
+            renderInfoCriteriosAvaliacaoDVC, usuarioTemHabilidadesReaisDVC, usuarioTemAvaliacaoTecnicaRealDVC, usuarioPrecisaAutoAvaliacao,
+            abrirModalAvaliacao, salvarAvaliacao, carregarHistoricoHabilidadeHtml, calcularScoreFuncaoDVC, calcularScoreGeralDVC,
+            abrirAvaliacaoColegas, salvarAvaliacaoColega, calcularMediaAvaliacoesPares, obterMesAtualAvaliacaoTecnicaDVC,
+            usuarioPodeAvaliarEquipeTecnicaDVC, usuarioTemAvaliacoesEquipePendentesDVC, renderAvaliacaoMensalEquipeDVC,
+            usuarioTemAvaliacaoColegaPendenteDVC,
+            renderAutoAvaliacoesPendentes, renderPainelAvaliacoesEquipeTecnica, abrirPainelAutoAvaliacoesDVC,
+            abrirModalAutoAvaliacaoObrigatoria, usuarioPrecisaAutoAvaliacaoComHistoricoDVC,
+            renderCalendar, setAgendaFiltro, toggleHistoricoAgendaDVC, fecharFormularioAgenda, abrirNovoEventoAgenda,
+            carregarResponsaveisTecnicos, renderConvocacao, renderChamada, salvarChamadaEvento, addEvent, prepararEdicao, apagarEvento,
+            renderFinance, renderFinanceiro, enviarComprovante, enviarJustificativa, carregarResumoPendenciasFinanceiras,
+            abrirPendenciasFinanceiras, atualizarFinanceiro, verificarViradaDeMes, verificarInadimplenciaProlongada,
+            validarExpress, aprovarJustificativa, aceitarCarenciaEspecial, recusarCarenciaEspecial,
+            abrirModoTesteAtleta, iniciarModoTesteAtleta, sairModoTesteAtleta,
+            renderProfile, mudarSubAbaPerfil, toggleEditProfile, saveProfileChanges,
+            abrirMicroModalFinanceiroPerfilDVC, toggleHabilidadeAccordionDVC,
+            carregarHistoricoHabilidadesAtletaDVC, toggleHistoricoTecnicoDVC, limparCacheHistoricoHabilidades,
+            getPlanoPorCriterio, obterFocosPlanoEvolucao, getSemanaAtualPlano, getDiaAtualPlano,
+            marcarTreinoPlanoRealizado, gerarPlanoEvolucaoHtml, alternarPrivacidadeScoreTecnico,
+            gerarMapaHabilidadesDVC, atualizarHistoricoRadarDVC,
+            carregarEExibirPlanoEvolucaoDVC, carregarEExibirHistoricoJogosDVC, carregarEExibirRegistrosFinanceirosDVC,
+            renderSecaoRecolhivelDVC, gerarAvaliacoesPendentesHtml, gerarHtmlAvaliacoesPendentesPerfil,
+            aplicarAvaliacaoPendenteAtleta, rejeitarAvaliacaoPendenteAtleta, atualizarResumoPendenciasAvaliacao,
+            aprovarAvaliacaoEvento, rejeitarAvaliacaoEvento, autorizarAvaliacaoAtletaPendente,
+            rejeitarAvaliacaoAtletaPendente, verDetalhesAvaliacaoPendente, carregarContribuicoesAtletaDVC,
+            carregarAcessosAtletaDVC, limparCacheContribuicoesAtleta, aplicarEvolucaoGradual,
+            jogoTreinoEncerradoDVC, jogoTreinoConcluidoDVC, treinoEstaFinalizadoDVC, eventoTreinoSorteioFinalizadoDVC,
+            obterTimePorIdSorteio, getProximoJogoPendenteTreino, getStatusAvaliacaoTreinoDVC, avaliacaoTreinoPendenteDVC,
+            calcularMediaHabilidadesTime, calcularClassificacaoTreino, renderizarClassificacaoTreinoHtml,
+            renderizarCardJogoTreinoMural, renderizarEventoJogosTreinoMural, renderizarCardTreinoFinalizadoCompactoDVC,
+            carregarJogosTreinoNoMural, renderizarListaAtletasTimeTreino, renderizarRadarComparativoTimes, toggleHistoricoTreinosDVC,
+            renderDashboard, renderAdmin, irParaBlocoGestao,
+            renderMembers, filterAdminList, toggleAcoesGestao,
+            updateUser, removerUsuario, adicionarEstrela,
+            aplicarAdvertencia, zerarAdvertencias, verDocs,
+            exportarXLS, exportarAtletasXLS,
+            baixarDocumentoWordDVC, baixarRelatorioAtletasDVC, baixarRelatorioPresencasDVC,
+            carregarResumoNovosCadastros, abrirNovosCadastros, marcarCadastroComoVisto,
+            loginGoogle, logout, salvarCadastro
+        } = window;
+
+        // cacheValidoDVC agora vem de js/cache.js
+
+window.DVC_CACHE = window.DVC_CACHE || {};
+window.DVC_CACHE.presencasPorEvento = window.DVC_CACHE.presencasPorEvento || {};
+window.DVC_CACHE.convocadosPorEvento = window.DVC_CACHE.convocadosPorEvento || {};
+
+// FASE 3B
+window.DVC_CACHE.historicoHabilidadesPorAtleta = window.DVC_CACHE.historicoHabilidadesPorAtleta || {};
+window.DVC_CACHE.contribuicoesPorAtleta = window.DVC_CACHE.contribuicoesPorAtleta || {};
+window.DVC_CACHE.acessosPorAtleta = window.DVC_CACHE.acessosPorAtleta || {};
+window.DVC_CACHE.avaliacoesPares = window.DVC_CACHE.avaliacoesPares || {};
+window.DVC_CACHE.autoAvaliacoes = window.DVC_CACHE.autoAvaliacoes || {};
+window.DVC_CACHE.avaliacoesEquipeTecnica = window.DVC_CACHE.avaliacoesEquipeTecnica || {};
+
+// [Stage 9: Perfil C - profile integration helpers modularized to js/profile.js]
+
+async function carregarPresencasEventoDVC(eventId, force = false) {
+  if (!eventId) return [];
+
+  window.DVC_CACHE = window.DVC_CACHE || {};
+  window.DVC_CACHE.presencasPorEvento = window.DVC_CACHE.presencasPorEvento || {};
+
+  const cache = window.DVC_CACHE.presencasPorEvento[eventId];
+
+  if (!force && cache && Array.isArray(cache.dados) && Date.now() - cache.atualizadoEm < 2 * 60 * 1000) {
+    return cache.dados;
+  }
+
+  console.log("[DVC leitura] presencas", eventId);
+
+  const snap = await getDocs(collection(db, "events", eventId, "presencas"));
+
+  const presencas = snap.docs.map(docSnap => ({
+    id: docSnap.id,
+    email: docSnap.id,
+    ...docSnap.data()
+  }));
+
+  window.DVC_CACHE.presencasPorEvento[eventId] = {
+    dados: presencas,
+    atualizadoEm: Date.now()
+  };
+
+  return presencas;
+}
+window.carregarPresencasEventoDVC = carregarPresencasEventoDVC;
+
+async function carregarConvocadosEventoDVC(eventId, force = false) {
+  if (!eventId) return [];
+
+  window.DVC_CACHE = window.DVC_CACHE || {};
+  window.DVC_CACHE.convocadosPorEvento = window.DVC_CACHE.convocadosPorEvento || {};
+
+  const cache = window.DVC_CACHE.convocadosPorEvento[eventId];
+
+  if (!force && cache && Array.isArray(cache.dados) && Date.now() - cache.atualizadoEm < 2 * 60 * 1000) {
+    return cache.dados;
+  }
+
+  console.log("[DVC leitura] convocados", eventId);
+
+  const snap = await getDocs(collection(db, "events", eventId, "convocados"));
+
+  const convocados = snap.docs.map(docSnap => ({
+    id: docSnap.id,
+    email: docSnap.id,
+    ...docSnap.data()
+  }));
+
+  window.DVC_CACHE.convocadosPorEvento[eventId] = {
+    dados: convocados,
+    atualizadoEm: Date.now()
+  };
+
+  return convocados;
+}
+window.carregarConvocadosEventoDVC = carregarConvocadosEventoDVC;
+
+function limparCachePresencasEventoDVC(eventId = null) {
+  if (!window.DVC_CACHE) return;
+
+  if (!window.DVC_CACHE.presencasPorEvento) {
+    window.DVC_CACHE.presencasPorEvento = {};
+  }
+
+  if (eventId) {
+    delete window.DVC_CACHE.presencasPorEvento[eventId];
+  } else {
+    window.DVC_CACHE.presencasPorEvento = {};
+  }
+}
+window.limparCachePresencasEventoDVC = limparCachePresencasEventoDVC;
+
+function limparCacheConvocadosEventoDVC(eventId = null) {
+  if (!window.DVC_CACHE) return;
+
+  if (!window.DVC_CACHE.convocadosPorEvento) {
+    window.DVC_CACHE.convocadosPorEvento = {};
+  }
+
+  if (eventId) {
+    delete window.DVC_CACHE.convocadosPorEvento[eventId];
+  } else {
+    window.DVC_CACHE.convocadosPorEvento = {};
+  }
+}
+window.limparCacheConvocadosEventoDVC = limparCacheConvocadosEventoDVC;
+
+        function limparCacheDVC(chave = null) {
+            if (chave) {
+                window.invalidarCacheDVC(chave);
+                return;
+            }
+            window.AppCache = {};
+        }
+        window.limparCacheDVC = limparCacheDVC;
+
+        async function carregarUsuariosCacheDVC(force = false) {
+            if (!force && window.cacheValidoDVC("users")) {
+                return window.obterCacheDVC("users").dados;
+            }
+            
+            const snap = await window.getDocsDVC(collection(db, "users"), { force: true });
+            const usuarios = snap.docs.map(docSnap => ({
+                id: docSnap.id,
+                email: docSnap.id,
+                ...docSnap.data()
+            }));
+            const porEmail = new Map();
+            usuarios.forEach(user => {
+                const emailPrincipal = normalizarEmailDVC(user.email || user.id);
+                if (emailPrincipal) porEmail.set(emailPrincipal, user);
+                const idDoc = normalizarEmailDVC(user.id);
+                if (idDoc) porEmail.set(idDoc, user);
+            });
+            
+            window.salvarCacheDVC("users", { dados: usuarios, porEmail });
+            return usuarios;
+        }
+
+        async function obterUsuarioCacheDVC(email, force = false) {
+            const emailNorm = normalizarEmailDVC(email);
+            if (!emailNorm) return null;
+            await carregarUsuariosCacheDVC(force);
+            const cache = window.obterCacheDVC("users");
+            return cache?.porEmail?.get(emailNorm) || null;
+        }
+        window.obterUsuarioCacheDVC = obterUsuarioCacheDVC;
+
+        async function carregarEventosCacheDVC(force = false) {
+            if (!force && window.cacheValidoDVC("events")) {
+                return window.obterCacheDVC("events").dados;
+            }
+            
+            const snap = await window.getDocsDVC(collection(db, "events"), { force: true });
+            const eventos = snap.docs.map(docSnap => ({
+                id: docSnap.id,
+                ...docSnap.data()
+            }));
+            const porId = new Map();
+            eventos.forEach(evento => {
+                if (evento.id) porId.set(evento.id, evento);
+            });
+            
+            window.salvarCacheDVC("events", { dados: eventos, porId });
+            return eventos;
+        }
+        window.carregarEventosCacheDVC = carregarEventosCacheDVC;
+
+        async function obterEventoCacheDVC(eventId, force = false) {
+            if (!eventId) return null;
+            await carregarEventosCacheDVC(force);
+            const cache = window.obterCacheDVC("events");
+            return cache?.porId?.get(eventId) || null;
+        }
+
+        function criarMockSnapshotDVC(array) {
+            return {
+                docs: array.map(item => ({
+                    id: item.id,
+                    data: () => item,
+                    exists: () => true
+                })),
+                empty: array.length === 0,
+                size: array.length,
+                forEach: function(cb) {
+                    this.docs.forEach(cb);
+                }
+            };
+        }
+
+        async function carregarUsuariosCacheMockDVC(force = false) {
+            const arr = await carregarUsuariosCacheDVC(force);
+            return criarMockSnapshotDVC(arr);
+        }
+        window.carregarUsuariosCacheMockDVC = carregarUsuariosCacheMockDVC;
+
+        async function carregarEventosCacheMockDVC(force = false) {
+            const arr = await carregarEventosCacheDVC(force);
+            return criarMockSnapshotDVC(arr);
+        }
+        window.carregarEventosCacheMockDVC = carregarEventosCacheMockDVC;
+
+
+
+        function snapshotToArray(snapshot) {
+            if (Array.isArray(snapshot)) return snapshot;
+            return snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+        }
+
+        async function carregarAtletasCache(forcar = false) {
+            const arr = await carregarUsuariosCacheDVC(forcar);
+            AppCache.atletas = arr;
+            return arr;
+        }
+        window.carregarAtletasCache = carregarAtletasCache;
+
+        async function carregarContribuicoesCache(forcar = false) {
+            if (!forcar && AppCache.contribuicoes) return AppCache.contribuicoes;
+            const snap = await getDocs(collection(db, COLECAO_CONTRIBUICOES_GLOBAIS));
+            AppCache.contribuicoes = snapshotToArray(snap);
+            return AppCache.contribuicoes;
+        }
+        window.carregarContribuicoesCache = carregarContribuicoesCache;
+
+        async function carregarEventosCache(forcar = false) {
+            const arr = await carregarEventosCacheDVC(forcar);
+            AppCache.eventos = arr;
+            return arr;
+        }
+        window.carregarEventosCache = carregarEventosCache;
+
+        function limparCacheDados(tipo = "todos") {
+            if (tipo === "todos" || tipo === "atletas") { window.AppCache.atletas = null; limparCacheDVC("users"); }
+            if (tipo === "todos" || tipo === "financeiro") window.AppCache.contribuicoes = null;
+            if (tipo === "todos" || tipo === "eventos") { window.AppCache.eventos = null; limparCacheDVC("events"); }
+            if (tipo === "todos" || tipo === "avaliacoes") window.AppCache.ultimasAvaliacoes = null;
+            if (tipo === "todos" || tipo === "avisos") window.AppCache.avisos = null;
+            if (tipo === "todos" || tipo === "avaliacoesEquipeTecnica") window.AppCache.avaliacoesEquipeTecnica = null;
+        }
+        window.limparCacheDados = limparCacheDados;
+
+        window.forcarAtualizacaoDados = async (tipo = "todos") => {
+            limparCacheDados(tipo);
+
+            if (tipo === "financeiro") {
+                return window.renderFinance?.();
+            }
+
+            if (tipo === "atletas" || tipo === "gestao") {
+                limparCacheDados("financeiro"); limparCacheContribuicoesAtleta();
+                return window.renderAdmin?.();
+            }
+
+            if (tipo === "eventos") {
+                return window.renderCalendar?.();
+            }
+
+            return window.changeTab?.(window.__abaAtualDVC || "mural");
+        };
+
+        // [Stage 7: Perfil A - mudarSubAbaPerfil modularized to js/profile.js]
+
+
+
+        function montarIdContribuicaoGlobal(email, docIdLegado) {
+            return `${normalizarIdFinanceiro(docIdLegado)}_${normalizarIdFinanceiro(email)}`;
+        }
+        window.montarIdContribuicaoGlobal = montarIdContribuicaoGlobal;
+
+        function refContribuicaoGlobal(docId) {
+            return doc(db, COLECAO_CONTRIBUICOES_GLOBAIS, docId);
+        }
+        window.refContribuicaoGlobal = refContribuicaoGlobal;
+
+        async function buscarContribuicaoGlobal(email, docId) {
+            const tentativaDiretaRef = refContribuicaoGlobal(docId);
+            const tentativaDiretaSnap = await getDoc(tentativaDiretaRef);
+
+            if (tentativaDiretaSnap.exists()) {
+                return {
+                    ref: tentativaDiretaRef,
+                    snap: tentativaDiretaSnap,
+                    docIdGlobal: docId
+                };
+            }
+
+            const docIdComposto = montarIdContribuicaoGlobal(email, docId);
+            const tentativaCompostaRef = refContribuicaoGlobal(docIdComposto);
+            const tentativaCompostaSnap = await getDoc(tentativaCompostaRef);
+
+            if (tentativaCompostaSnap.exists()) {
+                return {
+                    ref: tentativaCompostaRef,
+                    snap: tentativaCompostaSnap,
+                    docIdGlobal: docIdComposto
+                };
+            }
+
+            const legadoRef = doc(db, "users", email, "contribuicoes", docId);
+            const legadoSnap = await getDoc(legadoRef);
+
+            if (legadoSnap.exists()) {
+                await setDoc(
+                    tentativaCompostaRef,
+                    window.montarRegistroContribuicaoGlobal(email, docId, legadoSnap.data()),
+                    { merge: true }
+                );
+
+                return {
+                    ref: tentativaCompostaRef,
+                    snap: await getDoc(tentativaCompostaRef),
+                    docIdGlobal: docIdComposto
+                };
+            }
+
+            return {
+                ref: tentativaCompostaRef,
+                snap: legadoSnap,
+                docIdGlobal: docIdComposto
+            };
+        }
+        window.buscarContribuicaoGlobal = buscarContribuicaoGlobal;
+
+        // [Global contribution helpers extracted to js/finance.js]
+
+        // ============================================================================
+        // SECAO 04 - NAVEGACAO PRINCIPAL, MENU E CONTROLE DE ABAS
+        // ============================================================================
+        // Responsabilidade: alternar abas, destacar botoes do menu e abrir o menu extra.
+
+
+        // [Home module code extracted to js/home.js]
+
+
+
+
+        // [Avaliacoes module code extracted to js/evaluations.js]
+
+        // [Financeiro do Atleta module code extracted to js/finance.js]
+
+        // ============================================================================
+        // SECAO 02 - GESTAO FINANCEIRA: PENDENCIAS E ANALISE RAPIDA
+        // ============================================================================
+        // Responsabilidade: listar pendencias financeiras para a gestao e acionar validacoes rapidas.
+        // [carregarResumoPendenciasFinanceiras extracted to js/finance.js]
+// [abrirPendenciasFinanceiras extracted to js/finance.js]
+
+        // ============================================================================
+        // SECAO 05B - CONTROLE FINANCEIRO DINAMICO E ADVERTENCIAS
+        // ============================================================================
+        // Responsabilidade: atualizacoes financeiras manuais, advertencias e funcoes auxiliares antigas preservadas.
+// --- CONTROLE FINANCEIRO DINÂMICO ---
+        // Compatibilidade: existe uma segunda definicao de atualizarFinanceiro mais abaixo.
+        // A segunda e a ativa ao final do carregamento; esta foi mantida para nao apagar historico.
+        // [Legacy atualizarFinanceiro extracted to js/finance.js]
+        // --- GESTÃO (FILTROS COMPLETOS + EXCLUIR) ---
+        // --- SISTEMA DE ADVERTÊNCIAS ---
+        // [Stage 10D: Documents and Warnings - aplicarAdvertencia & zerarAdvertencias modularized to js/admin.js]
+        // --- DASHBOARD DO TREINADOR ---
+
+
+
+        // ============================================================================
+        // SECAO 06 - DASHBOARD DO TREINADOR
+        // ============================================================================
+        // Responsabilidade: indicadores consolidados para treinadores.
+
+
+
+
+// [montarRastroFinanceiro extracted to js/finance.js]
+
+async function limparComprovantesAntigosPainel() {
+    try {
+        const limiteQuatroMeses = new Date(Date.now() - (120 * 24 * 60 * 60 * 1000));
+        const snap = await getDocs(collection(db, "contribuicoesGlobais"));
+        const limpezas = [];
+
+        snap.forEach(docContrib => {
+            const data = docContrib.data();
+            const enviadoEm = data.enviadoEm ? new Date(data.enviadoEm) : null;
+            const comprovantePesado = typeof data.comprovante === "string" && data.comprovante.startsWith("data:image");
+
+            if (
+                data.tipo === "Comprovante" &&
+                enviadoEm &&
+                !isNaN(enviadoEm.getTime()) &&
+                enviadoEm < limiteQuatroMeses &&
+                comprovantePesado
+            ) {
+                limpezas.push(updateDoc(doc(db, "contribuicoesGlobais", docContrib.id), {
+                    comprovante: "[Arquivo removido automaticamente após 4 meses por diretriz de armazenamento]",
+                    comprovanteLimpoStatus: true
+                }));
+            }
+        });
+
+        await Promise.allSettled(limpezas);
+    } catch (e) {
+        console.warn("Limpeza automática de comprovantes antigos falhou:", e);
+    }
+}
+window.limparComprovantesAntigosPainel = limparComprovantesAntigosPainel;
+
+        // ============================================================================
+        // SECAO 06B - GESTAO ADMINISTRATIVA E FILTROS
+        // ============================================================================
+        // Responsabilidade: cards, filtros e acoes administrativas dos atletas.
+
+
+        
+
+
+        // [Stage 10D: Documents and Warnings - verDocs modularized to js/admin.js]
+function obterMesAtualTextoFinanceiro(dataReferencia = new Date()) {
+    const meses = [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+
+    const hoje = dataReferencia instanceof Date ? dataReferencia : new Date(dataReferencia);
+
+    return `${meses[hoje.getMonth()]}/${hoje.getFullYear()}`;
+}
+window.obterMesAtualTextoFinanceiro = obterMesAtualTextoFinanceiro;
+
+
+
+function usuarioEhAtletaAtivo(user = {}) {
+    return usuarioPodeSerEscaladoComoAtleta(user) && usuarioTemStatusConvocavel(user);
+}
+window.usuarioEhAtletaAtivo = usuarioEhAtletaAtivo;
+
+function usuarioTemStatusConvocavel(user = {}) {
+    const status = normalizarTextoFinanceiro(user.status);
+    return status === "ativo" || (status === "pendente" && usuarioEstaEmCarenciaCadastro(user));
+}
+window.usuarioTemStatusConvocavel = usuarioTemStatusConvocavel;
+
+
+
+function usuarioEstaEmCarenciaCadastro(user = {}, dataReferencia = new Date()) {
+    if (ehResponsavelTecnico(user)) return false;
+    const status = normalizarTextoFinanceiro(user.status);
+    if (status === "inativo" || status === "excluido") return false;
+    return obterDadosCarenciaCadastro(user, dataReferencia).ativa;
+}
+window.usuarioEstaEmCarenciaCadastro = usuarioEstaEmCarenciaCadastro;
+
+function obterStatusFinanceiroEfetivo(user = {}, dataReferencia = new Date()) {
+    if (usuarioEstaEmCarenciaCadastro(user, dataReferencia)) {
+        return STATUS_FINANCEIRO_CARENCIA;
+    }
+
+    if (normalizarTextoFinanceiro(user.financeiro) === "carencia") {
+        return "Inadimplente";
+    }
+
+    return user.financeiro || "Sem status";
+}
+window.obterStatusFinanceiroEfetivo = obterStatusFinanceiroEfetivo;
+
+// [Stage 11B: Cadastro: salvarCadastro - obterDadosFinanceiroInicialCadastro helper moved to js/auth.js]
+
+async function sincronizarCarenciaCadastroUsuarioAtual(userRef, userData = {}) {
+    if (!userRef || !usuarioEstaEmCarenciaCadastro(userData)) {
+        return userData;
+    }
+
+    const financeiroAtual = normalizarTextoFinanceiro(userData.financeiro);
+    if (financeiroAtual === "em dia" || financeiroAtual === "justificado") {
+        return userData;
+    }
+
+    const dadosCarencia = obterDadosCarenciaCadastro(userData);
+    const updates = {
+        status: "Ativo",
+        financeiro: STATUS_FINANCEIRO_CARENCIA,
+        carenciaCadastro: true,
+        carenciaCadastroAte: dadosCarencia.ate,
+        carenciaCadastroMotivo: "Cadastro no fim do mes",
+        atualizadoEm: new Date().toISOString()
+    };
+
+    if (
+        userData.status === "Ativo" &&
+        financeiroAtual === "carencia" &&
+        userData.carenciaCadastroAte === dadosCarencia.ate
+    ) {
+        return userData;
+    }
+
+    await updateDoc(userRef, updates);
+    limparCacheDados("atletas");
+
+    return {
+        ...userData,
+        ...updates
+    };
+}
+window.sincronizarCarenciaCadastroUsuarioAtual = sincronizarCarenciaCadastroUsuarioAtual;
+
+
+function usuarioEstaEmDia(user = {}) {
+    return normalizarTextoFinanceiro(user.financeiro) === "em dia";
+}
+window.usuarioEstaEmDia = usuarioEstaEmDia;
+
+function usuarioEstaJustificado(user = {}) {
+    return normalizarTextoFinanceiro(user.financeiro) === "justificado";
+}
+window.usuarioEstaJustificado = usuarioEstaJustificado;
+
+function usuarioPodeSerConvocadoPorFinanceiro(user = {}) {
+    return usuarioEstaEmDia(user) || usuarioEstaJustificado(user) || usuarioEstaEmCarenciaCadastro(user);
+}
+window.usuarioPodeSerConvocadoPorFinanceiro = usuarioPodeSerConvocadoPorFinanceiro;
+
+function converterMesParaChave(mesTexto) {
+    const meses = [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+
+    if (!mesTexto || !mesTexto.includes("/")) {
+        const hoje = new Date();
+        return hoje.getFullYear() + "-" + String(hoje.getMonth() + 1).padStart(2, '0');
+    }
+
+    const [mesNome, ano] = mesTexto.split('/');
+    const mesNumero = String(meses.indexOf(mesNome) + 1).padStart(2, '0');
+
+    return `${ano}-${mesNumero}`;
+}
+window.converterMesParaChave = converterMesParaChave;
+
+        // [validarExpress and aprovarJustificativa extracted to js/finance.js]
+
+        // ============================================================================
+        // SECAO 07 - AGENDA, EVENTOS, RESPONSAVEIS E HISTORICO
+        // ============================================================================
+        // Responsabilidade: cadastro/edicao de eventos, filtros de treino/jogo e responsaveis tecnicos.
+        // --- AGENDA (TRAVA ORIGINAL RESTAURADA) ---
+                
+function usuarioTemCargo(user, ...cargos) {
+    let targetUser = user;
+    let targetCargos = cargos;
+    // Backwards compatibility for calling like usuarioTemCargo(...cargos)
+    if (typeof user === 'string') {
+        targetUser = currentUserData;
+        targetCargos = [user, ...cargos];
+    }
+    const funcaoAtual = normalizarFuncaoTecnica(targetUser?.funcao || currentUserData?.funcao);
+    return targetCargos.some(cargo => normalizarFuncaoTecnica(cargo) === funcaoAtual);
+}
+function usuarioEhADM(user) {
+    return usuarioTemCargo(user, "ADM");
+}
+function usuarioEhEquipeTecnica(user) {
+    return usuarioTemCargo(user, "ADM", "Treinador", "Auxiliar");
+}
+function usuarioPodeAprovarAvaliacoes(user) {
+    return usuarioTemCargo(user, "ADM", "Treinador");
+}
+
+window.usuarioTemCargo = usuarioTemCargo;
+window.usuarioEhADM = usuarioEhADM;
+window.usuarioEhEquipeTecnica = usuarioEhEquipeTecnica;
+window.usuarioPodeAprovarAvaliacoes = usuarioPodeAprovarAvaliacoes;
+
+function ehResponsavelTecnico(user) {
+    const funcao = normalizarFuncaoTecnica(user?.funcao);
+    return funcao === "adm" || funcao === "treinador" || funcao === "auxiliar";
+}
+window.ehResponsavelTecnico = ehResponsavelTecnico;
+function usuarioPodeSerEscaladoComoAtleta(user = {}) {
+    const funcao = normalizarFuncaoTecnica(user?.funcao);
+
+    if (funcao === "adm") return false;
+    if (funcao === "treinador") return false;
+
+    return true;
+}
+window.usuarioPodeSerEscaladoComoAtleta = usuarioPodeSerEscaladoComoAtleta;
+// [Stage 9: Perfil C - renderSecaoRecolhivelDVC modularized to js/profile.js]
+
+        // [Avaliacoes da equipe tecnica extracted to js/evaluations.js]
+
+        // [Avisos & Comunicados section extracted to js/mural.js]
+
+
+        // [Agenda/Calendario module code extracted to js/calendar.js]
+
+        // [Mural main render and irParaBlocoMural functions extracted to js/mural.js]        // [Mural main render and irParaBlocoMural functions extracted to js/mural.js]
+
+// Jogos/Treinos do Mural - sequencia de jogos extraida para js/training-games.js
+
+
+
+        // [Helpers de convocacao adulta da Agenda extracted to js/calendar.js]
+
+        // ============================================================================
+        // SECAO 07C - CONVOCACAO, PRESENCA E CHAMADA
+        // ============================================================================
+        // Responsabilidade: convocar atletas, registrar presenca e finalizar chamadas.
+        // [Convocacao da Agenda extracted to js/calendar.js]
+        // [Avaliação de treino/evento extracted to js/event-evaluations.js]
+
+        // [Stage 9: Perfil C - aplicarEvolucaoGradual modularized to js/profile.js]
+        // [Sorteio legado de times extracted to js/training-games.js]
+
+        // [Chamada da Agenda extracted to js/calendar.js]
+        // --- PERFIL E AUXILIARES ---        // --- PERFIL E AUXILIARES ---
+        // --- PERFIL E AUXILIARES ---
+        // [Stage 10C: Administrative User Actions - adicionarEstrela modularized to js/admin.js]
+                // [Ranking module code extracted to js/ranking.js]
+        // ============================================================================
+        // SECAO 08B - PERFIL DO ATLETA
+        // ============================================================================
+        // Responsabilidade: perfil individual do atleta e visualizacao de historico pessoal.
+               async function obterMediaPorCategoria(categoria) {
+            if (!categoria) return null;
+            try {
+                const docRef = doc(db, "parametros", "mediaCategorias");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    return data[categoria] || null;
+                }
+                return null;
+            } catch (error) {
+                console.warn("Erro ao obter média por categoria:", error);
+                return null;
+            }
+        }
+
+        // [Stage 7: Perfil A - renderProfile modularized to js/profile.js]
+// [Stage 8: Perfil B - marcarTreinoPlanoRealizado, gerarPlanoEvolucaoHtml, alternarPrivacidadeScoreTecnico modularized to js/profile.js]
+        // [Stage 7: Perfil A - toggleEditProfile & saveProfileChanges modularized to js/profile.js]
+
+        // ============================================================================
+        // SECAO 09B - MEMBROS, ADMINISTRACAO BASE E CADASTRO
+        // ============================================================================
+        // Responsabilidade: listagem de membros, cadastro, utilitarios administrativos finais e automacoes financeiras.
+       
+
+        // [Criacao/edicao de eventos da Agenda extracted to js/calendar.js]
+        // [Stage 10C: Administrative User Actions - updateUser & removerUsuario modularized to js/admin.js]
+        // [Stage 10E: XLS Exports - exportarXLS & exportarAtletasXLS modularized to js/admin.js]
+
+        // [Stage 11B: Cadastro: salvarCadastro - LINK_GRUPO_WHATSAPP, mostrarConviteGrupoWhatsApp and salvarCadastro modularized to js/auth.js]
+        window.gerarBarrinhasHabilidades = (habilidades) => {
+    const listaHabilidades = [
+        { id: 'manchete', nome: 'Manchete' },
+        { id: 'toque', nome: 'Toque' },
+        { id: 'ataque', nome: 'Ataque' },
+        { id: 'saque', nome: 'Saque' },
+        { id: 'visaoJogo', nome: 'Visão de Jogo' },
+        { id: 'defesa', nome: 'Defesa' },
+        { id: 'comunicacao', nome: 'Comunicação' },
+        { id: 'trabalhoEquipe', nome: 'Trabalho em Equipe' }
+    ];
+
+    const h = habilidades || {};
+
+    const valores = listaHabilidades.map(item => {
+        const valor = Number(h[item.id] || 0);
+        return isNaN(valor) ? 0 : Math.max(0, Math.min(5, valor));
+    });
+
+    const temAvaliacao = valores.some(v => v > 0);
+
+    if (!temAvaliacao) {
+        return `
+            <div class="bg-gray-50 border border-dashed rounded-xl p-4 text-center">
+                <p class="text-[10px] text-gray-400 font-bold uppercase">
+                    Ainda sem avaliação técnica registrada.
+                </p>
+            </div>
+        `;
+    }
+
+    const centroX = 150;
+    const centroY = 150;
+    const raioMax = 95;
+
+    const calcularPonto = (index, valor, raioBase = raioMax) => {
+        const angulo = ((Math.PI * 2) / listaHabilidades.length) * index - Math.PI / 2;
+        const raio = raioBase * (valor / 5);
+
+        return {
+            x: centroX + Math.cos(angulo) * raio,
+            y: centroY + Math.sin(angulo) * raio
+        };
+    };
+
+    const calcularPontoGrade = (index, nivel) => {
+        const angulo = ((Math.PI * 2) / listaHabilidades.length) * index - Math.PI / 2;
+        const raio = raioMax * (nivel / 5);
+
+        return {
+            x: centroX + Math.cos(angulo) * raio,
+            y: centroY + Math.sin(angulo) * raio
+        };
+    };
+
+    const calcularPontoLabel = (index) => {
+        const angulo = ((Math.PI * 2) / listaHabilidades.length) * index - Math.PI / 2;
+        const raio = raioMax + 28;
+
+        return {
+            x: centroX + Math.cos(angulo) * raio,
+            y: centroY + Math.sin(angulo) * raio
+        };
+    };
+
+    const pontosRadar = valores
+        .map((valor, index) => {
+            const p = calcularPonto(index, valor);
+            return `${p.x},${p.y}`;
+        })
+        .join(' ');
+
+    const grades = [1, 2, 3, 4, 5].map(nivel => {
+        const pontosGrade = listaHabilidades
+            .map((_, index) => {
+                const p = calcularPontoGrade(index, nivel);
+                return `${p.x},${p.y}`;
+            })
+            .join(' ');
+
+        return `
+            <polygon 
+                points="${pontosGrade}" 
+                fill="none" 
+                stroke="#e5e7eb" 
+                stroke-width="1">
+            </polygon>
+        `;
+    }).join('');
+
+    const linhasEixos = listaHabilidades.map((_, index) => {
+        const p = calcularPontoGrade(index, 5);
+
+        return `
+            <line 
+                x1="${centroX}" 
+                y1="${centroY}" 
+                x2="${p.x}" 
+                y2="${p.y}" 
+                stroke="#e5e7eb" 
+                stroke-width="1">
+            </line>
+        `;
+    }).join('');
+
+    const labels = listaHabilidades.map((item, index) => {
+        const p = calcularPontoLabel(index);
+        const valor = valores[index];
+
+        return `
+            <text 
+                x="${p.x}" 
+                y="${p.y}" 
+                text-anchor="middle" 
+                dominant-baseline="middle" 
+                font-size="8" 
+                font-weight="700" 
+                fill="#4b5563">
+                ${item.nome}
+            </text>
+
+            <text 
+                x="${p.x}" 
+                y="${p.y + 10}" 
+                text-anchor="middle" 
+                dominant-baseline="middle" 
+                font-size="8" 
+                font-weight="900" 
+                fill="#990000">
+                ${valor}
+            </text>
+        `;
+    }).join('');
+
+    const pontosVertices = valores.map((valor, index) => {
+        const p = calcularPonto(index, valor);
+
+        return `
+            <circle 
+                cx="${p.x}" 
+                cy="${p.y}" 
+                r="3" 
+                fill="#990000">
+            </circle>
+        `;
+    }).join('');
+
+    const media = valores.length > 0 
+        ? (valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(1) 
+        : "0.0";
+
+    const listaNotas = listaHabilidades.map((item, index) => `
+        <div class="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2 border">
+            <span class="text-[9px] font-bold text-gray-600 uppercase">
+                ${item.nome}
+            </span>
+            <span class="text-[10px] font-black text-[#990000]">
+                ${valores[index]}/5
+            </span>
+        </div>
+    `).join('');
+
+    return `
+        <div class="bg-white rounded-xl">
+            <div class="bg-gray-50 border rounded-xl p-3 mb-3 text-center">
+                <p class="text-[9px] font-black text-gray-400 uppercase">
+                    Score Técnico
+                </p>
+                <p class="text-3xl font-black text-[#990000] leading-tight">
+                    ${media}
+                </p>
+                <p class="text-[8px] font-bold text-gray-400 uppercase">
+                    Média geral das habilidades
+                </p>
+            </div>
+
+            <div class="flex justify-center overflow-hidden">
+                <svg viewBox="0 0 300 300" class="w-full max-w-[300px] h-[300px]">
+                    ${grades}
+                    ${linhasEixos}
+
+                    <polygon 
+                        points="${pontosRadar}" 
+                        fill="rgba(153, 0, 0, 0.18)" 
+                        stroke="#990000" 
+                        stroke-width="2">
+                    </polygon>
+
+                    ${pontosVertices}
+                    ${labels}
+                </svg>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-3">
+                ${listaNotas}
+            </div>
+        </div>
+    `;
+};
+async function calcularMediaCategoriaDVC(userDataPerfil, emailPerfil, usuariosExistentes = null) {
+    try {
+        const sexoPerfil = userDataPerfil?.sexo || null;
+
+        if (!sexoPerfil) { return null; }
+
+        const usuarios = usuariosExistentes || snapshotToArray(await carregarUsuariosCacheMockDVC());
+
+        let soma = {};
+        let total = 0;
+
+        TODAS_HABILIDADES_DVC.forEach(skill => {
+            soma[skill.id] = 0;
+        });
+
+        usuarios.forEach(user => {
+            const email = user.email || user.id;
+
+            if (email === emailPerfil) return;
+            if (ehResponsavelTecnico(user)) return;
+            if (user.status !== "Ativo") return;
+            if (user.sexo !== sexoPerfil) return;
+
+            const habilidades = normalizarHabilidadesDVC(user.habilidades || {});
+
+            TODAS_HABILIDADES_DVC.forEach(skill => {
+                soma[skill.id] += Number(habilidades[skill.id] || 3);
+            });
+
+            total++;
+        });
+
+        if (total === 0) {
+            return null;
+        }
+
+        let media = {};
+
+        TODAS_HABILIDADES_DVC.forEach(skill => {
+            media[skill.id] = Number((soma[skill.id] / total).toFixed(1));
+        });
+
+        return {
+            tipo: sexoPerfil === "F" ? "Média Feminina" : "Média Masculina",
+            total,
+            habilidades: media
+        };
+
+    } catch (e) {
+        console.warn("Erro ao calcular média da categoria:", e);
+        return null;
+    }
+}
+// [Stage 8: Perfil B - getPlanoPorCriterio, obterFocosPlanoEvolucao, getSemanaAtualPlano, getDiaAtualPlano modularized to js/profile.js]
+
+// [Avaliação de treino/evento extracted to js/event-evaluations.js]
+        // [Stage 9: Perfil C - avaliacoes pendentes modularized to js/profile.js]
+        // Jogos/Treinos do Mural - geracao/salvamento de sequencia extraidos para js/training-games.js
+
+        // ============================================================================
+        // SECAO 07D - SORTEIO DE TIMES, RODADAS, PLACAR E CLASSIFICACAO DO TREINO
+        // ============================================================================
+        // Responsabilidade: montar times equilibrados, salvar rodadas no evento,
+        // exibir jogos no mural, registrar placar e calcular classificacao.
+window.graficosTimesTreino = window.graficosTimesTreino || {};
+
+
+
+// Jogos/Treinos do Mural - helper de IDs dos modais extraido para js/training-games.js
+
+// Jogos/Treinos do Mural - helpers de leitura/renderizacao extraidos para js/training-games.js
+
+
+// Jogos/Treinos do Mural - sorteio/finalizacao extraidos para js/training-games.js
+
+// Jogos/Treinos do Mural - aliases de sequencia/sorteio movidos para js/training-games.js
+
+        // ============================================================================
+        // SECAO 10 - NOVOS CADASTROS, TRIAGEM E CARENCIA ESPECIAL
+        // ============================================================================
+        // Responsabilidade: triagem de novos cadastros e fluxo de carencia especial apos justificativas consecutivas.
+// [Stage 10G: Novos Cadastros / Triagem de Cadastros - carregarResumoNovosCadastros, abrirNovosCadastros & marcarCadastroComoVisto modularized to js/admin.js]
+window.atualizarFuncaoVolei = async (email, funcaoVolei, selectElement) => {
+    try {
+        await updateDoc(doc(db, "users", email), {
+            funcaoVolei: funcaoVolei
+        });
+
+        if (selectElement) {
+            selectElement.style.outline = "2px solid #22c55e";
+
+            setTimeout(() => {
+                selectElement.style.outline = "none";
+            }, 1000);
+        }
+
+    } catch (e) {
+        console.error("Erro ao atualizar função em quadra:", e);
+        alert("Não foi possível atualizar a função em quadra.");
+    }
+};
+
+
+        // [Stage 6: Financeiro - Modularized to js/finance.js]
+
+        // ============================================================================
+        // SECAO 99 - INICIALIZACAO DO APP, LOGIN E SESSAO
+        // Responsabilidade: expor login/logout, reagir ao Firebase Auth e abrir a tela
+        // inicial somente depois que todas as funcoes de tela ja foram declaradas.
+        // ============================================================================
+        // [Stage 11A: Auth básico: login/logout - loginGoogle & logout modularized to js/auth.js]
+
+        // [Stage 11C: onAuthStateChanged / inicialização do app - onAuthStateChanged and helpers modularized to js/auth.js]
+
+
+    </script>
+</body>
+</html>

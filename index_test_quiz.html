@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Acorn Parser Test Quiz</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/acorn/8.10.0/acorn.min.js"></script>
+</head>
+<body>
+    <script>
+        const files = ['js/quiz.js', 'js/quiz-bank.js', 'js/main.js'];
+        
+        async function runTests() {
+            for (let f of files) {
+                try {
+                    const res = await fetch(f);
+                    const code = await res.text();
+                    acorn.parse(code, { ecmaVersion: 2022, sourceType: 'module' });
+                    fetch('/log', { method: 'POST', body: "SUCCESS: " + f + " parsed perfectly!" });
+                } catch (e) {
+                    fetch('/log', { method: 'POST', body: "Error in " + f + " at line " + e.loc?.line + " col " + e.loc?.column + ": " + e.message });
+                }
+            }
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>

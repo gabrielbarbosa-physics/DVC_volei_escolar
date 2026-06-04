@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Regra para a coleção do Quiz Semanal (Usa UID em vez de Email no nome do documento)
+    match /quizInteligenciaSemanal/{documentId} {
+      // O documento tem o formato: quizSemanaChave_UID. 
+      // A leitura só é permitida se o ID terminar com o UID do usuário (não usa resource.data na leitura para evitar erro quando doc não existe).
+      allow read: if request.auth != null && documentId.matches('.*_' + request.auth.uid);
+      
+      // Permite criar apenas se o campo uid no corpo do documento for igual ao do usuário autenticado.
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      
+      // Uma vez criado, não permite atualizar nem deletar para evitar alteração de notas antigas.
+      allow update, delete: if false;
+    }
+
+    // Regra para a coleção users
+    match /users/{email} {
+      allow read: if request.auth != null;
+      
+      // Update atômico seguro apenas nos campos do quiz.
+      allow update: if request.auth != null 
+                    && request.auth.token.email == email
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                      'ultimaSemanaQuizInteligencia',
+                      'ultimaPontuacaoQuizInteligencia',
+                      'melhorPontuacaoQuizInteligencia',
+                      'inteligenciaJogo',
+                      'quizInteligenciaAtualizadoEm',
+                      'badgesQuizInteligencia',
+                      'totalDesafiosQuizConcluidos',
+                      'melhorStreakQuiz',
+                      'ultimaBadgeQuizRecebida'
+                    ]);
+                    
+      // Importante: Suas regras atuais de create/update gerais da coleção users devem 
+      // ser mantidas junto desta, separadas por blocos ou combinadas inteligentemente.
+    }
+  }
+}

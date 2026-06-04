@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Additional custom styles */
+body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+.hidden-screen { display: none !important; }
+.fade-in { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.custom-scroll::-webkit-scrollbar { width: 4px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #990000; border-radius: 10px; }
+input:disabled, select:disabled { background-color: #f9fafb; color: #9ca3af; cursor: not-allowed; border-bottom: 1px solid #e5e7eb !important; appearance: none; }

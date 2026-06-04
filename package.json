@@ -1,0 +1,20 @@
+{
+  "name": "dvc",
+  "version": "1.0.0",
+  "description": "O **DVC App** é uma aplicação web progressiva (PWA) desenvolvida para a gestão completa de equipes e projetos de voleibol. Ele integra a gestão administrativa, técnica, financeira e comunicacional em uma única plataforma, focando no desenvolvimento individual do atleta e no fortalecimento do vínculo da equipe.",
+  "main": "esprima.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "fluent-ffmpeg": "^2.1.3"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.3.0"
+  }
+}
