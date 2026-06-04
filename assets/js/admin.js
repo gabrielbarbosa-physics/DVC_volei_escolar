@@ -1143,7 +1143,7 @@ async function renderDashboardEditaisDVC() {
         // 3. Montagem do HTML com abas
         const headerHtml = `
             <div class="bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] text-white p-5 rounded-3xl mb-5 shadow-xl relative overflow-hidden">
-                <img src="${PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "Loki2.webp"}" class="absolute -right-10 -bottom-12 w-48 h-48 opacity-10 object-contain">
+                <img src="${PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp"}" class="absolute -right-10 -bottom-12 w-48 h-48 opacity-10 object-contain">
                 <div class="relative z-10">
                     <p class="text-[8px] font-black uppercase text-white/60">Painel administrativo</p>
                     <h3 class="text-xl font-black uppercase tracking-wide leading-none mt-1">Indicadores DVC</h3>
@@ -1412,7 +1412,7 @@ async function renderAdmin() {
     window.verificarViradaDeMes(); 
 
     const projetoNomeGestao = PROJETO_ATUAL_DVC?.nome || "DVC";
-    const projetoLogoGestao = PROJETO_ATUAL_DVC?.logo || "Loki2.webp";
+    const projetoLogoGestao = PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
 
     c.innerHTML = `
         <div class="bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] text-white p-5 rounded-3xl mb-5 shadow-xl relative overflow-hidden">

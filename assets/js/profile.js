@@ -141,14 +141,14 @@ function getIconeFinanceiroPerfilDVC(status = "") {
         .toLowerCase();
 
     if (normalizado === "em dia" || normalizado === "pago" || normalizado === "validado") {
-        return "ICON/certoverde.webp";
+        return "assets/img/icon/certoverde.webp";
     }
 
     if (normalizado === "justificado" || normalizado.includes("carencia")) {
-        return "ICON/dinheirocolorido.webp";
+        return "assets/img/icon/dinheirocolorido.webp";
     }
 
-    return "ICON/certovernelho.webp";
+    return "assets/img/icon/certovernelho.webp";
 }
 
 // 1. obterMediaPorCategoria
@@ -730,7 +730,7 @@ async function renderProfile() {
                         ${financeiroPerfilStatus}
                     </span>
                     <span onclick="mudarSubAbaPerfil('presenca')" role="button" tabindex="0" class="cursor-pointer inline-flex items-center gap-1 bg-indigo-50 border border-indigo-200 text-indigo-700 text-[8px] font-black px-2.5 py-1 rounded-full uppercase transition hover:scale-105 active:scale-95">
-                        ${renderIconeLocalDVC("ICON/Listab.webp", "Presenças", "w-3.5 h-3.5")}
+                        ${renderIconeLocalDVC("assets/img/icon/Listab.webp", "Presenças", "w-3.5 h-3.5")}
                         PresenÃ§as: ${minhasPresencas}
                     </span>
                 </div>
@@ -747,7 +747,7 @@ async function renderProfile() {
                 
                 <div class="flex items-center gap-3 min-w-0 z-10">
                     <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center p-0.5 shrink-0 overflow-hidden">
-                        <img src="${auth.currentUser?.photoURL || 'logo.webp'}" class="w-full h-full object-cover rounded-xl" onerror="this.src='logo.webp'">
+                        <img src="${auth.currentUser?.photoURL || 'assets/img/logo.webp'}" class="w-full h-full object-cover rounded-xl" onerror="this.src='assets/img/logo.webp'">
                     </div>
                     <div class="min-w-0">
                         <p class="text-[8px] font-black uppercase text-white/50 truncate">Ficha de Jogador</p>
@@ -830,15 +830,15 @@ async function renderProfile() {
         const subTabsHtml = `
             <div class="bg-gray-100/80 border border-gray-100 rounded-2xl p-1 mb-4 flex gap-1 sticky top-[58px] z-20 backdrop-blur-md shadow-sm">
                 <button id="btn-subaba-perfil-habilidades" onclick="mudarSubAbaPerfil('habilidades')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${classeBotaoSubAbaPerfil('habilidades')}">
-                    ${renderIconeLocalDVC("ICON/dvcev.webp", "Evolução Técnica", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'habilidades' ? 'opacity-100' : 'opacity-60'))}
+                    ${renderIconeLocalDVC("assets/img/icon/dvcev.webp", "Evolução Técnica", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'habilidades' ? 'opacity-100' : 'opacity-60'))}
                     Evolução Técnica
                 </button>
                 <button id="btn-subaba-perfil-financeiro" onclick="mudarSubAbaPerfil('financeiro')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${classeBotaoSubAbaPerfil('financeiro')}">
-                    ${renderIconeLocalDVC("ICON/dvccart.webp", "Financeiro", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'financeiro' ? 'opacity-100' : 'opacity-60'))}
+                    ${renderIconeLocalDVC("assets/img/icon/dvccart.webp", "Financeiro", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'financeiro' ? 'opacity-100' : 'opacity-60'))}
                     Financeiro
                 </button>
                 <button id="btn-subaba-perfil-presenca" onclick="mudarSubAbaPerfil('presenca')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${classeBotaoSubAbaPerfil('presenca')}">
-                    ${renderIconeLocalDVC("ICON/dvclist.webp", "Presenças", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'presenca' ? 'opacity-100' : 'opacity-60'))}
+                    ${renderIconeLocalDVC("assets/img/icon/dvclist.webp", "Presenças", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'presenca' ? 'opacity-100' : 'opacity-60'))}
                     Presenças
                 </button>
             </div>
@@ -1280,7 +1280,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
         if (p.nota <= 2.5) {
             priorityBadge = `<span class="bg-red-50 border border-red-200 text-red-700 text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0">AtenÃ§Ã£o</span>`;
         } else if (isImportantePosicao) {
-            priorityBadge = `<span class="bg-amber-50 border border-amber-200 text-amber-700 text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 inline-flex items-center gap-1">${renderIconeLocalDVC("ICON/estrela.webp", "Prioridade", "w-3 h-3")} Prioridade</span>`;
+            priorityBadge = `<span class="bg-amber-50 border border-amber-200 text-amber-700 text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 inline-flex items-center gap-1">${renderIconeLocalDVC("assets/img/icon/estrela.webp", "Prioridade", "w-3 h-3")} Prioridade</span>`;
         }
 
         let cardBorderClass = "border-gray-200";
@@ -1347,7 +1347,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                         <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                             <p class="font-black text-gray-400 uppercase font-bold">RelevÃ¢ncia</p>
                             <p class="font-extrabold text-gray-700 mt-1 uppercase">
-                                ${isImportantePosicao ? `${renderIconeLocalDVC("ICON/estrela.webp", "Alta relevância", "w-3 h-3")} Alta RelevÃ¢ncia` : 'RelevÃ¢ncia Geral PadrÃ£o'}
+                                ${isImportantePosicao ? `${renderIconeLocalDVC("assets/img/icon/estrela.webp", "Alta relevância", "w-3 h-3")} Alta RelevÃ¢ncia` : 'RelevÃ¢ncia Geral PadrÃ£o'}
                             </p>
                         </div>
                     </div>

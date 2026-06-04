@@ -356,8 +356,8 @@ function renderTagsRankingDVC(atleta = {}, modoEscuro = false) {
 function renderCardTopLokiDVC(atleta, posicao, destaque = false) {
     if (!atleta) return "";
 
-    const logoEscuro = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "Loki2.webp";
-    const logoClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || PROJETO_ATUAL_DVC?.logo || "Loki1.webp";
+    const logoEscuro = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
+    const logoClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki1.webp";
     const score = formatarPontuacaoRankingDVC(atleta.pontuacaoRanking, window.filtrosRankingDVC?.tipo || "tecnico", atleta.valorOcultoParaMim);
     const unidade = getUnidadeRankingDVC(window.filtrosRankingDVC?.tipo || "tecnico");
 
@@ -412,7 +412,7 @@ function renderCardTopLokiDVC(atleta, posicao, destaque = false) {
 
 function renderCardRankingAtletaDVC(atleta, posicao) {
     const tipo = window.filtrosRankingDVC?.tipo || "tecnico";
-    const logoClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || PROJETO_ATUAL_DVC?.logo || "Loki1.webp";
+    const logoClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki1.webp";
     const score = formatarPontuacaoRankingDVC(atleta.pontuacaoRanking, tipo, atleta.valorOcultoParaMim);
     const unidade = getUnidadeRankingDVC(tipo);
     const podeAbrirPerfil = usuarioPodeAbrirPerfilRankingDVC(atleta);
@@ -530,7 +530,7 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
     const filtros = window.filtrosRankingDVC;
     const tipoAtual = filtros.tipo || "tecnico";
     const projetoNomeRanking = PROJETO_ATUAL_DVC?.nome || "DVC";
-    const projetoLogoRanking = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "Loki2.webp";
+    const projetoLogoRanking = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
 
     window.subabaMestresDaTatica = window.subabaMestresDaTatica || "geral";
     window.alterarSubabaMestresDaTatica = (aba) => {
@@ -886,8 +886,8 @@ window.renderRankingDVCNovo = async (tipoRanking = null) => {
     : (tipoRanking === "tecnico" ? "Ranking Técnico" : "Ranking de Presença");
 
     const projetoNomeRanking = PROJETO_ATUAL_DVC?.nome || "DVC";
-    const projetoLogoRanking = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "Loki2.webp";
-    const projetoLogoRankingClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || "Loki1.webp";
+    const projetoLogoRanking = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
+    const projetoLogoRankingClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || "assets/img/loki1.webp";
 
 c.innerHTML = `
     <div class="bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] text-white p-5 rounded-3xl mb-5 shadow-xl relative overflow-hidden">

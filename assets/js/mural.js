@@ -485,8 +485,8 @@ async function renderMural() {
 
     const projetoNome = window.PROJETO_ATUAL_DVC?.nome || "DVC";
     const projetoSelo = window.PROJETO_ATUAL_DVC?.selo || "DVC";
-    const projetoLogo = window.PROJETO_ATUAL_DVC?.logo || "Loki2.webp";
-    const projetoLogoFundoClaro = window.PROJETO_ATUAL_DVC?.logoFundoClaro || "Loki1.webp";
+    const projetoLogo = window.PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
+    const projetoLogoFundoClaro = window.PROJETO_ATUAL_DVC?.logoFundoClaro || "assets/img/loki1.webp";
     const avisosMuralHtml = await renderAvisosMuralDVC();
 
     c.innerHTML = `

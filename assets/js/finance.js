@@ -156,13 +156,13 @@ async function renderFinanceiro() {
     c.innerHTML = `
         <div class="bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] text-white p-5 rounded-3xl mb-5 shadow-xl relative overflow-hidden">
             <div class="absolute -right-10 -bottom-12 opacity-10">
-                <img src="${get_PROJETO_ATUAL_DVC()?.logo || 'Loki2.webp'}" class="w-48 h-48 object-contain">
+                <img src="${get_PROJETO_ATUAL_DVC()?.logo || 'assets/img/loki2.webp'}" class="w-48 h-48 object-contain">
             </div>
 
             <div class="relative z-10">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center p-2">
-                        <img src="${get_PROJETO_ATUAL_DVC()?.logo || 'Loki2.webp'}" class="w-full h-full object-contain">
+                        <img src="${get_PROJETO_ATUAL_DVC()?.logo || 'assets/img/loki2.webp'}" class="w-full h-full object-contain">
                     </div>
 
                     <div class="flex-1">

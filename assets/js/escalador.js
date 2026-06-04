@@ -953,7 +953,7 @@ function renderizarAvisosHtml() {
     return `
         <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3 flex items-start gap-2 shadow-sm animate-fade-in">
             <div class="shrink-0 mt-0.5">
-                ${renderIconeLocalDVC("ICON/red.webp", "Aviso", "w-3.5 h-3.5")}
+                ${renderIconeLocalDVC("assets/img/icon/red.webp", "Aviso", "w-3.5 h-3.5")}
             </div>
             <div class="text-[9px] text-amber-800 font-bold uppercase space-y-1">
                 ${escalacaoAtiva.avisos.map(aviso => `<p>${aviso}</p>`).join("")}
@@ -1000,7 +1000,7 @@ function renderizarQuadraHtml() {
                 
                 ${isMelhor && atleta ? `
                     <div class="absolute top-1 right-2">
-                        ${renderIconeLocalDVC("ICON/estrela.webp", "Estrela", "w-3.5 h-3.5")}
+                        ${renderIconeLocalDVC("assets/img/icon/estrela.webp", "Estrela", "w-3.5 h-3.5")}
                     </div>
                 ` : ""}
                 
@@ -1052,7 +1052,7 @@ function renderizarLiberoHtml() {
         <div class="bg-white border border-indigo-100 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-sm">
             <div class="flex items-center gap-2 min-w-0">
                 <div class="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                    ${renderIconeLocalDVC("ICON/certoverde.webp", "Líbero", "w-4 h-4")}
+                    ${renderIconeLocalDVC("assets/img/icon/certoverde.webp", "Líbero", "w-4 h-4")}
                 </div>
                 <div class="min-w-0">
                     <p class="text-xs font-black text-gray-900 truncate">${liberoAtleta.nome}</p>
@@ -1075,7 +1075,7 @@ function renderizarLiberosHtml() {
     if (liberosAtivos.length === 0) {
         return `
             <div class="bg-white border border-gray-100 rounded-2xl p-3 flex items-center gap-2">
-                ${renderIconeLocalDVC("ICON/red.webp", "Aviso", "w-4 h-4")}
+                ${renderIconeLocalDVC("assets/img/icon/red.webp", "Aviso", "w-4 h-4")}
                 <p class="text-[9px] font-bold text-gray-400 uppercase">Nenhum l&iacute;bero identificado entre os convocados.</p>
             </div>
         `;
@@ -1089,7 +1089,7 @@ function renderizarLiberosHtml() {
                     <div class="bg-white border border-indigo-100 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-sm">
                         <div class="flex items-center gap-2 min-w-0">
                             <div class="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                                ${renderIconeLocalDVC("ICON/certoverde.webp", "L&iacute;bero", "w-4 h-4")}
+                                ${renderIconeLocalDVC("assets/img/icon/certoverde.webp", "L&iacute;bero", "w-4 h-4")}
                             </div>
                             <div class="min-w-0">
                                 <p class="text-[8px] font-black text-indigo-600 uppercase mt-0.5">L&iacute;bero ${idx + 1}</p>
@@ -1155,7 +1155,7 @@ function renderizarReservasHtml() {
                 </div>
                 
                 <div class="shrink-0 flex items-center gap-2">
-                    ${renderIconeLocalDVC("ICON/dvclist.webp", "Reserva", "w-4 h-4 opacity-40")}
+                    ${renderIconeLocalDVC("assets/img/icon/dvclist.webp", "Reserva", "w-4 h-4 opacity-40")}
                     <select onchange="window.trocarTitularEscaladorDVC(this.value, '${reserveEmailSeguro}')" class="p-1.5 border border-gray-200 rounded-xl text-[9px] font-black bg-gray-50 outline-none w-24">
                         <option value="">Trocar...</option>
                         <option value="1">Zona 1 - ${esquema["1"] ? esquema["1"].nome : "Vazio"}</option>
@@ -1222,7 +1222,7 @@ function renderizarReservasEscaladorCorrigidasHtml() {
                 </div>
 
                 <div class="shrink-0 flex items-center gap-2">
-                    ${renderIconeLocalDVC("ICON/dvclist.webp", "Reserva", "w-4 h-4 opacity-40")}
+                    ${renderIconeLocalDVC("assets/img/icon/dvclist.webp", "Reserva", "w-4 h-4 opacity-40")}
                     <select onchange="window.trocarTitularEscaladorDVC(this.value, '${reserveEmailSeguro}')" class="p-1.5 border border-gray-200 rounded-xl text-[9px] font-black bg-gray-50 outline-none w-24">
                         <option value="">Trocar...</option>
                         ${opcoesQuadra}
@@ -1425,7 +1425,7 @@ function renderEscaladorTaticoDVC(evento, atletasConvocados) {
                 <!-- Header -->
                 <div class="bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000] text-white p-4 flex items-center justify-between gap-3 shrink-0">
                     <div class="flex items-center gap-2">
-                        ${renderIconeLocalDVC("ICON/alvo.webp", "Escalador", "w-5 h-5")}
+                        ${renderIconeLocalDVC("assets/img/icon/alvo.webp", "Escalador", "w-5 h-5")}
                         <div>
                             <h3 class="text-xs font-black uppercase tracking-tight">Escalador Tático</h3>
                             <p class="text-[7.5px] font-bold text-white/70 uppercase">Sugestão de Plano de Sets</p>
@@ -1475,14 +1475,14 @@ function renderEscaladorTaticoDVC(evento, atletasConvocados) {
                     
                     <!-- Main Action Button -->
                     <button onclick="window.regerarSugestaoDVC()" class="w-full bg-[#990000] text-white py-3 rounded-2xl text-[9px] font-black uppercase shadow-md flex items-center justify-center gap-1.5 hover:bg-[#780808] transition active:scale-[0.99]">
-                        ${renderIconeLocalDVC("ICON/dvcev.webp", "Gerar", "w-4 h-4")}
+                        ${renderIconeLocalDVC("assets/img/icon/dvcev.webp", "Gerar", "w-4 h-4")}
                         ${btnLabel}
                     </button>
                     
                     ${totalAthletes < 6 ? `
                         <!-- Insufficient players card -->
                         <div class="bg-red-50 border border-red-200 rounded-3xl p-5 text-center flex flex-col items-center gap-2">
-                            ${renderIconeLocalDVC("ICON/certovernelho.webp", "Erro", "w-8 h-8")}
+                            ${renderIconeLocalDVC("assets/img/icon/certovernelho.webp", "Erro", "w-8 h-8")}
                             <p class="text-xs font-black uppercase text-red-900 leading-tight">Sugestão Indisponível</p>
                             <p class="text-[9.5px] font-semibold text-red-700">É preciso ter pelo menos 6 atletas convocados ou confirmados para gerar o plano de sets.</p>
                         </div>
@@ -1515,7 +1515,7 @@ function renderEscaladorTaticoDVC(evento, atletasConvocados) {
                             ${currentEstrategia === "distribuida" ? `
                                 <div class="bg-green-50 border border-green-100 rounded-xl p-2 text-center mt-1.5">
                                     <p class="text-[8px] font-black text-green-700 uppercase flex items-center justify-center gap-1">
-                                        ${renderIconeLocalDVC("ICON/certoverde.webp", "Info", "w-3 h-3")}
+                                        ${renderIconeLocalDVC("assets/img/icon/certoverde.webp", "Info", "w-3 h-3")}
                                         O app está distribuindo oportunidades entre os sets, mantendo equilíbrio técnico.
                                     </p>
                                 </div>
@@ -1528,7 +1528,7 @@ function renderEscaladorTaticoDVC(evento, atletasConvocados) {
                         <!-- Court Diagram -->
                         <section class="space-y-2">
                             <div class="flex items-center gap-1">
-                                ${renderIconeLocalDVC("ICON/alvo.webp", "Quadra", "w-3.5 h-3.5")}
+                                ${renderIconeLocalDVC("assets/img/icon/alvo.webp", "Quadra", "w-3.5 h-3.5")}
                                 <h4 class="text-[9.5px] font-black text-gray-700 uppercase">Organização em Quadra</h4>
                             </div>
                             ${renderizarQuadraHtml()}
@@ -1537,7 +1537,7 @@ function renderEscaladorTaticoDVC(evento, atletasConvocados) {
                         <!-- Libero Section -->
                         <section class="space-y-2">
                             <div class="flex items-center gap-1">
-                                ${renderIconeLocalDVC("ICON/certoverde.webp", "Libero", "w-3.5 h-3.5")}
+                                ${renderIconeLocalDVC("assets/img/icon/certoverde.webp", "Libero", "w-3.5 h-3.5")}
                                 <h4 class="text-[9.5px] font-black text-gray-700 uppercase">L&iacute;beros</h4>
                             </div>
                             ${renderizarLiberosHtml()}
@@ -1546,7 +1546,7 @@ function renderEscaladorTaticoDVC(evento, atletasConvocados) {
                         <!-- Reserves Bench -->
                         <section class="space-y-2">
                             <div class="flex items-center gap-1">
-                                ${renderIconeLocalDVC("ICON/dvclist.webp", "Banco", "w-3.5 h-3.5")}
+                                ${renderIconeLocalDVC("assets/img/icon/dvclist.webp", "Banco", "w-3.5 h-3.5")}
                                 <h4 class="text-[9.5px] font-black text-gray-700 uppercase">Banco de Reservas</h4>
                             </div>
                             ${renderizarReservasEscaladorCorrigidasHtml()}

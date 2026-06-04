@@ -14,9 +14,9 @@ const PROJETO_ATUAL_DVC = {
     id: "dvc",
     nome: "DVC",
     selo: "DVC",
-    logo: "Loki2.webp",
-    logoFundoEscuro: "Loki2.webp",
-    logoFundoClaro: "Loki1.webp"
+    logo: "assets/img/loki2.webp",
+    logoFundoEscuro: "assets/img/loki2.webp",
+    logoFundoClaro: "assets/img/loki1.webp"
 };
 
 const COLECAO_CONTRIBUICOES_GLOBAIS = "contribuicoesGlobais";

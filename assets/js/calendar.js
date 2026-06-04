@@ -411,9 +411,9 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
     const c = document.getElementById('main-content');
     const podeGerenciarAgenda = usuarioEhEquipeTecnica();
     const filtroAtual = getAgendaFiltroAtual();
-    const projetoLogo = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "Loki2.webp";
-    const projetoLogoFundoClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || "Loki1.webp";
-    const projetoMarcaDvc = "logo.webp";
+    const projetoLogo = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
+    const projetoLogoFundoClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || "assets/img/loki1.webp";
+    const projetoMarcaDvc = "assets/img/logo.webp";
 
     let eventos = await carregarEventosCache();
     if (window.__abaAtualDVC !== "calendar") return;
@@ -678,7 +678,7 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
                 <button onclick="renderConvocacao('${ev.id}')" class="bg-[#990000] text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Convocar</button>
                 <button onclick="renderChamada('${ev.id}')" class="bg-green-600 text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Chamada</button>
                 <button onclick="abrirEscaladorTaticoDVC('${ev.id}')" class="bg-indigo-600 text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm flex items-center justify-center gap-1">
-                    <img src="ICON/alvo.webp" alt="Escalador" class="inline-block object-contain w-3.5 h-3.5 opacity-100">
+                    <img src="assets/img/icon/alvo.webp" alt="Escalador" class="inline-block object-contain w-3.5 h-3.5 opacity-100">
                     Escalador
                 </button>
              </div>` : `

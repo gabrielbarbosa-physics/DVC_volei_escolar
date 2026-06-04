@@ -13,30 +13,30 @@
 import { PROJETO_ATUAL_DVC } from "./state.js";
 
 const MIDIAS_HOME_DVC = [
-    { src: "127-IMG_1749.webp", titulo: "Juventude e pertencimento", categoria: "vinculo", tipo: "imagem", proporcao: "hero", position: "center center", alt: "Atletas do DVC em momento de integração" },
-    { src: "20260224_102424.webp", titulo: "Identidade em quadra", categoria: "identidade", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC reunida em quadra" },
-    { src: "20260403_185449.webp", titulo: "Camisa, bandeira e presença", categoria: "identidade", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Atletas do DVC com identidade do projeto" },
-    { src: "campeaodjanira.webp", titulo: "Experiência competitiva", categoria: "conquista", tipo: "imagem", proporcao: "trofeu", position: "center center", alt: "Equipe DVC em registro de conquista" },
-    { src: "formandos.webp", titulo: "Além da quadra", categoria: "impacto", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Registro institucional de trajetória além da quadra" },
-    { src: "IMG_3101.webp", titulo: "Concentração", categoria: "processo", tipo: "imagem", proporcao: "portrait", position: "center 30%", alt: "Atleta do DVC em momento de concentração" },
-    { src: "IMG_3162.webp", titulo: "União", categoria: "vinculo", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC em roda de união" },
-    { src: "treinoserginho.webp", titulo: "Fundamento técnico", categoria: "processo", tipo: "imagem", proporcao: "portrait", position: "center center", alt: "Registro do DVC em treino técnico" },
+    { src: "assets/img/127-IMG_1749.webp", titulo: "Juventude e pertencimento", categoria: "vinculo", tipo: "imagem", proporcao: "hero", position: "center center", alt: "Atletas do DVC em momento de integração" },
+    { src: "assets/img/20260224_102424.webp", titulo: "Identidade em quadra", categoria: "identidade", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC reunida em quadra" },
+    { src: "assets/img/20260403_185449.webp", titulo: "Camisa, bandeira e presença", categoria: "identidade", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Atletas do DVC com identidade do projeto" },
+    { src: "assets/img/campeaodjanira.webp", titulo: "Experiência competitiva", categoria: "conquista", tipo: "imagem", proporcao: "trofeu", position: "center center", alt: "Equipe DVC em registro de conquista" },
+    { src: "assets/img/formandos.webp", titulo: "Além da quadra", categoria: "impacto", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Registro institucional de trajetória além da quadra" },
+    { src: "assets/img/IMG_3101.webp", titulo: "Concentração", categoria: "processo", tipo: "imagem", proporcao: "portrait", position: "center 30%", alt: "Atleta do DVC em momento de concentração" },
+    { src: "assets/img/IMG_3162.webp", titulo: "União", categoria: "vinculo", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC em roda de união" },
+    { src: "assets/img/treinoserginho.webp", titulo: "Fundamento técnico", categoria: "processo", tipo: "imagem", proporcao: "portrait", position: "center center", alt: "Registro do DVC em treino técnico" },
     { src: "treinoserinho2.mp4", titulo: "Treino em movimento", categoria: "processo", tipo: "video", proporcao: "video", position: "center center", alt: "Vídeo de treino do DVC" },
     { src: "123dvc.mp4", titulo: "DVC em movimento", categoria: "vinculo", tipo: "video", proporcao: "video", position: "center center", alt: "Vídeo institucional do DVC" },
-    { src: "22-IMG_1226.webp", titulo: "Orientação", categoria: "processo", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Atletas do DVC em roda de orientação" },
-    { src: "107-IMG_1672.webp", titulo: "Treino orientado", categoria: "processo", tipo: "imagem", proporcao: "wide", position: "center center", alt: "Registro do DVC em orientação de treino" },
-    { src: "111-IMG_1703.webp", titulo: "Conversa de equipe", categoria: "processo", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC em conversa de treino" },
-    { src: "7-IMG_0969.webp", titulo: "Movimento", categoria: "processo", tipo: "imagem", proporcao: "portrait", position: "center center", alt: "Atleta do DVC em ação esportiva" },
-    { src: "5-IMG_0946.webp", titulo: "Protagonismo", categoria: "processo", tipo: "imagem", proporcao: "portrait", position: "center center", alt: "Atleta do DVC em momento de protagonismo" },
-    { src: "1-IMG_0907.webp", titulo: "Pertencimento", categoria: "vinculo", tipo: "imagem", proporcao: "portrait", position: "center center", alt: "Registro de pertencimento do DVC" },
-    { src: "123-_MG_0342.webp", titulo: "Coletivo", categoria: "vinculo", tipo: "imagem", proporcao: "wide", position: "center center", alt: "Atletas do DVC em momento coletivo" },
-    { src: "131-IMG_1773.webp", titulo: "Comunidade", categoria: "comunidade", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Atletas do DVC em momento de comunidade" },
-    { src: "interno.webp", titulo: "Integração", categoria: "comunidade", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Atletas do DVC em momento de integração" },
-    { src: "jebh2024.webp", titulo: "JEBH 2024", categoria: "trajetoria", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC no campeonato JEBH 2024" },
-    { src: "metro1.webp", titulo: "Metropolitano 2025", categoria: "trajetoria", tipo: "imagem", proporcao: "trofeu", position: "center center", alt: "Equipe DVC no Campeonato Metropolitano 2025" },
-    { src: "metro2.webp", titulo: "Metropolitano 2025", categoria: "trajetoria", tipo: "imagem", proporcao: "trofeu", position: "center center", alt: "Conquista no Campeonato Metropolitano 2025" },
-    { src: "metro3.webp", titulo: "Metropolitano 2025", categoria: "trajetoria", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Vice-campeonato no Campeonato Metropolitano 2025" },
-    { src: "estadual.webp", titulo: "Estadual Sub-18", categoria: "trajetoria", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC na seletiva estadual escolar sub-18" }
+    { src: "assets/img/22-IMG_1226.webp", titulo: "Orientação", categoria: "processo", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Atletas do DVC em roda de orientação" },
+    { src: "assets/img/107-IMG_1672.webp", titulo: "Treino orientado", categoria: "processo", tipo: "imagem", proporcao: "wide", position: "center center", alt: "Registro do DVC em orientação de treino" },
+    { src: "assets/img/111-IMG_1703.webp", titulo: "Conversa de equipe", categoria: "processo", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC em conversa de treino" },
+    { src: "assets/img/7-IMG_0969.webp", titulo: "Movimento", categoria: "processo", tipo: "imagem", proporcao: "portrait", position: "center center", alt: "Atleta do DVC em ação esportiva" },
+    { src: "assets/img/5-IMG_0946.webp", titulo: "Protagonismo", categoria: "processo", tipo: "imagem", proporcao: "portrait", position: "center center", alt: "Atleta do DVC em momento de protagonismo" },
+    { src: "assets/img/1-IMG_0907.webp", titulo: "Pertencimento", categoria: "vinculo", tipo: "imagem", proporcao: "portrait", position: "center center", alt: "Registro de pertencimento do DVC" },
+    { src: "assets/img/123-_MG_0342.webp", titulo: "Coletivo", categoria: "vinculo", tipo: "imagem", proporcao: "wide", position: "center center", alt: "Atletas do DVC em momento coletivo" },
+    { src: "assets/img/131-IMG_1773.webp", titulo: "Comunidade", categoria: "comunidade", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Atletas do DVC em momento de comunidade" },
+    { src: "assets/img/interno.webp", titulo: "Integração", categoria: "comunidade", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Atletas do DVC em momento de integração" },
+    { src: "assets/img/jebh2024.webp", titulo: "JEBH 2024", categoria: "trajetoria", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC no campeonato JEBH 2024" },
+    { src: "assets/img/metro1.webp", titulo: "Metropolitano 2025", categoria: "trajetoria", tipo: "imagem", proporcao: "trofeu", position: "center center", alt: "Equipe DVC no Campeonato Metropolitano 2025" },
+    { src: "assets/img/metro2.webp", titulo: "Metropolitano 2025", categoria: "trajetoria", tipo: "imagem", proporcao: "trofeu", position: "center center", alt: "Conquista no Campeonato Metropolitano 2025" },
+    { src: "assets/img/metro3.webp", titulo: "Metropolitano 2025", categoria: "trajetoria", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Vice-campeonato no Campeonato Metropolitano 2025" },
+    { src: "assets/img/estadual.webp", titulo: "Estadual Sub-18", categoria: "trajetoria", tipo: "imagem", proporcao: "grupo", position: "center center", alt: "Equipe DVC na seletiva estadual escolar sub-18" }
 ];
 
 function arquivoMidiaDVC(src) {
@@ -340,13 +340,13 @@ function renderSecaoDvcEmMovimento() {
             <div class="space-y-3">
                 ${renderVideoHomeDVC({
                     src: "treinoserinho2.mp4",
-                    poster: "treinoserginho.webp",
+                    poster: "assets/img/treinoserginho.webp",
                     titulo: "Treino especial com Serginho",
                     texto: "Uma vivência com Sérgio Luiz, conhecido como Serginho, ex-voleibolista brasileiro, que compartilhou experiências de alto rendimento com nossos atletas. Atividade realizada graças ao apoio do Instituto Educa Cidades."
                 })}
                 ${renderVideoHomeDVC({
                     src: "123dvc.mp4",
-                    poster: "127-IMG_1749.webp",
+                    poster: "assets/img/127-IMG_1749.webp",
                     titulo: "DVC em movimento",
                     texto: "Registros que mostram a energia dos treinos, a convivência e o cotidiano do projeto."
                 })}
@@ -359,7 +359,7 @@ async function renderHome() {
     const c = document.getElementById('main-content');
     if (!c) return;
 
-    const logoDVC = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || 'Loki2.webp';
+    const logoDVC = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || 'assets/img/loki2.webp';
     let jaViuHomeDVC = false;
 
     try {
@@ -378,25 +378,25 @@ async function renderHome() {
     ];
 
     const trajetoria = [
-        buscarMidiaHomeDVC("jebh2024.webp", {
+        buscarMidiaHomeDVC("assets/img/jebh2024.webp", {
             ano: "2024",
             tituloCard: "JEBH",
             texto: "Primeiro campeonato do projeto e marco inicial da caminhada competitiva.",
             selo: "Estreia"
         }),
-        buscarMidiaHomeDVC("metro3.webp", {
+        buscarMidiaHomeDVC("assets/img/metro3.webp", {
             ano: "2025",
             tituloCard: "Campeonato Metropolitano de Escolas Públicas",
             texto: "2º lugar no Feminino e 3º lugar no Masculino.",
             selo: "Conquista"
         }),
-        buscarMidiaHomeDVC("estadual.webp", {
+        buscarMidiaHomeDVC("assets/img/estadual.webp", {
             ano: "2026",
             tituloCard: "Seletiva Estadual Escolar Sub-18",
             texto: "2º lugar em uma disputa de alto nível, consolidando a evolução esportiva do projeto.",
             selo: "Evolução"
         }),
-        buscarMidiaHomeDVC("campeaodjanira.webp", {
+        buscarMidiaHomeDVC("assets/img/campeaodjanira.webp", {
             ano: "DVC",
             tituloCard: "Experiências que formam",
             texto: "Cada competição amplia repertórios, fortalece vínculos e transforma esforço em experiência.",
@@ -405,32 +405,32 @@ async function renderHome() {
     ];
 
     const processo = [
-        buscarMidiaHomeDVC("22-IMG_1226.webp", { legenda: "Escuta e orientação" }),
-        buscarMidiaHomeDVC("107-IMG_1672.webp", { titulo: "Treino", legenda: "Rotina e fundamento" }),
-        buscarMidiaHomeDVC("111-IMG_1703.webp", { legenda: "Organização coletiva" }),
-        buscarMidiaHomeDVC("IMG_3162.webp", { titulo: "Vínculo", legenda: "União antes do jogo" }),
-        buscarMidiaHomeDVC("treinoserginho.webp", { titulo: "Fundamento", legenda: "Desenvolvimento técnico" }),
-        buscarMidiaHomeDVC("IMG_3101.webp", { legenda: "Foco e presença" })
+        buscarMidiaHomeDVC("assets/img/22-IMG_1226.webp", { legenda: "Escuta e orientação" }),
+        buscarMidiaHomeDVC("assets/img/107-IMG_1672.webp", { titulo: "Treino", legenda: "Rotina e fundamento" }),
+        buscarMidiaHomeDVC("assets/img/111-IMG_1703.webp", { legenda: "Organização coletiva" }),
+        buscarMidiaHomeDVC("assets/img/IMG_3162.webp", { titulo: "Vínculo", legenda: "União antes do jogo" }),
+        buscarMidiaHomeDVC("assets/img/treinoserginho.webp", { titulo: "Fundamento", legenda: "Desenvolvimento técnico" }),
+        buscarMidiaHomeDVC("assets/img/IMG_3101.webp", { legenda: "Foco e presença" })
     ];
 
     const memorias = [
-        buscarMidiaHomeDVC("20260403_185449.webp", { titulo: "Identidade" }),
-        buscarMidiaHomeDVC("131-IMG_1773.webp"),
-        buscarMidiaHomeDVC("campeaodjanira.webp", { titulo: "Protagonismo" }),
-        buscarMidiaHomeDVC("treinoserginho.webp", { titulo: "Fundamento Técnico" }),
-        buscarMidiaHomeDVC("22-IMG_1226.webp", { titulo: "Orientação" }),
-        buscarMidiaHomeDVC("123-_MG_0342.webp", { titulo: "Vínculo" }),
-        buscarMidiaHomeDVC("formandos.webp", { titulo: "Formação Humana" }),
-        buscarMidiaHomeDVC("5-IMG_0946.webp"),
-        buscarMidiaHomeDVC("7-IMG_0969.webp", { titulo: "Protagonismo" }),
-        buscarMidiaHomeDVC("metro2.webp", { titulo: "Comunidade" })
+        buscarMidiaHomeDVC("assets/img/20260403_185449.webp", { titulo: "Identidade" }),
+        buscarMidiaHomeDVC("assets/img/131-IMG_1773.webp"),
+        buscarMidiaHomeDVC("assets/img/campeaodjanira.webp", { titulo: "Protagonismo" }),
+        buscarMidiaHomeDVC("assets/img/treinoserginho.webp", { titulo: "Fundamento Técnico" }),
+        buscarMidiaHomeDVC("assets/img/22-IMG_1226.webp", { titulo: "Orientação" }),
+        buscarMidiaHomeDVC("assets/img/123-_MG_0342.webp", { titulo: "Vínculo" }),
+        buscarMidiaHomeDVC("assets/img/formandos.webp", { titulo: "Formação Humana" }),
+        buscarMidiaHomeDVC("assets/img/5-IMG_0946.webp"),
+        buscarMidiaHomeDVC("assets/img/7-IMG_0969.webp", { titulo: "Protagonismo" }),
+        buscarMidiaHomeDVC("assets/img/metro2.webp", { titulo: "Comunidade" })
     ];
 
-    const hero = buscarMidiaHomeDVC("127-IMG_1749.webp");
-    const identidadePrincipal = buscarMidiaHomeDVC("20260224_102424.webp");
-    const identidadeSecundaria = buscarMidiaHomeDVC("20260403_185449.webp");
-    const alemDaQuadra = buscarMidiaHomeDVC("formandos.webp");
-    const resultadoFundo = buscarMidiaHomeDVC("campeaodjanira.webp");
+    const hero = buscarMidiaHomeDVC("assets/img/127-IMG_1749.webp");
+    const identidadePrincipal = buscarMidiaHomeDVC("assets/img/20260224_102424.webp");
+    const identidadeSecundaria = buscarMidiaHomeDVC("assets/img/20260403_185449.webp");
+    const alemDaQuadra = buscarMidiaHomeDVC("assets/img/formandos.webp");
+    const resultadoFundo = buscarMidiaHomeDVC("assets/img/campeaodjanira.webp");
 
     c.innerHTML = `
         <div class="space-y-4 pb-24 fade-in">
@@ -514,7 +514,7 @@ async function renderHome() {
 
                     <section class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
                         <div class="h-52 bg-gray-100">
-                            ${renderImagemHomeDVC(buscarMidiaHomeDVC("interno.webp"), "w-full h-full object-cover")}
+                            ${renderImagemHomeDVC(buscarMidiaHomeDVC("assets/img/interno.webp"), "w-full h-full object-cover")}
                         </div>
                         <div class="p-5">
                             <p class="text-[10px] font-black uppercase text-[#990000]">Mais que um time</p>
