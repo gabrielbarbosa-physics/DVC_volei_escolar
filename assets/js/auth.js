@@ -338,8 +338,13 @@ onAuthStateChanged(auth, async (user) => {
                             }
                         }
                     } else {
-                        userRef = doc(db, "users", cadastroExistente.id);
-                        snap = await getDoc(userRef);
+                        if (cadastroExistente) {
+                            userRef = doc(db, "users", cadastroExistente.id);
+                            snap = await getDoc(userRef);
+                        } else {
+                            userRef = userRefAuth;
+                            snap = await getDoc(userRef);
+                        }
                     }
                 }
             } catch (erroBuscaCadastro) {
