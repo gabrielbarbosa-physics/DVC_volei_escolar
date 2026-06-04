@@ -109,3 +109,23 @@ window.serverTimestamp = serverTimestamp;
 window.Timestamp = Timestamp;
 
 console.log("[DVC App] Modular system initialized successfully.");
+
+// Add global click listener to close modals when clicking outside
+document.addEventListener('click', function(e) {
+    // Verify if the clicked element is a modal backdrop
+    if (e.target.classList.contains('fixed') && e.target.classList.contains('inset-0')) {
+        // Prevent closing critical/blocking modals
+        const blockingModals = [
+            'm-pacto-dvc', 
+            'm-bloqueio-pesquisa-trimestral-dvc', 
+            'm-pesquisa-trimestral-dvc',
+            'm-autoavaliacao-obrigatoria',
+            'm-grupo-whatsapp'
+        ];
+        if (blockingModals.includes(e.target.id)) {
+            return;
+        }
+        // Safely remove the modal from the DOM
+        e.target.remove();
+    }
+});
