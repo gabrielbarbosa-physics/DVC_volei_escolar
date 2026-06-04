@@ -241,7 +241,7 @@ function showAppUI() {
     document.getElementById('header-app').classList.remove('hidden-screen');
     document.getElementById('nav-bar').classList.remove('hidden-screen');
     document.getElementById('main-content').classList.remove('hidden-screen');
-    document.getElementById('user-photo').style.backgroundImage = `url(${auth.currentUser.photoURL})`;
+    document.getElementById('user-photo').style.backgroundImage = `url('${auth.currentUser.photoURL || 'assets/img/logo.webp'}')`;
     document.getElementById('user-display-name').innerText = window.currentUserData.nome;
     document.getElementById('user-display-info').innerText = `${window.currentUserData.funcao} • ${window.currentUserData.status}`;
 
