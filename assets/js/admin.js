@@ -626,20 +626,59 @@ async function renderDashboard() {
     }
 }
 
-async function carregarPesquisasTrimestraisCache(force = false) {
+async function carregarPesquisasTrimestraisCache(force = false, chaveTrimestreParametro = "") {
+    if (typeof force === "string") {
+        chaveTrimestreParametro = force;
+        force = false;
+    }
+
     const TTL = 2 * 60 * 1000; // 2 minutos de cache
     const cache = window.DVC_CACHE?.pesquisasTrimestrais;
-    if (!force && cache?.dados && (Date.now() - cache.atualizadoEm < TTL)) {
-        return cache.dados;
+    const temFiltroTrimestre = Boolean(chaveTrimestreParametro);
+
+    if (!temFiltroTrimestre) {
+        if (!force && cache?.dados && (Date.now() - cache.atualizadoEm < TTL)) {
+            return cache.dados;
+        }
+
+        try {
+            console.log("[DVC leitura] pesquisasTrimestrais");
+            const snap = await getDocs(collection(db, "pesquisasTrimestrais"));
+
+            const dados = snap.docs.map(docSnap => ({
+                id: docSnap.id,
+                ...docSnap.data()
+            }));
+
+            if (!window.DVC_CACHE) window.DVC_CACHE = {};
+            window.DVC_CACHE.pesquisasTrimestrais = {
+                dados: dados,
+                atualizadoEm: Date.now()
+            };
+
+            return dados;
+        } catch (e) {
+            console.warn("Erro ao buscar pesquisas trimestrais:", e);
+            return [];
+        }
     }
     
-    let chaveAtiva = "";
+    let chaveAtiva = chaveTrimestreParametro || "";
     if (typeof window.obterChavePesquisaAtivaDVC === "function") {
         const dataRef = window.obterDataAtualDVC ? window.obterDataAtualDVC() : new Date();
-        chaveAtiva = window.obterChavePesquisaAtivaDVC(dataRef);
+        chaveAtiva = chaveAtiva || window.obterChavePesquisaAtivaDVC(dataRef);
     }
     
     if (!chaveAtiva) return [];
+
+    const cachePorTrimestre = window.DVC_CACHE?.pesquisasTrimestraisPorTrimestre?.[chaveAtiva];
+    if (!force && cachePorTrimestre?.dados && (Date.now() - cachePorTrimestre.atualizadoEm < TTL)) {
+        return cachePorTrimestre.dados;
+    }
+
+    if (!force && cache?.dados && cache.chaveTrimestre === chaveAtiva && (Date.now() - cache.atualizadoEm < TTL)) {
+        return cache.dados;
+    }
     
     try {
         console.log("[DVC leitura] pesquisasTrimestrais");
@@ -652,9 +691,15 @@ async function carregarPesquisasTrimestraisCache(force = false) {
         }));
         
         if (!window.DVC_CACHE) window.DVC_CACHE = {};
-        window.DVC_CACHE.pesquisasTrimestrais = {
+        window.DVC_CACHE.pesquisasTrimestraisPorTrimestre = window.DVC_CACHE.pesquisasTrimestraisPorTrimestre || {};
+        window.DVC_CACHE.pesquisasTrimestraisPorTrimestre[chaveAtiva] = {
             dados: dados,
             atualizadoEm: Date.now()
+        };
+        window.DVC_CACHE.pesquisasTrimestrais = {
+            dados: dados,
+            atualizadoEm: Date.now(),
+            chaveTrimestre: chaveAtiva
         };
         
         return dados;
@@ -664,6 +709,449 @@ async function carregarPesquisasTrimestraisCache(force = false) {
     }
 }
 window.carregarPesquisasTrimestraisCache = carregarPesquisasTrimestraisCache;
+
+const CAMPOS_RESPOSTAS_ABERTAS_PESQUISA_DVC = [
+    "perguntaAbertaSub17",
+    "perguntaAbertaAdulto",
+    "perguntaAbertaSub17Curta",
+    "perguntaAbertaAdultoCurta"
+];
+
+const estadoRespostasAbertasPesquisaDVC = {
+    chaveTrimestre: "",
+    pergunta: "",
+    tipoRespondente: "todos",
+    busca: "",
+    mostrarVazias: false,
+    modo: "pergunta",
+    dados: [],
+    carregando: false
+};
+
+function textoPesquisaDVC(valor = "") {
+    const texto = String(valor || "");
+    if (typeof window.corrigirMojibakeDVC === "function") {
+        return window.corrigirMojibakeDVC(texto);
+    }
+    return texto;
+}
+
+function escaparHtmlPesquisaDVC(texto = "") {
+    // DVC PESQUISA: escapa conteudo livre antes de renderizar.
+    return dashboardEscapeHtmlDVC(textoPesquisaDVC(texto));
+}
+
+function obterRespostaAbertaPesquisaDVC(documento = {}, campo = "") {
+    return (
+        documento?.respostas?.[campo] ??
+        documento?.[campo] ??
+        ""
+    );
+}
+
+function obterPerguntasAbertasAdminPesquisaDVC() {
+    const perguntasWindow = typeof window.obterPerguntasAbertasPesquisaDVC === "function"
+        ? window.obterPerguntasAbertasPesquisaDVC()
+        : [];
+
+    const porId = {};
+    perguntasWindow.forEach(pergunta => {
+        if (pergunta?.id && CAMPOS_RESPOSTAS_ABERTAS_PESQUISA_DVC.includes(pergunta.id)) {
+            porId[pergunta.id] = pergunta.pergunta || pergunta.id;
+        }
+    });
+
+    const fallback = {
+        perguntaAbertaSub17: "Conte uma coisa que voce aprendeu, melhorou ou percebeu sobre voce neste trimestre.",
+        perguntaAbertaAdulto: "Deixe uma sugestao, critica ou comentario sobre como o DVC pode melhorar nos proximos meses.",
+        perguntaAbertaSub17Curta: "Conte em poucas palavras o que voce espera viver ou aprender no DVC.",
+        perguntaAbertaAdultoCurta: "Deixe uma sugestao ou expectativa para sua participacao no DVC."
+    };
+
+    return CAMPOS_RESPOSTAS_ABERTAS_PESQUISA_DVC.map(id => ({
+        id,
+        pergunta: porId[id] || fallback[id] || id
+    }));
+}
+
+function obterTrimestresComentariosPesquisaDVC() {
+    return ["2026-T1", "2026-T2", "2026-T3"];
+}
+
+function formatarChaveTrimestrePesquisaDVC(chave = "") {
+    const [ano, trimestre] = String(chave || "").split("-T");
+    return `${ano || "2026"} - T${trimestre || ""}`.trim();
+}
+
+function obterChaveInicialComentariosPesquisaDVC() {
+    const trimestres = obterTrimestresComentariosPesquisaDVC();
+    const ativa = typeof window.obterChavePesquisaAtivaDVC === "function"
+        ? window.obterChavePesquisaAtivaDVC(window.obterDataAtualDVC ? window.obterDataAtualDVC() : new Date())
+        : "";
+
+    if (trimestres.includes(ativa)) return ativa;
+    return trimestres[trimestres.length - 1];
+}
+
+function formatarDataRespostaPesquisaDVC(valor) {
+    if (!valor) return "Data nao registrada";
+
+    const data = typeof valor.toDate === "function"
+        ? valor.toDate()
+        : valor.seconds
+            ? new Date(valor.seconds * 1000)
+            : new Date(valor);
+
+    if (Number.isNaN(data.getTime())) return "Data nao registrada";
+
+    return data.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    });
+}
+
+function obterDadosParticipantePesquisaDVC(documento = {}) {
+    const nome = textoPesquisaDVC(documento.nome || documento.nomeCompleto || documento.email || "Participante DVC");
+    const funcao = textoPesquisaDVC(documento.funcao || documento.tipoFuncao || "Atleta");
+    const genero = textoPesquisaDVC(documento.genero || documento.sexo || "");
+    const categoria = textoPesquisaDVC(
+        documento.categoria ||
+        documento.categoriaEtaria ||
+        (documento.tipoRespondente === "sub17" ? "Sub-17" : documento.tipoRespondente === "adulto" ? "Adulto" : "")
+    );
+    const dataResposta = formatarDataRespostaPesquisaDVC(documento.respondidoEm || documento.criadoEm || documento.atualizadoEm);
+
+    return {
+        nome,
+        funcao,
+        genero,
+        categoria,
+        dataResposta,
+        busca: window.normalizarBuscaDVC
+            ? window.normalizarBuscaDVC([nome, funcao, genero, categoria, documento.email || ""].join(" "))
+            : [nome, funcao, genero, categoria, documento.email || ""].join(" ").toLowerCase()
+    };
+}
+
+function documentoPassaFiltrosPesquisaDVC(documento = {}) {
+    const estado = estadoRespostasAbertasPesquisaDVC;
+
+    if (estado.tipoRespondente !== "todos" && documento.tipoRespondente !== estado.tipoRespondente) {
+        return false;
+    }
+
+    if (estado.busca) {
+        const dados = obterDadosParticipantePesquisaDVC(documento);
+        const busca = window.normalizarBuscaDVC ? window.normalizarBuscaDVC(estado.busca) : estado.busca.toLowerCase();
+        if (!dados.busca.includes(busca)) return false;
+    }
+
+    return true;
+}
+
+function renderizarRespostaTextoPesquisaDVC(resposta = "") {
+    const texto = textoPesquisaDVC(resposta).trim();
+
+    if (!texto) {
+        return `<p class="text-[10px] font-semibold italic text-gray-400">Nao respondida</p>`;
+    }
+
+    if (texto.length <= 220) {
+        return `<p class="text-[11px] font-semibold leading-relaxed text-gray-700 whitespace-pre-wrap">${escaparHtmlPesquisaDVC(texto)}</p>`;
+    }
+
+    const resumo = `${texto.slice(0, 220).trim()}...`;
+    return `
+        <p class="text-[11px] font-semibold leading-relaxed text-gray-700 whitespace-pre-wrap">${escaparHtmlPesquisaDVC(resumo)}</p>
+        <details class="mt-2">
+            <summary class="cursor-pointer text-[9px] font-black uppercase text-red-800">Ler resposta completa</summary>
+            <p class="mt-2 text-[11px] font-semibold leading-relaxed text-gray-700 whitespace-pre-wrap">${escaparHtmlPesquisaDVC(texto)}</p>
+        </details>
+    `;
+}
+
+function obterPerguntasSelecionadasPesquisaDVC() {
+    const perguntas = obterPerguntasAbertasAdminPesquisaDVC();
+    if (estadoRespostasAbertasPesquisaDVC.pergunta === "todas") return perguntas;
+    return perguntas.filter(pergunta => pergunta.id === estadoRespostasAbertasPesquisaDVC.pergunta);
+}
+
+function renderizarCardRespostaPorPerguntaDVC(documento = {}, pergunta = {}) {
+    const resposta = obterRespostaAbertaPesquisaDVC(documento, pergunta.id);
+    if (!estadoRespostasAbertasPesquisaDVC.mostrarVazias && !textoPesquisaDVC(resposta).trim()) {
+        return "";
+    }
+
+    const dados = obterDadosParticipantePesquisaDVC(documento);
+    return `
+        <article class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="rounded-xl border border-red-100 bg-red-50 px-3 py-2">
+                <p class="text-[8px] font-black uppercase text-red-800">Pergunta visualizada</p>
+                <p class="mt-1 text-[10px] font-black leading-snug text-gray-800">${escaparHtmlPesquisaDVC(pergunta.pergunta)}</p>
+            </div>
+
+            <div class="mt-3 flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-black uppercase text-gray-900">${escaparHtmlPesquisaDVC(dados.nome)}</p>
+                    <p class="mt-1 text-[9px] font-bold uppercase text-gray-400">
+                        ${escaparHtmlPesquisaDVC([dados.funcao, dados.genero, dados.categoria].filter(Boolean).join(" - "))}
+                    </p>
+                    <p class="mt-1 text-[9px] font-semibold text-gray-400">Respondido em ${escaparHtmlPesquisaDVC(dados.dataResposta)}</p>
+                </div>
+            </div>
+
+            <div class="mt-3 border-t border-gray-100 pt-3">
+                ${renderizarRespostaTextoPesquisaDVC(resposta)}
+            </div>
+        </article>
+    `;
+}
+
+function renderizarListaPorPerguntaPesquisaDVC(dados = []) {
+    const perguntas = obterPerguntasSelecionadasPesquisaDVC();
+    const html = [];
+
+    dados.forEach(documento => {
+        perguntas.forEach(pergunta => {
+            const card = renderizarCardRespostaPorPerguntaDVC(documento, pergunta);
+            if (card) html.push(card);
+        });
+    });
+
+    if (html.length === 0) {
+        return `<div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-5 text-center text-[10px] font-black uppercase text-gray-400">Nenhuma resposta aberta encontrada.</div>`;
+    }
+
+    return html.join("");
+}
+
+function renderizarCardParticipantePesquisaDVC(documento = {}) {
+    const perguntas = obterPerguntasSelecionadasPesquisaDVC();
+    const respostas = perguntas
+        .map(pergunta => ({
+            pergunta,
+            resposta: obterRespostaAbertaPesquisaDVC(documento, pergunta.id)
+        }))
+        .filter(item => estadoRespostasAbertasPesquisaDVC.mostrarVazias || textoPesquisaDVC(item.resposta).trim());
+
+    if (respostas.length === 0) return "";
+
+    const dados = obterDadosParticipantePesquisaDVC(documento);
+
+    return `
+        <article class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p class="text-[11px] font-black uppercase text-gray-900">${escaparHtmlPesquisaDVC(dados.nome)}</p>
+            <p class="mt-1 text-[9px] font-bold uppercase text-gray-400">
+                ${escaparHtmlPesquisaDVC([dados.funcao, dados.genero, dados.categoria].filter(Boolean).join(" - "))}
+            </p>
+            <p class="mt-1 text-[9px] font-semibold text-gray-400">Respondido em ${escaparHtmlPesquisaDVC(dados.dataResposta)}</p>
+
+            <div class="mt-3 space-y-3 border-t border-gray-100 pt-3">
+                ${respostas.map((item, index) => `
+                    <div>
+                        <p class="text-[8px] font-black uppercase text-red-800">Pergunta ${index + 1}</p>
+                        <p class="mt-1 text-[10px] font-black leading-snug text-gray-800">${escaparHtmlPesquisaDVC(item.pergunta.pergunta)}</p>
+                        <div class="mt-2">${renderizarRespostaTextoPesquisaDVC(item.resposta)}</div>
+                    </div>
+                `).join("")}
+            </div>
+        </article>
+    `;
+}
+
+function renderizarListaPorParticipantePesquisaDVC(dados = []) {
+    const html = dados
+        .map(renderizarCardParticipantePesquisaDVC)
+        .filter(Boolean);
+
+    if (html.length === 0) {
+        return `<div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-5 text-center text-[10px] font-black uppercase text-gray-400">Nenhum participante encontrado.</div>`;
+    }
+
+    return html.join("");
+}
+
+function renderizarPainelRespostasAbertasPesquisaDVC() {
+    const corpo = document.getElementById("comentarios-pesquisa-corpo-dvc");
+    if (!corpo) return;
+
+    const estado = estadoRespostasAbertasPesquisaDVC;
+    const perguntas = obterPerguntasAbertasAdminPesquisaDVC();
+
+    if (!estado.pergunta || !["todas", ...perguntas.map(pergunta => pergunta.id)].includes(estado.pergunta)) {
+        estado.pergunta = perguntas[0]?.id || "todas";
+    }
+
+    const dadosFiltrados = estado.dados.filter(documentoPassaFiltrosPesquisaDVC);
+    const listaHtml = estado.carregando
+        ? `<div class="rounded-2xl border border-gray-200 bg-white p-5 text-center shadow-sm"><p class="text-[10px] font-black uppercase text-gray-400">Carregando coment&aacute;rios...</p></div>`
+        : estado.modo === "participante"
+            ? renderizarListaPorParticipantePesquisaDVC(dadosFiltrados)
+            : renderizarListaPorPerguntaPesquisaDVC(dadosFiltrados);
+
+    const perguntaOptions = [
+        `<option value="todas" ${estado.pergunta === "todas" ? "selected" : ""}>Todas as perguntas abertas</option>`,
+        ...perguntas.map(pergunta => `
+            <option value="${escaparHtmlPesquisaDVC(pergunta.id)}" ${estado.pergunta === pergunta.id ? "selected" : ""}>
+                ${escaparHtmlPesquisaDVC(pergunta.pergunta)}
+            </option>
+        `)
+    ].join("");
+
+    corpo.innerHTML = `
+        <div class="bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] text-white p-5 rounded-3xl shadow-xl">
+            <p class="text-[8px] font-black uppercase tracking-wider text-white/60">Coment&aacute;rios da pesquisa</p>
+            <h3 class="mt-1 text-lg font-black uppercase leading-tight">Coment&aacute;rios da Pesquisa</h3>
+            <p class="mt-1 text-[10px] font-semibold leading-relaxed text-white/70">Respostas abertas da avalia&ccedil;&atilde;o trimestral</p>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <div class="rounded-2xl border border-white/10 bg-white/10 p-3">
+                    <p class="text-[8px] font-black uppercase text-white/60">Per&iacute;odo</p>
+                    <p class="mt-1 text-sm font-black uppercase">${escaparHtmlPesquisaDVC(formatarChaveTrimestrePesquisaDVC(estado.chaveTrimestre))}</p>
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-right">
+                    <p class="text-[8px] font-black uppercase text-white/60">Quantidade de respostas</p>
+                    <p class="mt-1 text-sm font-black uppercase">${estado.dados.length}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="grid grid-cols-1 gap-3">
+                <label class="block">
+                    <span class="text-[8px] font-black uppercase text-gray-400">Trimestre</span>
+                    <select id="comentarios-pesquisa-trimestre-dvc" onchange="selecionarTrimestreComentariosPesquisaDVC(this.value)" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-[11px] font-black text-gray-800 outline-none">
+                        ${obterTrimestresComentariosPesquisaDVC().map(chave => `
+                            <option value="${chave}" ${estado.chaveTrimestre === chave ? "selected" : ""}>${formatarChaveTrimestrePesquisaDVC(chave)}</option>
+                        `).join("")}
+                    </select>
+                </label>
+
+                <label class="block">
+                    <span class="text-[8px] font-black uppercase text-gray-400">Pergunta</span>
+                    <select id="comentarios-pesquisa-pergunta-dvc" onchange="atualizarFiltrosComentariosPesquisaDVC()" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-[11px] font-black text-gray-800 outline-none">
+                        ${perguntaOptions}
+                    </select>
+                </label>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="block">
+                        <span class="text-[8px] font-black uppercase text-gray-400">Respondente</span>
+                        <select id="comentarios-pesquisa-tipo-dvc" onchange="atualizarFiltrosComentariosPesquisaDVC()" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-[11px] font-black text-gray-800 outline-none">
+                            <option value="todos" ${estado.tipoRespondente === "todos" ? "selected" : ""}>Todos</option>
+                            <option value="sub17" ${estado.tipoRespondente === "sub17" ? "selected" : ""}>Sub-17</option>
+                            <option value="adulto" ${estado.tipoRespondente === "adulto" ? "selected" : ""}>Adulto</option>
+                        </select>
+                    </label>
+
+                    <label class="block">
+                        <span class="text-[8px] font-black uppercase text-gray-400">Busca por nome</span>
+                        <input id="comentarios-pesquisa-busca-dvc" value="${escaparHtmlPesquisaDVC(estado.busca)}" oninput="atualizarFiltrosComentariosPesquisaDVC()" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-[11px] font-semibold text-gray-800 outline-none" placeholder="Nome">
+                    </label>
+                </div>
+
+                <label class="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
+                    <input id="comentarios-pesquisa-vazias-dvc" type="checkbox" onchange="atualizarFiltrosComentariosPesquisaDVC()" class="accent-[#990000]" ${estado.mostrarVazias ? "checked" : ""}>
+                    <span class="text-[9px] font-black uppercase text-gray-600">Mostrar n&atilde;o respondidas</span>
+                </label>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="alternarVisualizacaoComentariosPesquisaDVC('pergunta')" class="rounded-xl px-3 py-3 text-[9px] font-black uppercase ${estado.modo === "pergunta" ? "bg-[#990000] text-white" : "bg-gray-100 text-gray-500"}">Por pergunta</button>
+                    <button type="button" onclick="alternarVisualizacaoComentariosPesquisaDVC('participante')" class="rounded-xl px-3 py-3 text-[9px] font-black uppercase ${estado.modo === "participante" ? "bg-[#990000] text-white" : "bg-gray-100 text-gray-500"}">Por participante</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            ${listaHtml}
+        </div>
+    `;
+}
+
+async function carregarTrimestreComentariosPesquisaDVC(chaveTrimestre) {
+    estadoRespostasAbertasPesquisaDVC.chaveTrimestre = chaveTrimestre;
+    estadoRespostasAbertasPesquisaDVC.carregando = true;
+    renderizarPainelRespostasAbertasPesquisaDVC();
+
+    // DVC PESQUISA: mantem respostas e filtros isolados por trimestre.
+    estadoRespostasAbertasPesquisaDVC.dados = await carregarPesquisasTrimestraisCache(false, chaveTrimestre);
+    estadoRespostasAbertasPesquisaDVC.carregando = false;
+    renderizarPainelRespostasAbertasPesquisaDVC();
+}
+
+function atualizarFiltrosComentariosPesquisaDVC() {
+    estadoRespostasAbertasPesquisaDVC.pergunta = document.getElementById("comentarios-pesquisa-pergunta-dvc")?.value || estadoRespostasAbertasPesquisaDVC.pergunta;
+    estadoRespostasAbertasPesquisaDVC.tipoRespondente = document.getElementById("comentarios-pesquisa-tipo-dvc")?.value || "todos";
+    estadoRespostasAbertasPesquisaDVC.busca = document.getElementById("comentarios-pesquisa-busca-dvc")?.value || "";
+    estadoRespostasAbertasPesquisaDVC.mostrarVazias = document.getElementById("comentarios-pesquisa-vazias-dvc")?.checked || false;
+    renderizarPainelRespostasAbertasPesquisaDVC();
+}
+
+function alternarVisualizacaoComentariosPesquisaDVC(modo = "pergunta") {
+    // DVC PESQUISA: alterna a visualizacao sem novas leituras.
+    estadoRespostasAbertasPesquisaDVC.modo = modo === "participante" ? "participante" : "pergunta";
+    atualizarFiltrosComentariosPesquisaDVC();
+}
+
+function selecionarTrimestreComentariosPesquisaDVC(chaveTrimestre = "") {
+    const chave = obterTrimestresComentariosPesquisaDVC().includes(chaveTrimestre)
+        ? chaveTrimestre
+        : obterChaveInicialComentariosPesquisaDVC();
+    carregarTrimestreComentariosPesquisaDVC(chave);
+}
+
+function fecharRespostasAbertasPesquisaDVC() {
+    document.getElementById("m-comentarios-pesquisa-dvc")?.remove();
+}
+
+function abrirRespostasAbertasPesquisaDVC() {
+    if (!window.usuarioEhADM?.()) {
+        alert("Acesso permitido somente para administradores.");
+        return;
+    }
+
+    const modalAnterior = document.getElementById("m-comentarios-pesquisa-dvc");
+    if (modalAnterior) modalAnterior.remove();
+
+    const chaveInicial = obterChaveInicialComentariosPesquisaDVC();
+    const perguntas = obterPerguntasAbertasAdminPesquisaDVC();
+
+    estadoRespostasAbertasPesquisaDVC.chaveTrimestre = chaveInicial;
+    estadoRespostasAbertasPesquisaDVC.pergunta = perguntas[0]?.id || "todas";
+    estadoRespostasAbertasPesquisaDVC.tipoRespondente = "todos";
+    estadoRespostasAbertasPesquisaDVC.busca = "";
+    estadoRespostasAbertasPesquisaDVC.mostrarVazias = false;
+    estadoRespostasAbertasPesquisaDVC.modo = "pergunta";
+    estadoRespostasAbertasPesquisaDVC.dados = [];
+    estadoRespostasAbertasPesquisaDVC.carregando = true;
+
+    // DVC PESQUISA: reutiliza o painel existente de comentarios quando disponivel.
+    const modalHtml = `
+        <div id="m-comentarios-pesquisa-dvc" class="fixed inset-0 bg-black/80 z-[130] p-4 flex items-center justify-center fade-in">
+            <div class="bg-gray-50 w-full max-w-md rounded-3xl shadow-2xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-100">
+                <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3">
+                    <div>
+                        <p class="text-[8px] font-black uppercase text-red-800">Pesquisa trimestral</p>
+                        <p class="text-[12px] font-black uppercase text-gray-900">Coment&aacute;rios abertos</p>
+                    </div>
+                    <button type="button" onclick="fecharRespostasAbertasPesquisaDVC()" class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-[9px] font-black uppercase text-gray-600">Fechar</button>
+                </div>
+
+                <div id="comentarios-pesquisa-corpo-dvc" class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4"></div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
+    carregarTrimestreComentariosPesquisaDVC(chaveInicial);
+}
+
+window.obterRespostaAbertaPesquisaDVC = obterRespostaAbertaPesquisaDVC;
+window.abrirRespostasAbertasPesquisaDVC = abrirRespostasAbertasPesquisaDVC;
+window.fecharRespostasAbertasPesquisaDVC = fecharRespostasAbertasPesquisaDVC;
+window.selecionarTrimestreComentariosPesquisaDVC = selecionarTrimestreComentariosPesquisaDVC;
+window.atualizarFiltrosComentariosPesquisaDVC = atualizarFiltrosComentariosPesquisaDVC;
+window.alternarVisualizacaoComentariosPesquisaDVC = alternarVisualizacaoComentariosPesquisaDVC;
 
 function renderizarSubAbaEspecifica(aba) {
     const c = document.getElementById('main-content');

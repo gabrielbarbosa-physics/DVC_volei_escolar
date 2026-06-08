@@ -101,11 +101,14 @@ function abrirMenuMais() {
                         <p class="text-[8px] font-bold text-gray-400 uppercase mt-1">Lista e consulta</p>
                     </button>
 
-                    <button onclick="document.getElementById('m-menu-mais').remove(); changeTab('calendar');" class="bg-gray-50 border rounded-2xl p-4 text-left shadow-sm">
-                        <i class="fa-solid fa-calendar-days text-[#990000] text-xl mb-3"></i>
-                        <p class="text-[10px] font-black uppercase text-gray-800">Agenda</p>
-                        <p class="text-[8px] font-bold text-gray-400 uppercase mt-1">Treinos e jogos</p>
+                    ${isADM ? `
+                    <!-- DVC GESTAO: substitui o atalho redundante da Agenda pelo acesso as respostas abertas. -->
+                    <button onclick="if(typeof window.abrirRespostasAbertasPesquisaDVC === 'function') window.abrirRespostasAbertasPesquisaDVC();" class="bg-gray-50 border rounded-2xl p-4 text-left shadow-sm">
+                        <i class="fa-solid fa-comments text-[#990000] text-xl mb-3"></i>
+                        <p class="text-[10px] font-black uppercase text-gray-800">Coment&aacute;rios</p>
+                        <p class="text-[8px] font-bold text-gray-400 uppercase mt-1">Pesquisa trimestral</p>
                     </button>
+                    ` : ''}
 
                     <button onclick="document.getElementById('m-menu-mais').remove(); if(typeof window.abrirPainelAutoAvaliacoesDVC === 'function') window.abrirPainelAutoAvaliacoesDVC();" class="bg-gray-50 border rounded-2xl p-4 text-left shadow-sm">
                         <i class="fa-solid fa-clipboard-list text-[#990000] text-xl mb-3"></i>

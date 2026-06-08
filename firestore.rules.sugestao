@@ -37,5 +37,23 @@ service cloud.firestore {
       // Importante: Suas regras atuais de create/update gerais da coleção users devem 
       // ser mantidas junto desta, separadas por blocos ou combinadas inteligentemente.
     }
+
+    // IMPORTANTE:
+    // Este arquivo é uma sugestão/local de referência.
+    // A regra correspondente já foi publicada manualmente no Firebase Console.
+    // Alterações futuras neste arquivo não são aplicadas automaticamente.
+    match /events/{eventId} {
+      
+      // DVC VISITANTES — PARTE 4.2B:
+      // Documenta localmente a regra já publicada no Firebase Console.
+      match /visitantesTreino/{visitanteId} {
+          allow read, create, update:
+              if isSignedIn() && isEquipeTecnica();
+
+          // O fluxo utiliza inativação lógica com ativo: false.
+          // A exclusão física permanece bloqueada para preservar rastreabilidade.
+          allow delete: if false;
+      }
+    }
   }
 }

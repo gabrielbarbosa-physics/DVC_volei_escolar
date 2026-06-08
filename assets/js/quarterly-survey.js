@@ -938,6 +938,20 @@ function verificarFluxoPesquisaTrimestralDVC() {
 }
 
 // Expor funções públicas no objeto window
+function obterPerguntasAbertasPesquisaDVC() {
+    return [
+        ...PERGUNTAS_SUB17,
+        ...PERGUNTAS_ADULTOS,
+        ...PERGUNTAS_SUB17_CURTA,
+        ...PERGUNTAS_ADULTOS_CURTA
+    ]
+        .filter(pergunta => pergunta.tipo === "textarea")
+        .map(pergunta => ({
+            id: pergunta.id,
+            pergunta: pergunta.pergunta
+        }));
+}
+
 window.obterDataAtualDVC = obterDataAtualDVC;
 window.obterChaveTrimestreDVC = obterChaveTrimestreDVC;
 window.obterChavePesquisaAtivaDVC = obterChavePesquisaAtivaDVC;
@@ -954,3 +968,4 @@ window.avancarEtapaPesquisaTrimestralDVC = avancarEtapaPesquisaTrimestralDVC;
 window.voltarEtapaPesquisaTrimestralDVC = voltarEtapaPesquisaTrimestralDVC;
 window.salvarPesquisaTrimestralDVC = salvarPesquisaTrimestralDVC;
 window.verificarFluxoPesquisaTrimestralDVC = verificarFluxoPesquisaTrimestralDVC;
+window.obterPerguntasAbertasPesquisaDVC = obterPerguntasAbertasPesquisaDVC;

@@ -89,6 +89,17 @@ function getCriteriosAvaliacaoEvento(tipoEvento) {
     ];
 }
 
+// DVC VISITANTES — PARTE 4.2A: mantém apenas atletas oficiais na lista avaliável.
+function participanteEhVisitanteAvaliacaoDVC(participante = {}) {
+    return String(
+        participante.tipoParticipante ||
+        participante.tipo ||
+        "atleta"
+    )
+        .trim()
+        .toLowerCase() === "visitante";
+}
+
 window.avaliacaoTreinoTempDVC = window.avaliacaoTreinoTempDVC || {};
 
 function getEstadoAvaliacaoTreinoDVC(eventId) {
@@ -214,7 +225,8 @@ async function abrirAvaliacaoEvento(evId) {
                 nascimento: data.nascimento || data.dataNascimento || data.data_nascimento || "",
                 funcao: data.funcao || "",
                 funcaoVolei: data.funcaoVolei || "",
-                sexo: data.sexo || ""
+                sexo: data.sexo || "",
+                tipoParticipante: data.tipoParticipante || data.tipo || "atleta"
             });
         });
 
@@ -228,7 +240,8 @@ async function abrirAvaliacaoEvento(evId) {
                     nascimento: data.nascimento || data.dataNascimento || data.data_nascimento || "",
                     funcao: data.funcao || "",
                     funcaoVolei: data.funcaoVolei || "",
-                    sexo: data.sexo || ""
+                    sexo: data.sexo || "",
+                    tipoParticipante: data.tipoParticipante || data.tipo || "atleta"
                 });
             });
         }
@@ -237,14 +250,24 @@ async function abrirAvaliacaoEvento(evId) {
             return alert("Nenhum atleta presente ou convocado foi encontrado para avaliação.");
         }
 
-        presentes.sort((a, b) => a.nome.localeCompare(b.nome));
+        // DVC VISITANTES — PARTE 4.2A: mantém apenas atletas oficiais na lista avaliável.
+        const atletasAvaliaveis = presentes.filter(
+            participante => !participanteEhVisitanteAvaliacaoDVC(participante)
+        );
+
+        if (atletasAvaliaveis.length === 0) {
+            return alert("Nenhum atleta válido (oficial) presente para avaliação.");
+        }
+
+        // DVC VISITANTES — PARTE 4.2A: preserva registros antigos sem tipoParticipante como atletas.
+        atletasAvaliaveis.sort((a, b) => a.nome.localeCompare(b.nome));
         window.avaliacaoTreinoTempDVC[evId] = {
             atletasAlterados: new Set(),
             atletasConfirmadosSemMudanca: new Set(),
-            todosAtletas: new Set(presentes.map(atleta => getChaveAtletaAvaliacaoTreinoDVC(atleta.email)).filter(Boolean))
+            todosAtletas: new Set(atletasAvaliaveis.map(atleta => getChaveAtletaAvaliacaoTreinoDVC(atleta.email)).filter(Boolean))
         };
 
-        const cardsAtletas = presentes.map((atleta, index) => {
+        const cardsAtletas = atletasAvaliaveis.map((atleta, index) => {
             const atletaEmailSeguro = safeEditParam(atleta.email);
             const atletaIdSeguro = normalizarEmailIdDVC(atleta.email);
             const criteriosHtml = criterios.map(criterio => `
@@ -271,12 +294,13 @@ async function abrirAvaliacaoEvento(evId) {
                     id="card-avaliacao-treino-${atletaIdSeguro}"
                     class="card-avaliacao-evento bg-white border rounded-2xl p-4 mb-3 shadow-sm"
                     data-email="${escaparHtml(atleta.email)}"
-                    data-nome="${escaparHtml(atleta.nome || atleta.email)}">
+                    data-nome="${escaparHtml(atleta.nome || atleta.email)}"
+                    data-tipo-participante="${escaparHtml(atleta.tipoParticipante || 'atleta')}">
 
                     <div class="flex justify-between items-start gap-2 mb-3">
                         <div>
                             <p class="text-[9px] font-black text-gray-400 uppercase">
-                                Atleta ${index + 1} de ${presentes.length}
+                                Atleta ${index + 1} de ${atletasAvaliaveis.length}
                             </p>
                             <p class="text-sm font-black text-gray-800 uppercase">
                                 ${atleta.nome}
@@ -335,7 +359,7 @@ async function abrirAvaliacaoEvento(evId) {
                     </h2>
 
                     <p class="text-[9px] text-gray-400 font-bold uppercase mb-4">
-                        ${evento.titulo || "Evento DVC"} • ${presentes.length} presente(s)
+                        ${evento.titulo || "Evento DVC"} • ${atletasAvaliaveis.length} presente(s)
                     </p>
 
                     <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-3 mb-4">
@@ -436,6 +460,22 @@ async function salvarAvaliacaoEvento(evId, tipoEvento) {
             const emailAtleta = card.dataset.email;
             const nomeAtleta = card.dataset.nome || emailAtleta;
             const observacao = card.querySelector('[data-observacao="true"]')?.value || "";
+            const tipoParticipante = card.dataset.tipoParticipante || "atleta";
+
+            const participante = {
+                email: emailAtleta,
+                nome: nomeAtleta,
+                tipoParticipante: tipoParticipante
+            };
+
+            // DVC VISITANTES — PARTE 4.2A: bloqueia defensivamente avaliações de visitantes.
+            if (participanteEhVisitanteAvaliacaoDVC(participante)) {
+                console.warn(
+                    "[DVC Avaliações] Visitante ignorado na avaliação técnica:",
+                    participante?.email || participante?.nome || "sem identificação"
+                );
+                continue;
+            }
 
             let notasEvento = {};
 

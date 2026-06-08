@@ -124,7 +124,36 @@ function ordenarAvisosDVC(a, b) {
     return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0);
 }
 
-function renderCardAvisoDVC(aviso = {}, compacto = false, admin = false) {
+window.toggleComunicadoMuralDVC = function (avisoId, botao, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    const mensagem = document.getElementById(`mensagem-aviso-mural-${avisoId}`);
+
+    if (!mensagem || !botao) return;
+
+    const estaExpandido = botao.getAttribute("aria-expanded") === "true";
+
+    if (estaExpandido) {
+        mensagem.classList.add("line-clamp-3");
+        mensagem.style.webkitLineClamp = "3";
+        mensagem.style.overflow = "hidden";
+
+        botao.textContent = "LER COMUNICADO";
+        botao.setAttribute("aria-expanded", "false");
+    } else {
+        mensagem.classList.remove("line-clamp-3");
+        mensagem.style.webkitLineClamp = "unset";
+        mensagem.style.overflow = "visible";
+
+        botao.textContent = "RECOLHER COMUNICADO";
+        botao.setAttribute("aria-expanded", "true");
+    }
+};
+
+function renderCardAvisoDVC(aviso = {}, compacto = false, admin = false, ehDestaque = false) {
     const categoriaKey = chaveMetaAvisoDVC(aviso.categoria);
     const prioridadeKey = chavePrioridadeAvisoDVC(aviso.prioridade);
     const categoria = CATEGORIAS_AVISOS_DVC[categoriaKey] || CATEGORIAS_AVISOS_DVC.geral;
@@ -133,47 +162,102 @@ function renderCardAvisoDVC(aviso = {}, compacto = false, admin = false) {
     const textoMensagem = compacto && mensagem.length > 150 ? `${mensagem.slice(0, 150)}...` : mensagem;
     const ativo = avisoEstaAtivoDVC(aviso);
 
+    const isCardDestaque = ehDestaque && !admin;
+
+    // DVC MURAL — DESTAQUE: diferencia o comunicado principal dos cards operacionais.
+    const cardClass = isCardDestaque 
+        ? "bg-gradient-to-br from-white via-white to-red-50 border border-red-200 border-l-4 border-l-[#990000] rounded-2xl p-4 shadow-md relative overflow-hidden"
+        : "bg-white border border-gray-100 rounded-2xl p-4 shadow-sm";
+
+    const titleClass = isCardDestaque
+        ? "text-[15px] font-black text-slate-950 uppercase leading-tight mt-2"
+        : "text-sm font-black text-gray-900 uppercase leading-tight mt-2";
+
+    const msgClass = isCardDestaque
+        ? "text-[11px] text-gray-600 font-medium leading-relaxed mt-2 line-clamp-3 msg-aviso-dvc"
+        : "text-[10px] text-gray-500 font-semibold leading-relaxed mt-2";
+
+    const roundedIcon = isCardDestaque ? "rounded-xl" : "rounded-2xl";
+
+    let headerChips = "";
+    if (isCardDestaque) {
+        const destaqueLabel = aviso.fixado ? "Comunicado Fixado" : "Alta Prioridade";
+        headerChips = `
+            <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full px-2.5 py-1 text-[9px] font-black uppercase border bg-[#990000] text-white border-[#990000]">
+                ${destaqueLabel}
+            </span>
+            <span class="inline-flex items-center justify-center gap-1 whitespace-nowrap px-1 py-1 text-[9px] font-bold uppercase text-gray-500">
+                <i class="fa-solid ${categoria.icone} text-[9px]"></i>
+                ${categoria.label}
+            </span>
+            ${!ativo ? renderBadgeDVC("Inativo/expirado", "neutro") : ""}
+        `;
+    } else {
+        headerChips = `
+            <span class="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[8px] font-black uppercase border ${categoria.classe}">
+                <i class="fa-solid ${categoria.icone} text-[8px]"></i>
+                ${categoria.label}
+            </span>
+            <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full px-2.5 py-1 text-[8px] font-black uppercase border ${prioridade.classe}">
+                ${prioridade.label}
+            </span>
+            ${aviso.fixado ? renderBadgeDVC("Fixado", "vermelho") : ""}
+            ${!ativo ? renderBadgeDVC("Inativo/expirado", "neutro") : ""}
+        `;
+    }
+
+    // DVC MURAL — REVISÃO: expande e recolhe apenas o texto do card selecionado.
+    // DVC MURAL — REVISÃO: impede conflito entre expansão e clique do card.
+    const readMoreAction = isCardDestaque
+        ? `<button type="button" aria-expanded="false" aria-controls="mensagem-aviso-mural-${aviso.id}" onclick="window.toggleComunicadoMuralDVC('${aviso.id}', this, event)" class="mt-2 text-[#990000] text-[10px] font-black uppercase tracking-wide hover:underline text-left">Ler comunicado</button>`
+        : "";
+
+    const dtCriadoFormatada = aviso.criadoEm ? new Date(aviso.criadoEm).toLocaleDateString("pt-BR") : "";
+    const dtExpiraFormatada = aviso.expiraEm ? aviso.expiraEm.split("-").reverse().join("/") : "";
+
+    const logoMarcaDagua = window.PROJETO_ATUAL_DVC?.logoFundoClaro || window.PROJETO_ATUAL_DVC?.logo || "assets/img/loki1.webp";
+    const watermarkHtml = isCardDestaque
+        ? `<img src="${logoMarcaDagua}" alt="" aria-hidden="true" class="pointer-events-none select-none absolute z-0 object-contain" style="bottom: -0.25rem; right: 0.5rem; width: 4rem; height: auto; opacity: 0.15;" />`
+        : "";
+
     return `
-        <article class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-            <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-1">
-                        <span class="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[8px] font-black uppercase border ${categoria.classe}">
-                            <i class="fa-solid ${categoria.icone} text-[8px]"></i>
-                            ${categoria.label}
-                        </span>
-                        <span class="inline-flex items-center justify-center whitespace-nowrap rounded-full px-2.5 py-1 text-[8px] font-black uppercase border ${prioridade.classe}">
-                            ${prioridade.label}
-                        </span>
-                        ${aviso.fixado ? renderBadgeDVC("Fixado", "vermelho") : ""}
-                        ${!ativo ? renderBadgeDVC("Inativo/expirado", "neutro") : ""}
+        <article class="${cardClass}">
+            ${watermarkHtml}
+            <div class="relative z-10">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-1">
+                            ${headerChips}
+                        </div>
+                        <h3 class="${titleClass}">${escaparHtml(aviso.titulo || "Aviso DVC")}</h3>
                     </div>
-                    <h3 class="text-sm font-black text-gray-900 uppercase leading-tight mt-2">${escaparHtml(aviso.titulo || "Aviso DVC")}</h3>
+                    <div class="w-10 h-10 ${roundedIcon} bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+                        <i class="fa-solid ${categoria.icone} text-[#990000]"></i>
+                    </div>
                 </div>
-                <div class="w-10 h-10 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
-                    <i class="fa-solid ${categoria.icone} text-[#990000]"></i>
-                </div>
+
+                <p id="mensagem-aviso-mural-${aviso.id}" class="${msgClass}" ${isCardDestaque ? 'style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"' : ''}>${textoMensagem}</p>
+                ${readMoreAction}
+                
+                <p class="text-[8px] font-bold uppercase text-gray-400 mt-2">
+                    ${dtCriadoFormatada ? `Publicado em ${dtCriadoFormatada}` : ""}
+                    ${dtExpiraFormatada ? ` &bull; Válido até ${dtExpiraFormatada}` : ""}
+                </p>
+
+                ${aviso.link ? `
+                    <a href="${escaparHtml(aviso.link)}" target="_blank" rel="noopener" class="mt-3 inline-flex items-center justify-center w-full rounded-2xl bg-[#990000] text-white py-3 text-[10px] font-black uppercase shadow-sm">
+                        ${escaparHtml(aviso.botaoTexto || "Abrir link")}
+                    </a>
+                ` : ""}
+
+                ${admin ? `
+                    <div class="grid grid-cols-3 gap-2 mt-3">
+                        <button onclick="abrirModalCriarAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-gray-900 text-white rounded-xl py-2 text-[8px] font-black uppercase">Editar</button>
+                        <button onclick="desativarAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-yellow-50 text-yellow-800 border border-yellow-100 rounded-xl py-2 text-[8px] font-black uppercase">${aviso.ativo === false ? "Ativar" : "Desativar"}</button>
+                        <button onclick="excluirAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-white text-red-700 border border-red-100 rounded-xl py-2 text-[8px] font-black uppercase">Excluir</button>
+                    </div>
+                ` : ""}
             </div>
-
-            <p class="text-[10px] text-gray-500 font-semibold leading-relaxed mt-2">${textoMensagem}</p>
-            <p class="text-[8px] font-bold uppercase text-gray-400 mt-2">
-                ${aviso.criadoEm ? new Date(aviso.criadoEm).toLocaleDateString("pt-BR") : ""}
-                ${aviso.expiraEm ? `- Expira em ${escaparHtml(aviso.expiraEm)}` : ""}
-            </p>
-
-            ${aviso.link ? `
-                <a href="${escaparHtml(aviso.link)}" target="_blank" rel="noopener" class="mt-3 inline-flex items-center justify-center w-full rounded-2xl bg-[#990000] text-white py-3 text-[10px] font-black uppercase shadow-sm">
-                    ${escaparHtml(aviso.botaoTexto || "Abrir link")}
-                </a>
-            ` : ""}
-
-            ${admin ? `
-                <div class="grid grid-cols-3 gap-2 mt-3">
-                    <button onclick="abrirModalCriarAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-gray-900 text-white rounded-xl py-2 text-[8px] font-black uppercase">Editar</button>
-                    <button onclick="desativarAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-yellow-50 text-yellow-800 border border-yellow-100 rounded-xl py-2 text-[8px] font-black uppercase">${aviso.ativo === false ? "Ativar" : "Desativar"}</button>
-                    <button onclick="excluirAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-white text-red-700 border border-red-100 rounded-xl py-2 text-[8px] font-black uppercase">Excluir</button>
-                </div>
-            ` : ""}
         </article>
     `;
 }
@@ -218,16 +302,34 @@ async function renderAvisosMuralDVC() {
 
         if (!avisos.length) return "";
 
+        // DVC MURAL — REVISÃO: localiza o primeiro aviso realmente elegível para destaque.
+        const indiceAvisoDestaque = avisos.findIndex(aviso => {
+            const prioridade = typeof chavePrioridadeAvisoDVC === "function"
+                ? chavePrioridadeAvisoDVC(aviso.prioridade)
+                : String(aviso?.prioridade || "").trim().toLowerCase();
+
+            return aviso?.fixado === true || prioridade === "alta" || prioridade === "urgente";
+        });
+
+        const temDestaque = indiceAvisoDestaque !== -1;
+        const plural = avisos.length === 1 ? "comunicado ativo" : "comunicados ativos";
+
         return `
-            <section id="mural-comunicados-dvc" class="mb-5">
-                <div class="flex items-center justify-between gap-3 mb-2">
-                    <p class="text-[10px] font-black text-[#990000] uppercase">
-                        <i class="fa-solid fa-bullhorn mr-1"></i> Comunicados DVC
-                    </p>
-                    <span class="text-[8px] font-black uppercase text-gray-400">${avisos.length} ativo(s)</span>
+            <section id="mural-comunicados-dvc" class="mb-6">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                    <div>
+                        <p class="text-[10px] font-black text-[#990000] uppercase">
+                            <i class="fa-solid fa-bullhorn mr-1"></i> ${temDestaque ? "Comunicado em destaque" : "Comunicados DVC"}
+                        </p>
+                        ${temDestaque ? `<p class="text-[8px] font-semibold text-gray-500 uppercase mt-0.5">Informações importantes do projeto</p>` : ""}
+                    </div>
+                    <span class="text-[8px] font-black uppercase text-gray-400 mt-0.5 whitespace-nowrap">${avisos.length} ${temDestaque ? plural : "ativo(s)"}</span>
                 </div>
                 <div class="space-y-3">
-                    ${avisos.map(aviso => renderCardAvisoDVC(aviso, false)).join("")}
+                    ${avisos.map((aviso, i) => {
+                        const ehDestaque = temDestaque && i === indiceAvisoDestaque;
+                        return renderCardAvisoDVC(aviso, false, false, ehDestaque);
+                    }).join("")}
                 </div>
             </section>
         `;
