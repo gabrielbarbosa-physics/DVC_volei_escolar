@@ -345,7 +345,8 @@ async function carregarAtletasChamadaTreinoDVC(evento = {}) {
         if (!usuarioPodeSerEscaladoComoAtleta(dados)) return;
         if (!usuarioTemStatusConvocavel(dados)) return;
         if (!usuarioPodeSerConvocadoPorFinanceiro(dados)) return;
-        if (filtrarAdulto && !atletaCompleta18NoAno(dados, anoReferenciaAdulto)) return;
+        if (!usuarioPodeSerConvocadoPorFinanceiro(dados)) return;
+        // DVC CHAMADA — PARTE 2B: não restringe mais o Adulto na fonte de dados para que os atletas fiquem disponíveis no "Ver Todos".
 
         atletas.push({
             ...dados,
@@ -768,6 +769,46 @@ function getAnoReferenciaEvento(evento) {
         ? new Date().getFullYear()
         : dataEvento.getFullYear();
 }
+
+// DVC CHAMADA — PARTE 2B: Normalização rigorosa do público.
+function normalizarPublicoEventoChamadaDVC(valor = "") {
+    return String(valor)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "");
+}
+
+// DVC CHAMADA — PARTE 2B: Retorna os atletas que fazem parte do público e os preservados.
+function obterPublicoEsperadoChamadaDVC(evento, atletasElegiveis, participantesPreservados) {
+    const anoReferencia = getAnoReferenciaEvento(evento);
+    
+    // Prioridade dos campos reais.
+    const publicoBruto = evento.equipe || evento.categoriaTreino || evento.categoria || evento.genero || "";
+    const publico = normalizarPublicoEventoChamadaDVC(publicoBruto);
+    
+    const getId = window.getIdSeguroChamadaDVC || ((a) => String(a.id || a.email).toLowerCase());
+    const preservadosSet = new Set(participantesPreservados.map(getId));
+
+    return atletasElegiveis.filter(atleta => {
+        // DVC CHAMADA — PARTE 2B: preserva participantes já registrados ou convocados.
+        if (preservadosSet.has(getId(atleta))) return true;
+
+        const nascimento = String(atleta?.nascimento || "").trim();
+        const temNascimento = nascimento.length >= 4 && Number.isFinite(Number(nascimento.split("-")[0]));
+        const ehAdulto = atletaCompleta18NoAno(atleta, anoReferencia);
+        const sexo = normalizarPublicoEventoChamadaDVC(atleta.sexo || atleta.genero || "");
+
+        if (publico.includes("sub17")) return temNascimento && !ehAdulto;
+        if (publico.includes("adulto")) return temNascimento && ehAdulto;
+        if (publico.includes("masculino") || publico === "m" || publico === "masc") return sexo === "m" || sexo === "masculino";
+        if (publico.includes("feminino") || publico === "f" || publico === "fem") return sexo === "f" || sexo === "feminino";
+        
+        // Em Misto ou sem configuração, retorna todos.
+        return true; 
+    });
+}
 function eventoEhTreinoAdulto(evento) {
     const tipo = normalizarFuncaoTecnica(evento?.tipo);
     const categoria = normalizarFuncaoTecnica(evento?.equipe);
@@ -903,6 +944,11 @@ window.chamadaStatusTreinoDVC = window.chamadaStatusTreinoDVC || {};
         }
 
         function chamadaTemAlteracoesPendentes(evId) {
+            const estado = window.DVC_CHAMADA_ESTADO?.[evId];
+            if (estado && typeof estado.alterada === "boolean") {
+                return estado.alterada;
+            }
+
             const temp = window.chamadaTempDVC?.[evId];
             const salva = window.chamadaSalvaDVC?.[evId];
             if (!temp || !salva) return false;
@@ -910,34 +956,383 @@ window.chamadaStatusTreinoDVC = window.chamadaStatusTreinoDVC || {};
             for (const email of temp) {
                 if (!salva.has(email)) return true;
             }
+            const statusTemp = window.chamadaStatusTreinoDVC?.[evId];
+            const statusSalvo = window.chamadaStatusTreinoSalvoDVC?.[evId];
+            if (statusTemp && statusSalvo) {
+                for (const email of temp) {
+                    const sT = statusTemp.get(email) || {ativoNoTreino: true, saiuMaisCedo: false};
+                    const sS = statusSalvo.get(email) || {ativoNoTreino: true, saiuMaisCedo: false};
+                    if (sT.ativoNoTreino !== sS.ativoNoTreino || sT.saiuMaisCedo !== sS.saiuMaisCedo) return true;
+                }
+            }
             return false;
         }
+        window.chamadaTemAlteracoesPendentes = chamadaTemAlteracoesPendentes;
+
+        window.marcarChamadaComoAlteradaDVC = function (evId) {
+            const estado = window.DVC_CHAMADA_ESTADO[evId] || (window.DVC_CHAMADA_ESTADO[evId] = {});
+            estado.alterada = true;
+            estado.salvando = false;
+            window.atualizarBotaoSalvarChamadaDVC(evId);
+        };
+
+// DVC CHAMADA — PARTE 1: pesquisa participantes somente nos dados já carregados.
+function normalizarBuscaChamadaDVC(valor = "") {
+    return String(valor)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+}
+
+window.DVC_CHAMADA_ESTADO = window.DVC_CHAMADA_ESTADO || {};
+
+window.atualizarBuscaChamada = (evId, valor) => {
+    window.DVC_CHAMADA_ESTADO[evId].busca = normalizarBuscaChamadaDVC(valor);
+    window.atualizarVisualChamadaTemp(evId);
+};
+
+window.atualizarFiltroChamada = (evId, filtro) => {
+    window.DVC_CHAMADA_ESTADO[evId].filtro = filtro;
+    window.atualizarVisualChamadaTemp(evId);
+};
+
+window.mudarAbaChamada = (evId, abaId) => {
+    window.DVC_CHAMADA_ESTADO[evId].abaAtiva = abaId;
+    window.atualizarVisualChamadaTemp(evId);
+};
+
+// DVC CHAMADA — PARTE 1: separa pendentes, presentes e equipe sem novas leituras.
+        window.alternarModoPublicoDVC = (evId) => {
+            const estado = window.DVC_CHAMADA_ESTADO[evId];
+            if (estado) {
+                estado.mostrarTodosElegiveis = !estado.mostrarTodosElegiveis;
+                window.atualizarVisualChamadaTemp(evId);
+            }
+        };
+
+        window.acionarSalvamentoChamadaDVC = async function (evId) {
+            const estado = window.DVC_CHAMADA_ESTADO[evId] || (window.DVC_CHAMADA_ESTADO[evId] = {});
+
+            if (!estado.alterada || estado.salvando) {
+                return;
+            }
+
+            estado.salvando = true;
+            window.atualizarBotaoSalvarChamadaDVC(evId);
+
+            try {
+                const resultado = await window.salvarChamadaEvento(evId);
+                const sucesso = resultado === true || resultado?.sucesso === true;
+
+                if (!sucesso) {
+                    throw resultado?.erro || new Error("A chamada nǜo foi salva.");
+                }
+
+                estado.alterada = false;
+                alert("Chamada salva com sucesso!");
+            } catch (erro) {
+                estado.alterada = true;
+                console.error("[DVC Chamada] Falha ao salvar:", erro);
+                alert("Nǜo foi possvel salvar a chamada.");
+            } finally {
+                estado.salvando = false;
+                window.atualizarBotaoSalvarChamadaDVC(evId);
+            }
+        };
+
+        window.atualizarBotaoSalvarChamadaDVC = (evId) => {
+            const btnSalvar = document.getElementById(`btn-salvar-chamada-${evId}`);
+            if (!btnSalvar) return;
+            
+            const estado = window.DVC_CHAMADA_ESTADO[evId] || {};
+
+            if (estado.salvando) {
+                btnSalvar.disabled = true;
+                btnSalvar.textContent = "SALVANDO...";
+                btnSalvar.className = "min-h-[48px] w-full rounded-xl bg-slate-600 px-4 py-3 text-[11px] font-black uppercase text-white shadow-md cursor-wait opacity-80 transition-colors";
+            } else if (estado.alterada) {
+                btnSalvar.disabled = false;
+                btnSalvar.textContent = "SALVAR CHAMADA";
+                btnSalvar.className = "min-h-[48px] w-full rounded-xl bg-green-600 px-4 py-3 text-[11px] font-black uppercase text-white shadow-md cursor-pointer active:scale-[0.98] transition-colors";
+            } else {
+                btnSalvar.disabled = true;
+                btnSalvar.textContent = "CHAMADA SALVA";
+                btnSalvar.className = "min-h-[48px] w-full rounded-xl bg-slate-200 text-slate-500 border border-slate-300 px-4 py-3 text-[11px] font-black uppercase shadow-none cursor-not-allowed transition-colors";
+            }
+
+            btnSalvar.setAttribute("aria-disabled", btnSalvar.disabled ? "true" : "false");
+        };
 
         window.atualizarVisualChamadaTemp = (evId) => {
             const selecionados = window.chamadaTempDVC?.[evId] || new Set();
-            const convocados = window.chamadaConvocadosDVC?.[evId] || [];
-            const contador = document.getElementById(`contador-chamada-${evId}`);
-            const aviso = document.getElementById(`aviso-chamada-${evId}`);
-            if (contador) contador.innerText = `${selecionados.size}/${convocados.length}`;
-            if (aviso) aviso.classList.toggle("hidden", !chamadaTemAlteracoesPendentes(evId));
+            const todosConvocados = window.chamadaConvocadosDVC?.[evId] || [];
+            const estado = window.DVC_CHAMADA_ESTADO[evId] || { abaAtiva: "pendentes", busca: "", filtro: "TODOS", mostrarTodosElegiveis: false };
+            
+            // DVC CHAMADA — PARTE 2B: aplicar o público esperado.
+            const eventoObj = window.eventosAgendaPorIdDVC?.[evId] || { tipo: "treino" };
+            const mostrarTodos = estado.mostrarTodosElegiveis === true;
+            
+            let convocados = todosConvocados;
+            let preservadosParaFiltro = [];
+            
+            if (window.chamadaTempDVC && window.chamadaSalvaDVC) {
+                const salvosSet = window.chamadaSalvaDVC[evId] || new Set();
+                const getId = window.getIdSeguroChamadaDVC || ((a) => String(a.id || a.email).toLowerCase());
+                
+                // Pega os convocados explícitos já em cache sem fazer nova leitura
+                const cacheConvocados = window.DVC_CACHE?.convocadosPorEvento?.[evId]?.dados || [];
+                const setConvocados = new Set(cacheConvocados.map(getId));
+
+                preservadosParaFiltro = todosConvocados.filter(a => {
+                    const idA = getId(a);
+                    return selecionados.has(idA) || salvosSet.has(idA) || setConvocados.has(idA);
+                });
+            }
+
+            const equipeStaff = todosConvocados.filter(a => {
+                const funcNorm = typeof normalizarFuncaoTecnica === 'function' ? normalizarFuncaoTecnica(a.funcao) : String(a.funcao || "").toLowerCase();
+                return (funcNorm === 'treinador' || funcNorm === 'auxiliar' || funcNorm === 'adm' || funcNorm === 'responsavel');
+            });
+
+            const publicoAtletas = obterPublicoEsperadoChamadaDVC(eventoObj, todosConvocados.filter(a => {
+                const funcNorm = typeof normalizarFuncaoTecnica === 'function' ? normalizarFuncaoTecnica(a.funcao) : String(a.funcao || "").toLowerCase();
+                return !(funcNorm === 'treinador' || funcNorm === 'auxiliar' || funcNorm === 'adm' || funcNorm === 'responsavel');
+            }), preservadosParaFiltro);
+
+            if (!mostrarTodos) {
+                convocados = [...equipeStaff, ...publicoAtletas];
+            }
+            
+            // Renderiza o cabeçalho dinâmico
+            const cabecalhoEl = document.getElementById(`cabecalho-publico-${evId}`);
+            if (cabecalhoEl) {
+                const publicoBruto = eventoObj.equipe || eventoObj.categoriaTreino || eventoObj.categoria || eventoObj.genero || "";
+                const nomePublico = publicoBruto.toUpperCase() || "NÃO CONFIGURADO";
+                
+                const qtsFora = publicoAtletas.length - obterPublicoEsperadoChamadaDVC(eventoObj, todosConvocados.filter(a => {
+                    const funcNorm = typeof normalizarFuncaoTecnica === 'function' ? normalizarFuncaoTecnica(a.funcao) : String(a.funcao || "").toLowerCase();
+                    return !(funcNorm === 'treinador' || funcNorm === 'auxiliar' || funcNorm === 'adm' || funcNorm === 'responsavel');
+                }), []).length;
+
+                let headerHtml = `
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="text-[10px] font-black uppercase text-[#990000] mb-0.5">Público do Treino</h3>
+                            <p class="text-sm font-black uppercase text-gray-900">${nomePublico}</p>
+                            ${!mostrarTodos ? `
+                            <p class="text-[10px] font-bold text-gray-500 uppercase mt-1">
+                                ${publicoAtletas.length - qtsFora} atletas esperados
+                                ${qtsFora > 0 ? `<br><span class="text-amber-600">${qtsFora} inclusões preservadas</span>` : ''}
+                            </p>
+                            ` : `
+                            <p class="text-[10px] font-bold text-gray-500 uppercase mt-1">
+                                Atletas elegíveis: ${todosConvocados.length - equipeStaff.length}
+                            </p>
+                            `}
+                        </div>
+                        <button onclick="window.alternarModoPublicoDVC('${evId}')" class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 shadow-sm text-[8px] font-black uppercase text-gray-600 hover:bg-gray-50 transition-colors text-right max-w-[120px] leading-tight">
+                            ${mostrarTodos ? 'MOSTRAR APENAS O PÚBLICO DO TREINO' : 'VER TODOS OS ATLETAS ELEGÍVEIS'}
+                        </button>
+                    </div>
+                `;
+                
+                if (!publicoBruto && !mostrarTodos) {
+                    headerHtml += `
+                        <div class="mt-2 bg-amber-50 border border-amber-100 rounded-lg p-2 flex gap-2 items-start">
+                            <i class="fa-solid fa-circle-exclamation text-amber-500 mt-0.5 text-xs"></i>
+                            <p class="text-[9px] font-bold uppercase text-amber-800 leading-tight">
+                                Público do treino não configurado.<br>Todos os atletas elegíveis estão sendo exibidos.
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                if (!mostrarTodos) {
+                    let foraCount = 0;
+                    const pubNorm = normalizarPublicoEventoChamadaDVC(publicoBruto);
+                    todosConvocados.forEach(a => {
+                        const funcNorm = typeof normalizarFuncaoTecnica === 'function' ? normalizarFuncaoTecnica(a.funcao) : String(a.funcao || "").toLowerCase();
+                        if (funcNorm === 'treinador' || funcNorm === 'auxiliar' || funcNorm === 'adm' || funcNorm === 'responsavel') return;
+                        
+                        const nascimento = String(a.nascimento || "").trim();
+                        const temNascimento = nascimento.length >= 4 && Number.isFinite(Number(nascimento.split("-")[0]));
+                        const sexo = normalizarPublicoEventoChamadaDVC(a.sexo || a.genero || "");
+                        
+                        let faltandoDado = false;
+                        if ((pubNorm.includes("sub17") || pubNorm.includes("adulto")) && !temNascimento) faltandoDado = true;
+                        if ((pubNorm.includes("masculino") || pubNorm.includes("feminino")) && !sexo) faltandoDado = true;
+                        
+                        if (faltandoDado) foraCount++;
+                    });
+                    
+                    if (foraCount > 0) {
+                        headerHtml += `
+                            <div class="mt-2 bg-gray-100 rounded-lg p-2 border border-gray-200">
+                                <p class="text-[9px] font-bold uppercase text-gray-500 leading-tight">
+                                    Há ${foraCount} atleta(s) com cadastro incompleto fora do público automático. Use "Ver todos os atletas elegíveis" para localizá-los.
+                                </p>
+                            </div>
+                        `;
+                    }
+                }
+                
+                cabecalhoEl.innerHTML = headerHtml;
+            }
+
+            const temAlteracao = chamadaTemAlteracoesPendentes(evId);
+            const avisoPendente = document.getElementById(`aviso-pendente-${evId}`);
+            if (avisoPendente) {
+                avisoPendente.innerText = temAlteracao ? "ALTERAÇÕES PENDENTES" : "";
+            }
+
+            window.atualizarBotaoSalvarChamadaDVC(evId);
+
+            let countPendentes = 0;
+            let countPresentes = 0;
+            let countEquipe = 0;
+            let countEquipePresente = 0;
+
+            const pendentes = [];
+            const presentes = [];
+            const equipe = [];
 
             convocados.forEach(atleta => {
                 const email = normalizarEmailDVC(atleta.email || atleta.id);
-                const card = document.getElementById(`chamada-card-${evId}-${getIdSeguroChamadaDVC(email)}`);
-                const btn = document.getElementById(`chamada-btn-${evId}-${getIdSeguroChamadaDVC(email)}`);
-                const statusBadge = document.getElementById(`chamada-status-${evId}-${getIdSeguroChamadaDVC(email)}`);
-                const sorteioBtn = document.getElementById(`chamada-sorteio-btn-${evId}-${getIdSeguroChamadaDVC(email)}`);
-                const ativo = selecionados.has(email);
-                const foraSorteio = ativo && atletaEstaForaSorteioChamadaDVC(evId, email);
-                if (card) card.className = `flex justify-between items-start gap-2 p-2 border rounded-lg mb-1 cursor-pointer ${foraSorteio ? 'bg-amber-50 border-amber-200' : ativo ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`;
-                if (btn) btn.className = `w-8 h-8 rounded-full ${ativo ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'}`;
-                if (statusBadge) statusBadge.classList.toggle("hidden", !foraSorteio);
-                if (sorteioBtn) {
-                    sorteioBtn.classList.toggle("hidden", !ativo);
-                    sorteioBtn.innerText = foraSorteio ? "Voltar ao sorteio" : "Saiu";
-                    sorteioBtn.className = `shrink-0 rounded-full px-2.5 py-1 text-[8px] font-black uppercase border ${!ativo ? 'hidden' : ''} ${foraSorteio ? 'bg-green-50 text-green-700 border-green-100' : 'bg-amber-50 text-amber-800 border-amber-100'}`;
+                const funcNorm = typeof normalizarFuncaoTecnica === 'function' ? normalizarFuncaoTecnica(atleta.funcao) : String(atleta.funcao || "").toLowerCase();
+                const ehEquipe = funcNorm === 'treinador' || funcNorm === 'auxiliar' || funcNorm === 'adm' || funcNorm === 'responsavel';
+                const presente = selecionados.has(email);
+                
+                if (ehEquipe) {
+                    countEquipe++;
+                    if(presente) countEquipePresente++;
+                    equipe.push({atleta, email, presente, ehEquipe: true});
+                } else {
+                    if (presente) {
+                        countPresentes++;
+                        presentes.push({atleta, email, presente, ehEquipe: false});
+                    } else {
+                        countPendentes++;
+                        pendentes.push({atleta, email, presente, ehEquipe: false});
+                    }
                 }
             });
+
+            const abaBtnPendentes = document.getElementById(`contador-aba-${evId}-pendentes`);
+            if(abaBtnPendentes) abaBtnPendentes.innerText = countPendentes;
+            const abaBtnPresentes = document.getElementById(`contador-aba-${evId}-presentes`);
+            if(abaBtnPresentes) abaBtnPresentes.innerText = countPresentes;
+            const abaBtnEquipe = document.getElementById(`contador-aba-${evId}-equipe`);
+            if(abaBtnEquipe) abaBtnEquipe.innerText = countEquipe;
+
+            const resumoFixo = document.getElementById(`resumo-fixo-chamada-${evId}`);
+            if(resumoFixo) resumoFixo.innerText = `${countPresentes} atletas · ${countEquipePresente} equipe`;
+
+            let listaAtiva = [];
+            if (estado.abaAtiva === 'pendentes') listaAtiva = pendentes;
+            else if (estado.abaAtiva === 'presentes') listaAtiva = presentes;
+            else if (estado.abaAtiva === 'equipe') listaAtiva = equipe;
+
+            if (estado.busca) {
+                listaAtiva = listaAtiva.filter(item => normalizarBuscaChamadaDVC(item.atleta.nome).includes(estado.busca));
+            }
+            
+            if (estado.filtro !== 'TODOS') {
+                listaAtiva = listaAtiva.filter(item => {
+                    const at = item.atleta;
+                    if (estado.filtro === 'SUB-17' || estado.filtro === 'ADULTO') {
+                        const isAdulto = typeof atletaCompleta18NoAno === 'function' ? atletaCompleta18NoAno(at, new Date().getFullYear()) : false;
+                        if (estado.filtro === 'ADULTO' && !isAdulto) return false;
+                        if (estado.filtro === 'SUB-17' && isAdulto) return false;
+                    }
+                    if (estado.filtro === 'MASCULINO' || estado.filtro === 'FEMININO') {
+                        const genero = String(at.sexo || at.genero || at.gender || "").toUpperCase().startsWith('M') ? 'MASCULINO' : 'FEMININO';
+                        if (estado.filtro !== genero) return false;
+                    }
+                    return true;
+                });
+            }
+
+            const containerLista = document.getElementById(`lista-chamada-${evId}`);
+            if (!containerLista) return;
+
+            document.querySelectorAll(`.filtro-chamada-btn-${evId}`).forEach(btn => {
+                if(btn.innerText.trim() === estado.filtro) {
+                    btn.className = `filtro-chamada-btn-${evId} whitespace-nowrap px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-colors bg-[#990000] text-white border-[#990000]`;
+                } else {
+                    btn.className = `filtro-chamada-btn-${evId} whitespace-nowrap px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-colors bg-white text-gray-600 border-gray-200`;
+                }
+            });
+
+            document.querySelectorAll(`.aba-chamada-btn-${evId}`).forEach(btn => {
+                if(btn.id === `aba-btn-${evId}-${estado.abaAtiva}`) {
+                    btn.className = `aba-chamada-btn-${evId} py-2 rounded-lg text-[9px] font-black uppercase transition-colors bg-white text-gray-900 shadow-sm flex flex-col items-center justify-center`;
+                } else {
+                    btn.className = `aba-chamada-btn-${evId} py-2 rounded-lg text-[9px] font-black uppercase transition-colors text-gray-500 flex flex-col items-center justify-center`;
+                }
+            });
+
+            if (listaAtiva.length === 0) {
+                containerLista.innerHTML = `
+                    <div class="text-center p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                        <p class="text-[10px] font-semibold text-gray-500 mb-2">Nenhum participante encontrado com estes filtros.</p>
+                        <button onclick="window.atualizarBuscaChamada('${evId}', ''); document.getElementById('busca-chamada-${evId}').value = ''; window.atualizarFiltroChamada('${evId}', 'TODOS');" class="text-[#990000] text-[10px] font-black uppercase">Limpar filtros</button>
+                    </div>
+                `;
+                return;
+            }
+
+            containerLista.innerHTML = listaAtiva.map(item => {
+                const at = item.atleta;
+                const email = item.email;
+                const presente = item.presente;
+                const ehEquipe = item.ehEquipe;
+                
+                const funcText = ehEquipe ? String(at.funcao || "EQUIPE").toUpperCase() : String(at.funcaoVolei || at.posicaoVolei || at.posicao || "N/A").toUpperCase();
+                const genero = String(at.sexo || at.genero || at.gender || "").toUpperCase().startsWith('M') ? 'Masculino' : 'Feminino';
+                const isAdulto = typeof atletaCompleta18NoAno === 'function' ? atletaCompleta18NoAno(at, new Date().getFullYear()) : false;
+                const catText = isAdulto ? 'Adulto' : 'Sub-17';
+                
+                let tagsHtml = "";
+                if (ehEquipe) {
+                    tagsHtml = `<span class="text-[9px] font-semibold text-gray-500 uppercase">${funcText}</span>`;
+                } else {
+                    tagsHtml = `<span class="text-[9px] font-semibold text-gray-500">${catText} · ${genero} · ${funcText}</span>`;
+                }
+
+                const bgColor = presente ? (ehEquipe ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200') : 'bg-white border-gray-100';
+                const textBtn = presente ? (ehEquipe ? 'MARCADO' : 'MARCADO') : 'PRESENTE';
+                const btnClass = presente ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 border border-gray-200';
+
+                const foraSorteio = presente && atletaEstaForaSorteioChamadaDVC(evId, email);
+
+                let btnSorteioHtml = "";
+                // DVC CHAMADA — PARTE 1.1: retira o atleta apenas dos próximos sorteios.
+                if (presente && !ehEquipe) {
+                    if (foraSorteio) {
+                        btnSorteioHtml = `<button onclick="event.stopPropagation(); window.toggleAtivoSorteioTreino('${evId}', '${email}')" class="text-[9px] font-black uppercase text-amber-700 bg-amber-100/50 hover:bg-amber-200 px-2 py-1 rounded-md transition-colors mt-1">Retornou ao treino</button>`;
+                    } else {
+                        btnSorteioHtml = `<button onclick="event.stopPropagation(); window.toggleAtivoSorteioTreino('${evId}', '${email}')" class="text-[9px] font-black uppercase text-gray-400 hover:text-amber-700 hover:bg-amber-50 px-2 py-1 rounded-md transition-colors mt-1">Saiu mais cedo</button>`;
+                    }
+                }
+
+                return `
+                    <div onclick="togglePresencaTemp('${evId}', '${email}')" class="flex justify-between items-center p-3 border rounded-xl mb-1 cursor-pointer transition-colors ${foraSorteio ? 'bg-amber-50 border-amber-200' : bgColor}">
+                        <div class="flex flex-col min-w-0 pr-2">
+                            <span class="block text-xs font-bold text-gray-900 truncate uppercase tracking-tight">${at.nome}</span>
+                            <div class="flex items-center gap-1 mt-0.5 flex-wrap">
+                                ${tagsHtml}
+                            </div>
+                            ${foraSorteio ? `<span class="block text-[8px] font-black uppercase text-amber-700 mt-0.5">SAIU MAIS CEDO · FORA DO SORTEIO</span>` : ''}
+                        </div>
+                        <div class="flex flex-col items-end gap-1 shrink-0">
+                            <button class="rounded-lg px-3 py-1.5 text-[9px] font-black uppercase pointer-events-none ${btnClass}">${textBtn}</button>
+                            ${btnSorteioHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         };
 
         window.togglePresencaTemp = (evId, email) => {
@@ -946,64 +1341,48 @@ window.chamadaStatusTreinoDVC = window.chamadaStatusTreinoDVC || {};
             window.chamadaTempDVC[evId] = window.chamadaTempDVC[evId] || new Set();
             if (window.chamadaTempDVC[evId].has(emailLimpo)) window.chamadaTempDVC[evId].delete(emailLimpo);
             else window.chamadaTempDVC[evId].add(emailLimpo);
+            window.marcarChamadaComoAlteradaDVC(evId);
             window.atualizarVisualChamadaTemp(evId);
         };
 
-        window.toggleAtivoSorteioTreino = async (evId, email) => {
+        window.toggleAtivoSorteioTreino = (evId, email) => {
             const emailLimpo = normalizarEmailDVC(email);
             if (!emailLimpo) return;
 
-            const convocados = window.chamadaConvocadosDVC?.[evId] || [];
-            const atleta = convocados.find(item => normalizarEmailDVC(item.email || item.id) === emailLimpo) || {};
+            window.chamadaStatusTreinoDVC[evId] = window.chamadaStatusTreinoDVC[evId] || new Map();
             const statusAtual = getStatusSorteioChamadaDVC(evId, emailLimpo);
             const marcarFora = statusAtual.ativoNoTreino !== false && statusAtual.saiuMaisCedo !== true;
-            const agora = new Date().toISOString();
-            const dadosPresenca = {
-                nome: atleta.nome || emailLimpo,
-                email: emailLimpo,
-                presente: true,
+
+            const convocados = window.chamadaConvocadosDVC?.[evId] || [];
+            const atleta = convocados.find(item => normalizarEmailDVC(item.email || item.id) === emailLimpo) || {};
+            const nome = atleta.nome || emailLimpo;
+            const mensagem = marcarFora 
+                ? `Retirar ${nome} dos próximos sorteios?\n\nEla continuará registrada como presente neste treino.`
+                : `Disponibilizar ${nome} novamente para os sorteios?`;
+
+            // DVC CHAMADA — PARTE 1.1: impede propagação do botão para a linha de presença. (A propagacao ja é contida no HTML event.stopPropagation())
+            if (!confirm(mensagem)) return;
+
+            // DVC CHAMADA — PARTE 1.1: mantém presença mesmo após saída antecipada.
+            window.chamadaStatusTreinoDVC[evId].set(emailLimpo, {
                 ativoNoTreino: !marcarFora,
-                saiuMaisCedo: marcarFora,
-                sorteioAtualizadoEm: agora,
-                sorteioAtualizadoPor: window.currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica"
-            };
+                saiuMaisCedo: marcarFora
+            });
 
-            if (marcarFora) {
-                dadosPresenca.saiuMaisCedoEm = agora;
-                dadosPresenca.saiuMaisCedoPor = window.currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica";
-            } else {
-                dadosPresenca.voltouAoSorteioEm = agora;
-                dadosPresenca.voltouAoSorteioPor = window.currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica";
-            }
-
-            try {
-                await setDoc(doc(db, "events", evId, "presencas", emailLimpo), dadosPresenca, { merge: true });
-
-                window.chamadaTempDVC[evId] = window.chamadaTempDVC[evId] || new Set();
-                window.chamadaSalvaDVC[evId] = window.chamadaSalvaDVC[evId] || new Set();
-                window.chamadaStatusTreinoDVC[evId] = window.chamadaStatusTreinoDVC[evId] || new Map();
-                window.chamadaTempDVC[evId].add(emailLimpo);
-                window.chamadaSalvaDVC[evId].add(emailLimpo);
-                window.chamadaStatusTreinoDVC[evId].set(emailLimpo, {
-                    ativoNoTreino: !marcarFora,
-                    saiuMaisCedo: marcarFora
-                });
-                atualizarCachePresencaChamadaDVC(evId, emailLimpo, dadosPresenca);
-                window.atualizarVisualChamadaTemp(evId);
-            } catch (e) {
-                console.error("Erro ao atualizar atleta no sorteio:", e);
-                alert("Não foi possível atualizar este atleta no sorteio.");
-            }
+            window.marcarChamadaComoAlteradaDVC(evId);
+            window.atualizarVisualChamadaTemp(evId);
         };
 
         window.marcarTodosChamadaTemp = (evId) => {
             const convocados = window.chamadaConvocadosDVC?.[evId] || [];
             window.chamadaTempDVC[evId] = new Set(convocados.map(atleta => normalizarEmailDVC(atleta.email || atleta.id)).filter(Boolean));
+            window.marcarChamadaComoAlteradaDVC(evId);
             window.atualizarVisualChamadaTemp(evId);
         };
 
         window.limparChamadaTemp = (evId) => {
             window.chamadaTempDVC[evId] = new Set();
+            window.marcarChamadaComoAlteradaDVC(evId);
             window.atualizarVisualChamadaTemp(evId);
         };
 
@@ -1020,9 +1399,13 @@ window.chamadaStatusTreinoDVC = window.chamadaStatusTreinoDVC || {};
                 const responsavel = window.currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica";
 
                 selecionados.forEach(email => {
-                    if (salvos.has(email)) return;
-                    const atleta = porEmail.get(email) || {};
                     const statusSorteio = getStatusSorteioChamadaDVC(evId, email);
+                    const sS = window.chamadaStatusTreinoSalvoDVC?.[evId]?.get(email) || {ativoNoTreino: true, saiuMaisCedo: false};
+                    const statusMudou = statusSorteio.ativoNoTreino !== sS.ativoNoTreino || statusSorteio.saiuMaisCedo !== sS.saiuMaisCedo;
+                    
+                    if (salvos.has(email) && !statusMudou) return;
+
+                    const atleta = porEmail.get(email) || {};
                     const dadosPresenca = {
                         nome: atleta.nome || email,
                         email,
@@ -1032,6 +1415,7 @@ window.chamadaStatusTreinoDVC = window.chamadaStatusTreinoDVC || {};
                         salvoEm: agora,
                         salvoPor: responsavel
                     };
+                    // DVC CHAMADA — PARTE 1.1: preserva times e partidas já registrados.
                     operacoes.push(setDoc(doc(db, "events", evId, "presencas", email), dadosPresenca, { merge: true }));
                     atualizacoesCache.push({ email, dados: dadosPresenca });
                 });
@@ -1055,12 +1439,10 @@ window.chamadaStatusTreinoDVC = window.chamadaStatusTreinoDVC || {};
                     atualizarCachePresencaChamadaDVC(evId, email, {}, true);
                     window.chamadaStatusTreinoDVC?.[evId]?.delete(email);
                 });
-                window.chamadaSalvaDVC[evId] = new Set(selecionados);
-                alert("Chamada salva com sucesso!");
-                window.atualizarVisualChamadaTemp(evId);
+                return { sucesso: true };
             } catch (e) {
-                console.error("Erro ao salvar chamada:", e);
-                alert("Não foi possível salvar a chamada.");
+                console.error("[DVC Chamada] Erro ao salvar chamada no Firestore:", e);
+                return { sucesso: false, erro: e };
             }
         };
 
@@ -1097,34 +1479,82 @@ window.chamadaStatusTreinoDVC = window.chamadaStatusTreinoDVC || {};
             window.chamadaSalvaDVC[evId] = new Set(presencasSalvas);
             window.chamadaTempDVC[evId] = new Set(presencasSalvas);
             window.chamadaStatusTreinoDVC[evId] = statusPresencas;
+            window.chamadaStatusTreinoSalvoDVC = window.chamadaStatusTreinoSalvoDVC || {};
+            window.chamadaStatusTreinoSalvoDVC[evId] = new Map(
+                Array.from(statusPresencas.entries()).map(([k, v]) => [k, { ...v }])
+            );
+
+            // DVC CHAMADA — PARTE 1: mantém marcações em memória até o salvamento oficial.
+            if (!window.DVC_CHAMADA_ESTADO[evId]) {
+                window.DVC_CHAMADA_ESTADO[evId] = {
+                    abaAtiva: "pendentes",
+                    busca: "",
+                    filtro: "TODOS",
+                    mostrarTodosElegiveis: false
+                };
+            }
+            window.DVC_CHAMADA_ESTADO[evId].alterada = false;
+            window.DVC_CHAMADA_ESTADO[evId].salvando = false;
+
+            const total = convArr.length;
 
             div.innerHTML = `
-                <div class="bg-gray-50 border rounded-xl p-3 mb-3 space-y-2">
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="marcarTodosChamadaTemp('${evId}')" class="bg-white border text-gray-700 py-2 rounded-lg font-black text-[8px] uppercase">Todos</button>
-                        <button onclick="limparChamadaTemp('${evId}')" class="bg-white border text-gray-700 py-2 rounded-lg font-black text-[8px] uppercase">Limpar</button>
-                        <button onclick="salvarChamadaEvento('${evId}')" class="bg-green-700 text-white py-2 rounded-lg font-black text-[8px] uppercase">Salvar</button>
-                    </div>
-                    <div class="bg-white border rounded-xl p-2 flex items-center justify-between">
-                        <p class="text-[9px] font-black uppercase text-gray-500">Presentes</p>
-                        <p id="contador-chamada-${evId}" class="text-sm font-black text-[#990000]">0/0</p>
-                    </div>
-                    <p id="aviso-chamada-${evId}" class="hidden text-[9px] font-black uppercase text-yellow-700 bg-yellow-50 border border-yellow-100 rounded-xl p-2">Alterações pendentes.</p>
-                    ${chamadaEhTreino ? `<p class="text-[8px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-2">Atletas que saíram continuam presentes, mas ficam fora dos próximos sorteios.</p>` : ''}
-                </div>
-                <div id="lista-chamada-${evId}">
-                    ${convArr.map(at => `
-                        <div id="chamada-card-${evId}-${getIdSeguroChamadaDVC(at.email)}" onclick="togglePresencaTemp('${evId}', '${at.email}')" class="flex justify-between items-start gap-2 p-2 border rounded-lg mb-1 bg-white cursor-pointer">
-                            <div class="min-w-0">
-                                <span class="block text-xs font-semibold text-gray-800 truncate">${at.nome}</span>
-                                <span id="chamada-status-${evId}-${getIdSeguroChamadaDVC(at.email)}" class="hidden mt-1 inline-flex items-center rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 text-[8px] font-black uppercase">Fora do sorteio</span>
-                            </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                ${chamadaEhTreino ? `<button id="chamada-sorteio-btn-${evId}-${getIdSeguroChamadaDVC(at.email)}" onclick="event.stopPropagation(); toggleAtivoSorteioTreino('${evId}', '${at.email}')" class="hidden shrink-0 rounded-full px-2.5 py-1 text-[8px] font-black uppercase border bg-amber-50 text-amber-800 border-amber-100">Saiu</button>` : ''}
-                                <button id="chamada-btn-${evId}-${getIdSeguroChamadaDVC(at.email)}" class="w-8 h-8 rounded-full bg-gray-200 text-gray-500"><i class="fa-solid fa-check"></i></button>
-                            </div>
+                <div class="bg-gray-50 border rounded-xl p-3 mb-3 flex flex-col gap-3">
+                    <div id="cabecalho-publico-${evId}"></div>
+
+                    <div class="flex flex-col gap-2">
+                        <input type="text" id="busca-chamada-${evId}" placeholder="Buscar participante pelo nome..." 
+                            class="w-full p-3 rounded-xl border border-gray-200 text-sm bg-white outline-none font-semibold"
+                            oninput="window.atualizarBuscaChamada('${evId}', this.value)"
+                            value="${window.DVC_CHAMADA_ESTADO[evId].busca}">
+                        
+                        <div class="flex overflow-x-auto gap-2 pb-1 scrollbar-hide">
+                            ${['TODOS', 'SUB-17', 'ADULTO', 'MASCULINO', 'FEMININO'].map(f => `
+                                <button onclick="window.atualizarFiltroChamada('${evId}', '${f}')" 
+                                    class="filtro-chamada-btn-${evId} whitespace-nowrap px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-colors bg-white text-gray-600 border-gray-200">
+                                    ${f}
+                                </button>
+                            `).join('')}
                         </div>
-                    `).join("")}
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-1 bg-gray-200 p-1 rounded-xl">
+                        ${[
+                            { id: 'pendentes', label: 'Pendentes' },
+                            { id: 'presentes', label: 'Presentes' },
+                            { id: 'equipe', label: 'Equipe' }
+                        ].map(aba => `
+                            <button onclick="window.mudarAbaChamada('${evId}', '${aba.id}')"
+                                id="aba-btn-${evId}-${aba.id}"
+                                class="aba-chamada-btn-${evId} py-2 rounded-lg text-[9px] font-black uppercase transition-colors text-gray-500 flex flex-col items-center justify-center">
+                                <span>${aba.label}</span>
+                                <span id="contador-aba-${evId}-${aba.id}" class="text-xs mt-0.5 font-bold">0</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div id="lista-chamada-${evId}" class="space-y-1">
+                </div>
+
+                <div id="dvc-chamada-acoes-${evId}" class="sticky bottom-0 z-20 mt-3 border-t border-slate-200 bg-white/95 px-3 py-3 backdrop-blur">
+                    <div class="mb-2 flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-amber-700" id="aviso-pendente-${evId}">
+                        </span>
+                        <span class="text-[10px] font-black text-slate-600" id="resumo-fixo-chamada-${evId}">
+                            0 atletas · 0 equipe
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        id="btn-salvar-chamada-${evId}"
+                        onclick="window.acionarSalvamentoChamadaDVC('${evId}')"
+                        class="min-h-[48px] w-full rounded-xl bg-slate-200 text-slate-500 border border-slate-300 px-4 py-3 text-[11px] font-black uppercase shadow-none cursor-not-allowed transition-colors"
+                        disabled
+                        aria-disabled="true"
+                    >
+                        CHAMADA SALVA
+                    </button>
                 </div>
             `;
             window.atualizarVisualChamadaTemp(evId);

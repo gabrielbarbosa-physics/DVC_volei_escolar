@@ -1,10 +1,10 @@
 /**
  * ============================================================================
- * Módulo: FINANCE
+ * MÃ³dulo: FINANCE
  * ============================================================================
  * Responsabilidade: Gerencia funcionalidades relacionadas a finance.
  * Este arquivo faz parte do sistema modular do DVC App.
- * Todos os códigos principais aqui agrupados seguem as diretrizes do projeto.
+ * Todos os cÃ³digos principais aqui agrupados seguem as diretrizes do projeto.
  * ============================================================================
  */
 
@@ -26,18 +26,21 @@ import {
 
 // Global constant and state getters/setters via window
 const get_currentUserData = () => window.currentUserData;
-const get_PROJETO_ATUAL_DVC = () => window.PROJETO_ATUAL_DVC;
 const get_DIA_INICIO_CARENCIA_CADASTRO_FIM_MES = () => window.DIA_INICIO_CARENCIA_CADASTRO_FIM_MES;
 const get_DIA_LIMITE_FINANCEIRO_MENSAL = () => window.DIA_LIMITE_FINANCEIRO_MENSAL;
 const get_STATUS_FINANCEIRO_CARENCIA = () => window.STATUS_FINANCEIRO_CARENCIA;
 const get_AppCache = () => window.AppCache;
+
+const CHAVE_PIX_DVC = "drummondvoleibol@gmail.com";
+const VALOR_SUGERIDO_CONTRIBUICAO_DVC = "R$ 10,00";
+const logoContribuicaoDVC = "assets/img/loki2.webp";
 
 // Inner helper functions for renderFinanceiro
 function valorMesAno(textoMesAno) {
     const mapaMeses = {
         "Janeiro": 0,
         "Fevereiro": 1,
-        "Março": 2,
+        "MarÃ§o": 2,
         "Abril": 3,
         "Maio": 4,
         "Junho": 5,
@@ -52,10 +55,15 @@ function valorMesAno(textoMesAno) {
     return Number(ano) * 100 + mapaMeses[nomeMes];
 }
 
+function valorMesAnoSeguroFinanceiroDVC(textoMesAno) {
+    const valor = valorMesAno(textoMesAno);
+    return Number.isFinite(valor) ? valor : -1;
+}
+
 function obterMesInicialContribuicao() {
     const criadoEm = get_currentUserData()?.criadoEm;
 
-    // Usuários antigos sem data de cadastro continuam vendo desde Abril/2026
+    // UsuÃ¡rios antigos sem data de cadastro continuam vendo desde Abril/2026
     if (!criadoEm) {
         return valorMesAno("Abril/2026");
     }
@@ -69,7 +77,7 @@ function obterMesInicialContribuicao() {
     let mesCadastro = dataCadastro.getMonth();
     let anoCadastro = dataCadastro.getFullYear();
 
-    // Se cadastrou nos últimos dias do mês, começa no mês seguinte
+    // Se cadastrou nos Ãºltimos dias do mÃªs, comeÃ§a no mÃªs seguinte
     if (dataCadastro.getDate() >= get_DIA_INICIO_CARENCIA_CADASTRO_FIM_MES()) {
         mesCadastro++;
 
@@ -82,31 +90,659 @@ function obterMesInicialContribuicao() {
     return anoCadastro * 100 + mesCadastro;
 }
 
+function corrigirTextoFinanceiroDVC(valor = "") {
+    if (typeof window.corrigirMojibakeDVC === "function") {
+        return window.corrigirMojibakeDVC(valor);
+    }
+
+    return String(valor || "");
+}
+
+function escaparHtmlFinanceiroDVC(valor = "") {
+    if (typeof window.escaparHtml === "function") {
+        return window.escaparHtml(valor);
+    }
+
+    return corrigirTextoFinanceiroDVC(valor)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function normalizarStatusFinanceiroDVC(valor = "") {
+    return corrigirTextoFinanceiroDVC(valor)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase();
+}
+
+function obterCompetenciaAtualFinanceiroDVC(mesesPermitidos = []) {
+    if (mesesPermitidos.length > 0) {
+        return mesesPermitidos[mesesPermitidos.length - 1];
+    }
+
+    if (typeof window.obterMesAtualTextoFinanceiro === "function") {
+        return window.obterMesAtualTextoFinanceiro();
+    }
+
+    const hoje = new Date();
+    const meses = [
+        "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+
+    return `${meses[hoje.getMonth()]}/${hoje.getFullYear()}`;
+}
+
+function montarOptionsMesesFinanceiroDVC(mesesPermitidos = [], competenciaAtual = "") {
+    if (mesesPermitidos.length === 0) {
+        return `<option value="">Nenhum mes disponivel ainda</option>`;
+    }
+
+    return mesesPermitidos.map(mes => {
+        const mesSeguro = escaparHtmlFinanceiroDVC(mes);
+        const selecionado = mes === competenciaAtual ? " selected" : "";
+        return `<option value="${mesSeguro}"${selecionado}>${mesSeguro}</option>`;
+    }).join("");
+}
+
+function obterTipoEnvioFinanceiroDVC(tipo = "") {
+    const tipoNormalizado = normalizarStatusFinanceiroDVC(tipo);
+
+    if (tipoNormalizado === "justificativa") return "Justificativa";
+    if (tipoNormalizado === "carenciaespecial") return "Car&ecirc;ncia especial";
+    if (tipoNormalizado.includes("ajustemanual")) return "Ajuste manual";
+
+    return "Comprovante";
+}
+
+function obterStatusVisualFinanceiroDVC(item = {}) {
+    const statusNormalizado = normalizarStatusFinanceiroDVC(item.status || "");
+    const resultadoNormalizado = normalizarStatusFinanceiroDVC(item.resultadoFinanceiro || "");
+
+    if (statusNormalizado.includes("validado") || resultadoNormalizado.includes("pago")) {
+        return {
+            chave: "validado",
+            texto: "Validado",
+            peso: 50,
+            classe: "bg-green-50 text-green-800 border-green-200"
+        };
+    }
+
+    if (statusNormalizado.includes("justificado") || resultadoNormalizado.includes("justificado") || statusNormalizado.includes("carencia aceita")) {
+        return {
+            chave: "justificado",
+            texto: "Justificado",
+            peso: 40,
+            classe: "bg-blue-50 text-blue-800 border-blue-200"
+        };
+    }
+
+    if (statusNormalizado.includes("analise")) {
+        return {
+            chave: "analise",
+            texto: "Em an&aacute;lise",
+            peso: 30,
+            classe: "bg-yellow-50 text-yellow-800 border-yellow-200"
+        };
+    }
+
+    if (statusNormalizado.includes("recus") || resultadoNormalizado.includes("recus")) {
+        return {
+            chave: "recusado",
+            texto: "Recusado",
+            peso: 10,
+            classe: "bg-red-50 text-red-800 border-red-200"
+        };
+    }
+
+    if (statusNormalizado.includes("pendente")) {
+        return {
+            chave: "pendente",
+            texto: "Pendente",
+            peso: 20,
+            classe: "bg-red-50 text-red-800 border-red-200"
+        };
+    }
+
+    return {
+        chave: "sem_registro",
+        texto: "Sem registro",
+        peso: 0,
+        classe: "bg-gray-50 text-gray-600 border-gray-200"
+    };
+}
+
+function obterSituacaoMesFinanceiroDVC(envios = [], competenciaAtual = "") {
+    const enviosDoMes = envios.filter(item => item.mes === competenciaAtual);
+
+    if (enviosDoMes.length === 0) {
+        return obterStatusVisualFinanceiroDVC({});
+    }
+
+    return enviosDoMes
+        .map(obterStatusVisualFinanceiroDVC)
+        .sort((a, b) => b.peso - a.peso)[0];
+}
+
+function obterAcaoRecomendadaFinanceiroDVC(statusTexto = "") {
+    const statusNormalizado = normalizarStatusFinanceiroDVC(statusTexto);
+
+    if (statusNormalizado.includes("validado")) {
+        return "Contribui&ccedil;&atilde;o validada para este m&ecirc;s.";
+    }
+
+    if (statusNormalizado.includes("justificado")) {
+        return "Justificativa registrada para este m&ecirc;s.";
+    }
+
+    if (statusNormalizado.includes("analise")) {
+        return "Seu envio est&aacute; aguardando an&aacute;lise da equipe.";
+    }
+
+    if (statusNormalizado.includes("recus")) {
+        return "Confira o envio e regularize a compet&ecirc;ncia deste m&ecirc;s.";
+    }
+
+    return "Copie a chave PIX e envie o comprovante deste m&ecirc;s.";
+}
+
+function obterClasseBadgeHeroFinanceiroDVC(chave = "") {
+    if (chave === "validado") return "border-green-200 bg-green-50 text-green-800";
+    if (chave === "justificado") return "border-blue-200 bg-blue-50 text-blue-800";
+    if (chave === "analise") return "border-yellow-200 bg-yellow-50 text-yellow-800";
+    if (chave === "pendente" || chave === "recusado") return "border-red-200 bg-red-50 text-red-800";
+
+    return "border-white/20 bg-white text-gray-950";
+}
+
+function montarCabecalhoCardClaroFinanceiroDVC(chamada = "", titulo = "") {
+    return `
+        <div class="mb-4 h-1 w-12 rounded-full bg-gradient-to-r from-gray-950 via-gray-900 to-[#990000]"></div>
+
+        <div>
+            <p class="text-[9px] font-black uppercase tracking-wider text-gray-400">
+                ${chamada}
+            </p>
+
+            <h2 class="mt-1 text-sm font-black uppercase text-gray-950">
+                ${titulo}
+            </h2>
+        </div>
+    `;
+}
+
+function montarHeroContribuicaoFinanceiroDVC(envios = [], competenciaAtual = "", opcoes = {}) {
+    const situacao = opcoes.situacao || obterSituacaoMesFinanceiroDVC(envios, competenciaAtual);
+    const competenciaBase = opcoes.competencia || competenciaAtual || "Sem competencia";
+    const competencia = escaparHtmlFinanceiroDVC(corrigirTextoFinanceiroDVC(competenciaBase)).toUpperCase();
+    const acaoRecomendada = opcoes.acaoRecomendada || obterAcaoRecomendadaFinanceiroDVC(situacao.chave);
+    const valorSugerido = escaparHtmlFinanceiroDVC(opcoes.valorSugerido || VALOR_SUGERIDO_CONTRIBUICAO_DVC);
+    const labelValor = opcoes.labelValor || "CONTRIBUI&Ccedil;&Atilde;O SUGERIDA";
+    const badgeClasse = obterClasseBadgeHeroFinanceiroDVC(situacao.chave);
+
+    // DVC UX FINANCEIRO - ETAPA 1: usa o hero como identidade principal da aba.
+    // DVC UX FINANCEIRO - ETAPA 1: incorpora a situacao mensal ao banner institucional.
+    return `
+        <section id="finance-hero-contribuicao" class="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] p-5 text-white shadow-xl">
+            <img
+                src="${logoContribuicaoDVC}"
+                alt=""
+                aria-hidden="true"
+                class="pointer-events-none absolute -bottom-10 -right-8 h-40 w-40 object-contain opacity-10"
+                onerror="this.style.display='none'"
+            >
+
+            <div class="relative z-10 flex items-start justify-between gap-3">
+                <div class="flex min-w-0 items-start gap-3">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/20 bg-white/10 p-2">
+                        <img
+                            src="${logoContribuicaoDVC}"
+                            alt=""
+                            class="h-full w-full object-contain"
+                            loading="lazy"
+                            onerror="this.style.display='none'"
+                        >
+                    </div>
+
+                    <div class="min-w-0">
+                        <p class="text-[9px] font-black uppercase tracking-wider text-white/60">
+                            CORRESPONSABILIDADE
+                        </p>
+
+                        <h1 class="mt-1 text-xl font-black uppercase leading-tight text-white">
+                            CONTRIBUI&Ccedil;&Atilde;O DVC
+                        </h1>
+
+                        <p class="mt-2 max-w-[300px] text-[11px] font-semibold leading-relaxed text-white/75">
+                            Sua contribui&ccedil;&atilde;o ajuda a manter treinos, organiza&ccedil;&atilde;o e oportunidades.
+                        </p>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onclick="forcarAtualizacaoDados('financeiro')"
+                    class="relative z-10 shrink-0 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[9px] font-black uppercase text-white backdrop-blur-sm transition active:scale-[0.98]"
+                >
+                    ATUALIZAR
+                </button>
+            </div>
+
+            <div class="relative z-10 mt-4 flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-sm">
+                <div class="min-w-0">
+                    <p class="text-[9px] font-black uppercase tracking-wider text-white/60">
+                        SITUA&Ccedil;&Atilde;O DO M&Ecirc;S
+                    </p>
+
+                    <p class="mt-1 text-[11px] font-semibold leading-relaxed text-white/80">
+                        ${acaoRecomendada}
+                    </p>
+                </div>
+
+                <span class="${badgeClasse} shrink-0 rounded-full border px-3 py-1 text-[9px] font-black uppercase">
+                    ${situacao.texto}
+                </span>
+            </div>
+
+            <div class="relative z-10 mt-3 grid grid-cols-2 gap-3">
+                <div class="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-sm">
+                    <p class="text-[9px] font-black uppercase tracking-wider text-white/60">
+                        COMPET&Ecirc;NCIA
+                    </p>
+
+                    <p class="mt-1 text-base font-black uppercase text-white">
+                        ${competencia}
+                    </p>
+                </div>
+
+                <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-right backdrop-blur-sm">
+                    <p class="text-[9px] font-black uppercase tracking-wider text-white/60">
+                        ${labelValor}
+                    </p>
+
+                    <p class="mt-1 text-base font-black text-white">
+                        ${valorSugerido}
+                    </p>
+                </div>
+            </div>
+
+            <details
+                class="relative z-10 mt-4"
+                data-dvc-label-fechado="ENTENDA COMO FUNCIONA"
+                data-dvc-label-aberto="FECHAR INFORMA&Ccedil;&Otilde;ES"
+            >
+                <summary class="list-none cursor-pointer">
+                    <span class="block w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase text-white backdrop-blur-sm transition active:scale-[0.98]">
+                        <span data-dvc-details-label>ENTENDA COMO FUNCIONA</span>
+                    </span>
+                </summary>
+
+                <div class="mt-4 space-y-3 border-t border-white/10 pt-4">
+                    <p class="text-[10px] font-semibold leading-relaxed text-white/75">
+                        A contribui&ccedil;&atilde;o &eacute; uma forma de corresponsabilidade para manter o DVC organizado, acess&iacute;vel e constante.
+                    </p>
+
+                    <div class="rounded-xl border border-white/10 bg-white/10 p-3">
+                        <p class="text-[9px] font-black uppercase text-white">
+                            AVISO IMPORTANTE
+                        </p>
+
+                        <p class="mt-1 text-[10px] font-semibold leading-relaxed text-white/75">
+                            Quando n&atilde;o for poss&iacute;vel contribuir, a justificativa deve ser enviada para an&aacute;lise da equipe respons&aacute;vel.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="rounded-xl border border-white/10 bg-white/10 px-3 py-4 text-center">
+                            <span class="text-[9px] font-black uppercase text-white">TREINOS</span>
+                        </div>
+
+                        <div class="rounded-xl border border-white/10 bg-white/10 px-3 py-4 text-center">
+                            <span class="text-[9px] font-black uppercase text-white">PROJETO</span>
+                        </div>
+
+                        <div class="rounded-xl border border-white/10 bg-white/10 px-3 py-4 text-center">
+                            <span class="text-[9px] font-black uppercase text-white">APOIO</span>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </section>
+    `;
+}
+
+function montarCardSituacaoMesFinanceiroDVC(envios = [], competenciaAtual = "") {
+    return montarHeroContribuicaoFinanceiroDVC(envios, competenciaAtual);
+}
+
+function montarEnviosAgrupadosFinanceiroDVC(envios = []) {
+    if (envios.length === 0) {
+        return `
+            <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-center">
+                <p class="text-[10px] font-bold uppercase text-gray-400">
+                    Nenhum envio registrado ainda.
+                </p>
+            </div>
+        `;
+    }
+
+    const grupos = envios.reduce((acc, item) => {
+        const chave = item.mes || "Sem mes";
+        if (!acc[chave]) acc[chave] = [];
+        acc[chave].push(item);
+        return acc;
+    }, {});
+
+    // DVC UX FINANCEIRO - ETAPA 2: compacta o historico sem alterar documentos.
+    return Object.entries(grupos)
+        .sort(([mesA], [mesB]) => valorMesAnoSeguroFinanceiroDVC(mesB) - valorMesAnoSeguroFinanceiroDVC(mesA))
+        .map(([mes, itens], index) => {
+            const mesSeguro = escaparHtmlFinanceiroDVC(corrigirTextoFinanceiroDVC(mes)).toUpperCase();
+            const totalTexto = itens.length === 1 ? "1 registro" : `${itens.length} registros`;
+            const linhas = itens
+                .sort((a, b) => new Date(b.enviadoEm || 0) - new Date(a.enviadoEm || 0))
+                .map(item => {
+                    const status = obterStatusVisualFinanceiroDVC(item);
+                    const tipo = obterTipoEnvioFinanceiroDVC(item.tipo);
+                    const dataEnvio = item.enviadoEm
+                        ? window.formatarDataHoraFinanceira(item.enviadoEm)
+                        : "Sem data";
+
+                    return `
+                        <div class="flex items-start justify-between gap-3 border-t border-gray-100 bg-white px-4 py-3">
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-black uppercase text-gray-800">
+                                    ${tipo}
+                                </p>
+
+                                <p class="mt-1 text-[9px] font-semibold uppercase text-gray-400">
+                                    ${escaparHtmlFinanceiroDVC(dataEnvio)}
+                                </p>
+                            </div>
+
+                            <span class="${status.classe} shrink-0 rounded-full border px-2 py-1 text-[8px] font-black uppercase">
+                                ${status.texto}
+                            </span>
+                        </div>
+                    `;
+                }).join("");
+
+            const totalTextoBadge = itens.length === 1 ? "1 envio" : `${itens.length} envios`;
+
+            return `
+                <details class="group overflow-hidden rounded-2xl border border-gray-200 bg-gray-50" ${index === 0 ? "open" : ""}>
+                    <summary class="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-[10px] font-black uppercase text-gray-800">
+                        <span>${mesSeguro}</span>
+                        <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[9px] font-black uppercase text-gray-500">
+                            ${totalTextoBadge}
+                        </span>
+                    </summary>
+
+                    <div class="border-t border-gray-100 bg-white">
+                        <div class="h-1 w-12 bg-red-700"></div>
+                        ${linhas}
+                    </div>
+                </details>
+            `;
+        }).join("");
+}
+
+function montarAvisoCarenciaCadastroFinanceiroDVC(dadosCarenciaCadastro = {}) {
+    if (!dadosCarenciaCadastro.ativa) return "";
+
+    return `
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <p class="text-[9px] font-black uppercase text-amber-700">
+                Car&ecirc;ncia de cadastro ativa
+            </p>
+
+            <p class="mt-2 text-[10px] font-semibold leading-relaxed text-amber-900">
+                Como seu cadastro foi feito no fim do m&ecirc;s, voc&ecirc; pode participar normalmente at&eacute; ${escaparHtmlFinanceiroDVC(dadosCarenciaCadastro.label)}. O envio da contribui&ccedil;&atilde;o abre no pr&oacute;ximo m&ecirc;s e segue o prazo mensal.
+            </p>
+        </div>
+    `;
+}
+
+function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaCadastroHtml = "") {
+    // DVC UX FINANCEIRO - ETAPA 2: transforma o PIX em painel auxiliar compacto.
+    // DVC UX FINANCEIRO - ETAPA 2: mantem o envio como principal acao da tela.
+    return `
+        <div class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            ${montarCabecalhoCardClaroFinanceiroDVC("PAGAMENTO E COMPROVA&Ccedil;&Atilde;O", "CONTRIBUI&Ccedil;&Atilde;O DO M&Ecirc;S")}
+
+            ${avisoCarenciaCadastroHtml ? `<div class="mt-4">${avisoCarenciaCadastroHtml}</div>` : ""}
+
+            <div class="mt-4 space-y-5">
+                <section>
+                    <div class="rounded-2xl border border-red-100 bg-gradient-to-br from-gray-50 to-red-200 p-4">
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-wider text-red-700">
+                                ETAPA 01
+                            </p>
+
+                            <h3 class="mt-1 text-[13px] font-black text-gray-950">
+                                Copiar chave PIX
+                            </h3>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 gap-3">
+                            <div class="rounded-xl border border-red-100 bg-white p-3 shadow-sm">
+                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400">
+                                    CHAVE PIX &mdash; E-MAIL
+                                </p>
+
+                                <div class="mt-2 flex flex-col items-start gap-3">
+                                    <p class="min-w-0 break-all text-[12px] font-black leading-snug text-gray-950">
+                                        ${CHAVE_PIX_DVC}
+                                    </p>
+
+                                    <button
+                                        type="button"
+                                        onclick="copiarChavePixDVC()"
+                                        class="shrink-0 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase text-red-800 shadow-sm transition active:scale-95"
+                                    >
+                                        COPIAR CHAVE
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="rounded-xl border border-red-100 bg-white p-3 shadow-sm">
+                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400">
+                                    VALOR SUGERIDO
+                                </p>
+
+                                <p class="mt-1 text-lg font-black text-gray-950">
+                                    ${VALOR_SUGERIDO_CONTRIBUICAO_DVC}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="border-t border-gray-100"></div>
+
+                <section>
+                    <div>
+                        <p class="text-[9px] font-black uppercase tracking-wider text-red-700">
+                            ETAPA 02
+                        </p>
+
+                        <h3 class="mt-1 text-[13px] font-black text-gray-950">
+                            Enviar comprovante
+                        </h3>
+
+                        <p class="mt-1 text-[11px] font-medium leading-relaxed text-gray-500">
+                            Selecione a compet&ecirc;ncia e envie uma imagem do comprovante.
+                        </p>
+                    </div>
+
+                    <select id="f-mes" class="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-[12px] font-bold text-gray-900 outline-none ring-1 ring-red-100 transition focus:border-[#990000]">
+                        ${optionsHtml}
+                    </select>
+
+                    <!-- DVC UX FINANCEIRO - ETAPA 2: integra o input original ao novo componente de upload. -->
+                    <div class="mt-3 rounded-2xl border border-dashed border-red-200 bg-gradient-to-br from-gray-50 to-red-200 p-5 text-center">
+                        <p class="text-[10px] font-black uppercase text-red-800">
+                            ANEXAR COMPROVANTE
+                        </p>
+
+                        <p class="mt-1 text-[11px] font-semibold leading-relaxed text-gray-500">
+                            Selecione uma imagem do pagamento.
+                        </p>
+
+                        <label
+                            for="f-file"
+                            class="mt-3 inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-[10px] font-black uppercase text-gray-700 shadow-sm transition active:scale-95"
+                        >
+                            SELECIONAR IMAGEM
+                        </label>
+
+                        <input
+                            type="file"
+                            id="f-file"
+                            accept="image/*"
+                            class="sr-only"
+                        >
+
+                        <p id="f-file-nome" class="mt-3 break-all text-[10px] font-semibold text-gray-500">
+                            Nenhum arquivo selecionado
+                        </p>
+
+                        <p class="mt-2 text-[9px] font-semibold text-gray-400">
+                            M&aacute;ximo 800 KB. Prefira tirar um print do comprovante.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="btn-enviar-comprovante"
+                        onclick="enviarComprovante()"
+                        class="mt-3 h-12 w-full rounded-xl bg-red-700 px-4 py-3 text-[11px] font-black uppercase text-white shadow-lg shadow-red-900/10 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        ENVIAR COMPROVANTE
+                    </button>
+                    
+                    <div class="mt-4 rounded-xl border border-amber-200 bg-gradient-to-r from-gray-50 to-red-200 px-4 py-3">
+                        <p class="text-[11px] font-semibold leading-relaxed text-amber-900">
+                            Ap&oacute;s o envio, o comprovante ser&aacute; analisado pela equipe respons&aacute;vel.
+                        </p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    `;
+}
+
+function montarCardJustificativaFinanceiroDVC() {
+    // DVC UX FINANCEIRO - ETAPA 2: apresenta a justificativa como recurso de apoio.
+    return `
+        <details
+            class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+            data-dvc-label-fechado="ABRIR FORMUL&Aacute;RIO"
+            data-dvc-label-aberto="FECHAR FORMUL&Aacute;RIO"
+        >
+            <summary class="list-none cursor-pointer">
+                ${montarCabecalhoCardClaroFinanceiroDVC("APOIO AO PARTICIPANTE", "PRECISA DE APOIO NESTE M&Ecirc;S?")}
+
+                <p class="mt-3 text-[11px] font-semibold leading-relaxed text-gray-500">
+                    Envie uma justificativa para an&aacute;lise da equipe respons&aacute;vel.
+                </p>
+
+                <span class="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-[10px] font-black uppercase text-red-800 transition active:scale-95">
+                    <span data-dvc-details-label>ABRIR FORMUL&Aacute;RIO</span>
+                </span>
+            </summary>
+
+            <div class="mt-4 border-t border-gray-100 pt-4">
+                <textarea id="f-just-texto" placeholder="Descreva aqui o motivo..." class="h-24 w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 outline-none ring-1 ring-red-100 transition focus:border-[#990000]"></textarea>
+
+                <button
+                    type="button"
+                    onclick="enviarJustificativa()"
+                    class="mt-3 w-full rounded-xl bg-gray-800 px-4 py-3 text-[10px] font-black uppercase text-white shadow-sm transition active:scale-95"
+                >
+                    ENVIAR JUSTIFICATIVA
+                </button>
+            </div>
+        </details>
+    `;
+}
+
+function montarBannerInstitucionalFinanceiroDVC(envios = [], competenciaAtual = "", opcoes = {}) {
+    return montarHeroContribuicaoFinanceiroDVC(envios, competenciaAtual, opcoes);
+}
+
+function prepararInteracoesFinanceiroDVC() {
+    const inputArquivo = document.getElementById("f-file");
+    const nomeArquivo = document.getElementById("f-file-nome");
+
+    if (inputArquivo && nomeArquivo && inputArquivo.dataset.dvcFileLabelPronto !== "true") {
+        inputArquivo.dataset.dvcFileLabelPronto = "true";
+        inputArquivo.addEventListener("change", () => {
+            const arquivo = inputArquivo.files?.[0];
+            if (!arquivo) {
+                nomeArquivo.textContent = "Nenhum arquivo selecionado.";
+                return;
+            }
+
+            const nomeSeguro = escaparHtmlFinanceiroDVC(arquivo.name || "Arquivo selecionado");
+            nomeArquivo.innerHTML = `
+                <span class="block text-gray-700">${nomeSeguro}</span>
+                <span class="mt-1 block text-[9px] font-black uppercase text-red-700">Arquivo pronto para envio</span>
+            `;
+        });
+    }
+
+    document.querySelectorAll("[data-dvc-details-label]").forEach(label => {
+        const details = label.closest("details");
+        if (!details) return;
+
+        const atualizarLabel = () => {
+            label.textContent = details.open
+                ? (details.dataset.dvcLabelAberto || "")
+                : (details.dataset.dvcLabelFechado || "");
+        };
+
+        if (details.dataset.dvcDetailsLabelPronto !== "true") {
+            details.dataset.dvcDetailsLabelPronto = "true";
+            details.addEventListener("toggle", atualizarLabel);
+        }
+
+        atualizarLabel();
+    });
+}
+
+async function copiarChavePixDVC() {
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(CHAVE_PIX_DVC);
+        } else {
+            const campoTemporario = document.createElement("textarea");
+            campoTemporario.value = CHAVE_PIX_DVC;
+            campoTemporario.setAttribute("readonly", "");
+            campoTemporario.className = "fixed -top-1 left-0 h-1 w-1 opacity-0";
+            document.body.appendChild(campoTemporario);
+            campoTemporario.select();
+            document.execCommand("copy");
+            campoTemporario.remove();
+        }
+
+        alert("Chave PIX copiada.");
+    } catch (e) {
+        console.error("Erro ao copiar chave PIX:", e);
+        alert(`Chave PIX: ${CHAVE_PIX_DVC}`);
+    }
+}
+
 // 1. renderFinanceiro
 async function renderFinanceiro() {
     const c = document.getElementById('main-content');
 
-    if (get_currentUserData()?.funcao === "Auxiliar") {
-        c.innerHTML = `
-            <div class="relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] text-white rounded-3xl p-5 mb-4 shadow-xl">
-                <div class="absolute -right-8 -bottom-10 opacity-10">
-                    <i class="fa-solid fa-hands-helping text-9xl"></i>
-                </div>
-                <div class="relative z-10">
-                    <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-shield-heart text-white text-lg"></i>
-                    </div>
-                    <p class="text-[9px] font-black uppercase text-white/60 mb-1">Contribuição DVC</p>
-                    <h3 class="text-xl font-black uppercase leading-tight">Isenção de Auxiliar Técnica</h3>
-                    <p class="text-xs font-semibold text-white/75 leading-relaxed mt-3">Você está isento de contribuições mensais pelo seu apoio ao DVC.</p>
-                </div>
-            </div>
-            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-                <p class="text-[10px] font-bold text-gray-500 leading-relaxed">Obrigado por contribuir na organização dos treinos, chamadas e avaliações técnicas do clube.</p>
-            </div>
-        `;
-        return;
-    }
+    if (!c) return;
 
     const mesesAnos = [
         "Abril/2026",
@@ -129,201 +765,84 @@ async function renderFinanceiro() {
         return valor >= mesInicialPermitido && valor <= mesAtualValor;
     });
 
-    let optionsHtml = mesesPermitidos.length > 0
-        ? mesesPermitidos.map(m => `<option value="${m}">${m}</option>`).join('')
-        : `<option value="">Nenhum mês disponível ainda</option>`;
-
+    const competenciaAtual = obterCompetenciaAtualFinanceiroDVC(mesesPermitidos);
+    const optionsHtml = montarOptionsMesesFinanceiroDVC(mesesPermitidos, competenciaAtual);
     const dadosCarenciaCadastro = window.obterDadosCarenciaCadastro(get_currentUserData(), hoje);
-    const avisoCarenciaCadastroHtml = dadosCarenciaCadastro.ativa ? `
-        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5 fade-in">
-            <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                    <i class="fa-solid fa-hourglass-half text-amber-700"></i>
-                </div>
+    const avisoCarenciaCadastroHtml = montarAvisoCarenciaCadastroFinanceiroDVC(dadosCarenciaCadastro);
 
-                <div>
-                    <p class="text-[8px] font-black text-amber-700 uppercase mb-1">
-                        Carência de cadastro ativa
-                    </p>
-                    <p class="text-[10px] text-amber-900 font-semibold leading-relaxed">
-                        Como seu cadastro foi feito no fim do mês, você pode participar normalmente até ${dadosCarenciaCadastro.label}. O envio da contribuição abre no próximo mês e segue o prazo mensal.
+    if (get_currentUserData()?.funcao === "Auxiliar") {
+        c.innerHTML = `
+            <div id="dvc-finance-root" class="space-y-4 pb-28 pb-24">
+                ${montarHeroContribuicaoFinanceiroDVC([], competenciaAtual, {
+                    situacao: { chave: "validado", texto: "Validado" },
+                    competencia: "Isencao",
+                    acaoRecomendada: "Voc&ecirc; est&aacute; isento de contribui&ccedil;&otilde;es mensais pelo apoio ao DVC.",
+                    valorSugerido: "Isento",
+                    labelValor: "CONTRIBUI&Ccedil;&Atilde;O MENSAL"
+                })}
+
+                <div class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                    ${montarCabecalhoCardClaroFinanceiroDVC("PAGAMENTO E COMPROVA&Ccedil;&Atilde;O", "CONTRIBUI&Ccedil;&Atilde;O DO M&Ecirc;S")}
+
+                    <p class="mt-3 text-[10px] font-semibold leading-relaxed text-gray-500">
+                        Obrigado por contribuir na organiza&ccedil;&atilde;o dos treinos, chamadas e avalia&ccedil;&otilde;es t&eacute;cnicas do clube.
                     </p>
                 </div>
             </div>
-        </div>
-    ` : "";
+        `;
+        prepararInteracoesFinanceiroDVC();
+        return;
+    }
 
+    // DVC UX FINANCEIRO - ETAPA 1: remove apenas duplicidades visuais, preservando os dados.
+    // DVC UX FINANCEIRO: preserva todos os handlers, payloads e dados existentes.
     c.innerHTML = `
-        <div class="bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] text-white p-5 rounded-3xl mb-5 shadow-xl relative overflow-hidden">
-            <div class="absolute -right-10 -bottom-12 opacity-10">
-                <img src="${get_PROJETO_ATUAL_DVC()?.logo || 'assets/img/loki2.webp'}" class="w-48 h-48 object-contain">
+        <div id="dvc-finance-root" class="space-y-4 pb-28 pb-24">
+            <div id="finance-hero-root">
+                ${montarHeroContribuicaoFinanceiroDVC([], competenciaAtual)}
             </div>
 
-            <div class="relative z-10">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center p-2">
-                        <img src="${get_PROJETO_ATUAL_DVC()?.logo || 'assets/img/loki2.webp'}" class="w-full h-full object-contain">
-                    </div>
+            ${montarCardContribuicaoMesFinanceiroDVC(optionsHtml, avisoCarenciaCadastroHtml)}
 
-                    <div class="flex-1">
-                        <p class="text-[8px] font-black uppercase text-white/60">
-                            Corresponsabilidade
-                        </p>
+            <div class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                ${montarCabecalhoCardClaroFinanceiroDVC("HIST&Oacute;RICO FINANCEIRO", "SEUS ENVIOS")}
 
-                        <h3 class="text-xl font-black uppercase tracking-wide leading-none">
-                            Contribuição DVC
-                        </h3>
-
-                        <p class="text-[9px] font-bold text-white/60 mt-1 uppercase">
-                            Apoio mínimo sugerido: R$10,00
+                <div id="finance-status-list" class="mt-4 space-y-2">
+                    <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-center">
+                        <p class="text-[10px] font-bold uppercase text-gray-400">
+                            Carregando envios...
                         </p>
                     </div>
-
-                    <button onclick="forcarAtualizacaoDados('financeiro')" class="w-9 h-9 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-center shrink-0" title="Sincronizar">
-                        <i class="fa-solid fa-rotate text-xs"></i>
-                    </button>
-                </div>
-
-                <div class="bg-white/10 border border-white/10 rounded-2xl p-3">
-                    <p class="text-[10px] font-semibold text-white/80 leading-relaxed">
-                        Sua contribuição ajuda a manter o projeto ativo, organizado e acessível para todos os atletas.
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-3 gap-2 mt-4">
-                    <div class="bg-white/10 border border-white/10 rounded-2xl p-2 text-center">
-                        <i class="fa-solid fa-volleyball text-white text-sm mb-1"></i>
-                        <p class="text-[8px] font-black uppercase text-white/70">Treinos</p>
-                    </div>
-
-                    <div class="bg-white/10 border border-white/10 rounded-2xl p-2 text-center">
-                        <i class="fa-solid fa-people-group text-white text-sm mb-1"></i>
-                        <p class="text-[8px] font-black uppercase text-white/70">Projeto</p>
-                    </div>
-
-                    <div class="bg-white/10 border border-white/10 rounded-2xl p-2 text-center">
-                        <i class="fa-solid fa-hand-holding-heart text-white text-sm mb-1"></i>
-                        <p class="text-[8px] font-black uppercase text-white/70">Apoio</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-2xl border shadow-sm mb-5 fade-in">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <p class="text-[8px] font-black text-gray-400 uppercase">
-                        Contribuição mínima
-                    </p>
-                    <p class="text-3xl font-black text-[#990000] leading-none">
-                        R$10
-                    </p>
-                </div>
-
-                <div class="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center">
-                    <i class="fa-solid fa-heart text-[#990000] text-xl"></i>
                 </div>
             </div>
 
-            <p class="text-[10px] text-gray-500 font-semibold leading-relaxed mb-4">
-                A contribuição é uma forma de corresponsabilidade. Ela ajuda o DVC a continuar oferecendo treinos, organização, acompanhamento e oportunidades para mais jovens.
-            </p>
-
-            <div class="bg-red-50 border border-red-100 rounded-xl p-3">
-                <p class="text-[9px] font-black text-[#990000] uppercase mb-1">
-                    Importante
-                </p>
-                <p class="text-[10px] text-gray-600 font-semibold leading-relaxed">
-                    Caso não seja possível contribuir no mês, você pode enviar uma justificativa para análise.
-                </p>
-            </div>
-        </div>
-
-        ${avisoCarenciaCadastroHtml}
-
-        <div class="bg-white p-5 rounded-2xl border shadow-sm mb-6 fade-in">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center">
-                    <i class="fa-solid fa-receipt text-green-700"></i>
-                </div>
-
-                <div>
-                    <p class="text-[8px] font-black text-gray-400 uppercase">
-                        Comprovante
-                    </p>
-                    <p class="text-xs font-black text-gray-800 uppercase">
-                        Enviar contribuição
-                    </p>
-                </div>
-            </div>
-
-            <div class="space-y-4">
-                <select id="f-mes" class="w-full p-3 border rounded-xl text-xs font-bold bg-gray-50">
-                    ${optionsHtml}
-                </select>
-
-                <div class="bg-gray-50 border border-dashed rounded-xl p-3">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-2">
-                        Anexar comprovante
-                    </p>
-                    <input type="file" id="f-file" accept="image/*" class="text-[10px] w-full">
-                </div>
-
-                <button onclick="enviarComprovante()" class="w-full bg-green-600 text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-md">
-                    <i class="fa-solid fa-paper-plane mr-1"></i> Enviar comprovante
-                </button>
-            </div>
-        </div>
-
-        <p class="text-[9px] font-black text-gray-400 uppercase mb-2">Seus Envios</p>
-        <div id="finance-status-list" class="mb-6 space-y-2"></div>
-
-        <div class="bg-gray-950 p-5 rounded-2xl shadow-lg fade-in text-white">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
-                    <i class="fa-solid fa-comment-dots text-white"></i>
-                </div>
-
-                <div>
-                    <p class="text-[8px] font-black text-white/50 uppercase">
-                        Justificativa
-                    </p>
-                    <p class="text-xs font-black text-white uppercase">
-                        Solicitar análise
-                    </p>
-                </div>
-            </div>
-
-            <p class="text-white/60 text-[9px] mb-3 font-semibold leading-relaxed">
-                Use este espaço apenas quando não for possível contribuir no mês selecionado.
-            </p>
-
-            <textarea id="f-just-texto" placeholder="Descreva aqui o motivo..." class="w-full p-3 border-none rounded-xl text-xs mb-3 h-24 outline-none text-gray-800"></textarea>
-
-            <button onclick="enviarJustificativa()" class="w-full bg-white text-gray-900 py-3 rounded-xl font-black text-[10px] uppercase shadow-md">
-                <i class="fa-solid fa-envelope-open-text mr-1"></i> Enviar justificativa
-            </button>
+            ${montarCardJustificativaFinanceiroDVC()}
         </div>
     `;
+
+    prepararInteracoesFinanceiroDVC();
 
     if (!get_AppCache().contribuicoes && auth.currentUser?.email) {
         await migrarContribuicoesLegadasDoAtleta(auth.currentUser.email);
     }
+
     const contribuicoesFinanceiras = await window.carregarContribuicoesCache();
     if (window.__abaAtualDVC !== "finance") return;
+
     const listDiv = document.getElementById('finance-status-list');
     if (!listDiv) return;
 
-    let envios = [];
+    const emailAtual = String(auth.currentUser?.email || "").toLowerCase();
+    const envios = [];
 
     contribuicoesFinanceiras
-        .filter(docContrib => String(docContrib.email || "").toLowerCase() === String(auth.currentUser.email || "").toLowerCase())
+        .filter(docContrib => String(docContrib.email || "").toLowerCase() === emailAtual)
         .forEach(docContrib => {
             const data = docContrib;
 
             envios.push({
                 id: docContrib.id,
-                mes: data.mes || "Sem mês",
+                mes: data.mes || "Sem mes",
                 tipo: data.tipo || "Comprovante",
                 status: data.status || "Pendente",
                 resultadoFinanceiro: data.resultadoFinanceiro || "",
@@ -337,63 +856,14 @@ async function renderFinanceiro() {
         return dataB - dataA;
     });
 
-    if (envios.length === 0) {
-        listDiv.innerHTML = `
-            <div class="bg-white p-4 border border-dashed rounded-xl text-center">
-                <p class="text-[10px] text-gray-400 font-bold uppercase">
-                    Nenhum envio registrado ainda.
-                </p>
-            </div>
-        `;
-    } else {
-        listDiv.innerHTML = envios.map(item => {
-            const isJustificativa = item.tipo === "Justificativa";
-            const isCarenciaEspecial = item.tipo === "CarenciaEspecial";
+    listDiv.innerHTML = montarEnviosAgrupadosFinanceiroDVC(envios);
 
-            let corStatus = "bg-yellow-100 text-yellow-800 border-yellow-200";
-            let textoStatus = "Pendente";
-
-            if (item.status === "Validado" || item.resultadoFinanceiro === "Pago") {
-                corStatus = "bg-green-100 text-green-800 border-green-200";
-                textoStatus = "Validado";
-            }
-
-            if (item.status === "Justificado" || item.resultadoFinanceiro === "Justificado" || item.status === "Carência aceita") {
-                corStatus = "bg-blue-100 text-blue-800 border-blue-200";
-                textoStatus = item.status === "Carência aceita" ? "Carência aceita" : "Justificado";
-            }
-
-            if (item.status === "Em análise") {
-                corStatus = "bg-red-100 text-red-800 border-red-200";
-                textoStatus = "Em análise";
-            }
-
-            if (item.status === "Carência recusada") {
-                corStatus = "bg-red-100 text-red-800 border-red-200";
-                textoStatus = "Recusada";
-            }
-
-            return `
-                <div class="bg-white p-3 border rounded-xl flex justify-between items-center shadow-sm">
-                    <div>
-                        <p class="text-xs font-black uppercase text-gray-800">
-                            ${item.mes}
-                        </p>
-
-                        <p class="text-[9px] font-bold ${isCarenciaEspecial ? 'text-red-700' : isJustificativa ? 'text-blue-600' : 'text-green-600'} uppercase mt-1">
-                            ${isCarenciaEspecial ? 'Carência especial' : isJustificativa ? 'Justificativa' : 'Comprovante'}
-                        </p>
-                    </div>
-
-                    <span class="${corStatus} border text-[8px] font-black px-2 py-1 rounded-full uppercase">
-                        ${textoStatus}
-                    </span>
-                </div>
-            `;
-        }).join('');
+    const heroDiv = document.getElementById("finance-hero-root");
+    if (heroDiv) {
+        heroDiv.innerHTML = montarHeroContribuicaoFinanceiroDVC(envios, competenciaAtual);
+        prepararInteracoesFinanceiroDVC();
     }
 }
-
 // 2. renderFinance
 function renderFinance(...args) {
     if (typeof window.renderFinanceiro === "function") {
@@ -404,7 +874,7 @@ function renderFinance(...args) {
     if (c) {
         c.innerHTML = `
             <div class="p-6 text-center bg-red-50 border border-red-100 rounded-2xl">
-                <p class="text-xs font-black uppercase text-red-700">Financeiro indisponível agora.</p>
+                <p class="text-xs font-black uppercase text-red-700">Financeiro indisponÃ­vel agora.</p>
             </div>
         `;
     }
@@ -449,7 +919,7 @@ async function abrirModoTesteAtleta() {
                     <button 
                         onclick="document.getElementById('m-modo-teste').remove()" 
                         class="absolute top-4 right-4 text-red-600 font-black text-xl">
-                        &times;
+                        X
                     </button>
 
                     <h2 class="font-bold text-xs uppercase mb-2 text-[#990000]">
@@ -481,7 +951,7 @@ async function abrirModoTesteAtleta() {
 
     } catch (e) {
         console.error("Erro ao abrir modo teste:", e);
-        alert("Não foi possível abrir o modo teste.");
+        alert("NÃ£o foi possÃ­vel abrir o modo teste.");
     }
 }
 
@@ -515,7 +985,7 @@ async function enviarComprovanteLegadoDesativado() {
     const mes = document.getElementById('f-mes').value;
 
     if (!mes) {
-        return alert("Nenhum mês disponível para envio no momento.");
+        return alert("Nenhum mÃªs disponÃ­vel para envio no momento.");
     }
 
     if (!file) {
@@ -565,6 +1035,7 @@ async function enviarComprovanteLegadoDesativado() {
 
 // 7. enviarComprovante
 async function enviarComprovante() {
+    const alert = mensagem => window.alert(corrigirTextoFinanceiroDVC(mensagem));
     const file = document.getElementById('f-file')?.files?.[0];
     const mes = document.getElementById('f-mes')?.value;
 
@@ -572,10 +1043,10 @@ async function enviarComprovante() {
         const dadosCarencia = window.obterDadosCarenciaCadastro(get_currentUserData());
 
         if (dadosCarencia.ativa) {
-            return alert(`Você está em carência de cadastro até ${dadosCarencia.label}. O envio da contribuição abre no próximo mês.`);
+            return alert(`VocÃª estÃ¡ em carÃªncia de cadastro atÃ© ${dadosCarencia.label}. O envio da contribuiÃ§Ã£o abre no prÃ³ximo mÃªs.`);
         }
 
-        return alert("Nenhum mês disponível para envio no momento.");
+        return alert("Nenhum mÃªs disponÃ­vel para envio no momento.");
     }
 
     if (!file) {
@@ -583,7 +1054,20 @@ async function enviarComprovante() {
     }
 
     if (file.size > 800000) {
-        return alert("Arquivo muito grande! No plano gratuito, tire um print da tela do comprovante para diminuir o tamanho antes de enviar (máx: 800KB).");
+        return alert("Arquivo muito grande! No plano gratuito, tire um print da tela do comprovante para diminuir o tamanho antes de enviar (mÃ¡x: 800KB).");
+    }
+
+    const btn = document.getElementById("btn-enviar-comprovante");
+    const textoOriginal = btn?.textContent?.trim() || "ENVIAR COMPROVANTE";
+    const restaurarBotao = () => {
+        if (!btn) return;
+        btn.textContent = textoOriginal;
+        btn.disabled = false;
+    };
+
+    if (btn) {
+        btn.textContent = "ENVIANDO...";
+        btn.disabled = true;
     }
 
     const reader = new FileReader();
@@ -614,15 +1098,18 @@ async function enviarComprovante() {
             window.limparCacheDados("financeiro"); window.limparCacheContribuicoesAtleta();
             window.limparCacheDados("atletas");
             alert("Enviado!");
+            restaurarBotao();
             renderFinance();
         } catch (err) {
             console.error("Erro ao enviar comprovante:", err);
-            alert("Não foi possível enviar o comprovante.");
+            restaurarBotao();
+            alert("NÃ£o foi possÃ­vel enviar o comprovante.");
         }
     };
 
     reader.onerror = () => {
-        alert("Não foi possível ler o arquivo selecionado.");
+        restaurarBotao();
+        alert("NÃ£o foi possÃ­vel ler o arquivo selecionado.");
     };
 
     reader.readAsDataURL(file);
@@ -630,6 +1117,7 @@ async function enviarComprovante() {
 
 // 8. enviarJustificativa
 async function enviarJustificativa() {
+    const alert = mensagem => window.alert(corrigirTextoFinanceiroDVC(mensagem));
     const texto = document.getElementById('f-just-texto').value.trim();
     const mes = document.getElementById('f-mes').value;
 
@@ -641,10 +1129,10 @@ async function enviarJustificativa() {
         const dadosCarencia = window.obterDadosCarenciaCadastro(get_currentUserData());
 
         if (dadosCarencia.ativa) {
-            return alert(`Você está em carência de cadastro até ${dadosCarencia.label}. A justificativa mensal será necessária apenas quando houver mês disponível.`);
+            return alert(`VocÃª estÃ¡ em carÃªncia de cadastro atÃ© ${dadosCarencia.label}. A justificativa mensal serÃ¡ necessÃ¡ria apenas quando houver mÃªs disponÃ­vel.`);
         }
 
-        return alert("Selecione o mês da justificativa.");
+        return alert("Selecione o mÃªs da justificativa.");
     }
     const consecutivos = await contarJustificativasConsecutivas(auth.currentUser.email, mes);
     if (consecutivos >= 3) {
@@ -652,7 +1140,7 @@ async function enviarJustificativa() {
         return;
     }
     try {
-        // Cria um ID próprio para justificativa, sem apagar possível comprovante do mesmo mês
+        // Cria um ID prÃ³prio para justificativa, sem apagar possÃ­vel comprovante do mesmo mÃªs
         const docId = "justificativa_" + mes.replace('/', '_');
         const enviadoEm = new Date().toISOString();
         const enviadoPor = get_currentUserData()?.nome || auth.currentUser.email;
@@ -698,12 +1186,12 @@ async function enviarJustificativa() {
         const corpo = encodeURIComponent(
             `Atleta: ${get_currentUserData().nome || ""}\n` +
             `E-mail: ${auth.currentUser.email}\n` +
-            `Mês: ${mes}\n\n` +
+            `MÃªs: ${mes}\n\n` +
             `Justificativa:\n${texto}\n\n` +
-            `Observação: esta justificativa também foi registrada no sistema DVC para análise.`
+            `ObservaÃ§Ã£o: esta justificativa tambÃ©m foi registrada no sistema DVC para anÃ¡lise.`
         );
 
-        alert("Justificativa salva no sistema. Agora o e-mail será aberto para envio.");
+        alert("Justificativa salva no sistema. Agora o e-mail serÃ¡ aberto para envio.");
 
         window.location.href = `mailto:${destinatarios}?subject=${assunto}&body=${corpo}`;
 
@@ -711,7 +1199,7 @@ async function enviarJustificativa() {
 
     } catch (e) {
         console.error("Erro ao enviar justificativa:", e);
-        alert("Não foi possível salvar a justificativa. Tente novamente.");
+        alert("NÃ£o foi possÃ­vel salvar a justificativa. Tente novamente.");
     }
 }
 
@@ -746,7 +1234,7 @@ async function carregarResumoPendenciasFinanceiras() {
         if (elJustificativas) elJustificativas.innerText = justificativasPendentes;
 
     } catch (e) {
-        console.error("Erro ao carregar resumo de pendências:", e);
+        console.error("Erro ao carregar resumo de pendÃªncias:", e);
 
         const elComprovantes = document.getElementById('count-comprovantes-pendentes');
         const elJustificativas = document.getElementById('count-justificativas-pendentes');
@@ -776,7 +1264,7 @@ async function abrirPendenciasFinanceiras() {
                 nome: data.nome || data.email || "Atleta",
                 docId: docContrib.id,
                 legacyDocId: data.legacyDocId || "",
-                mes: data.mes || "Sem mês",
+                mes: data.mes || "Sem mÃªs",
                 tipo: tipo,
                 justificativa: data.justificativa || "",
                 comprovante: data.comprovante || "",
@@ -830,7 +1318,7 @@ async function abrirPendenciasFinanceiras() {
                         } text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">
                             ${
                                 isCarenciaEspecial 
-                                    ? 'Carência especial' 
+                                    ? 'CarÃªncia especial' 
                                     : isJustificativa 
                                         ? 'Justificativa' 
                                         : 'Comprovante'
@@ -839,7 +1327,7 @@ async function abrirPendenciasFinanceiras() {
                     </div>
 
                     <p class="text-[10px] font-bold text-gray-700 mb-2">
-                        Mês: ${item.mes}
+                        MÃªs: ${item.mes}
                     </p>
 
                     ${montarRastroFinanceiro(item)}
@@ -854,21 +1342,21 @@ async function abrirPendenciasFinanceiras() {
                             </p>
 
                             <p class="text-[9px] font-black text-gray-500 uppercase mb-1">
-                                1. Tem certeza que não pode contribuir com nenhum valor?
+                                1. Tem certeza que nÃ£o pode contribuir com nenhum valor?
                             </p>
                             <p class="text-[10px] text-gray-700 leading-relaxed mb-3">
                                 ${item.respostaPodeContribuir || "Sem resposta."}
                             </p>
 
                             <p class="text-[9px] font-black text-gray-500 uppercase mb-1">
-                                2. Qual a importância do projeto?
+                                2. Qual a importÃ¢ncia do projeto?
                             </p>
                             <p class="text-[10px] text-gray-700 leading-relaxed mb-3">
                                 ${item.respostaImportanciaProjeto || "Sem resposta."}
                             </p>
 
                             <p class="text-[9px] font-black text-gray-500 uppercase mb-1">
-                                3. Qual será sua contribuição com o projeto?
+                                3. Qual serÃ¡ sua contribuiÃ§Ã£o com o projeto?
                             </p>
                             <p class="text-[10px] text-gray-700 leading-relaxed">
                                 ${item.respostaContribuicaoProjeto || "Sem resposta."}
@@ -879,7 +1367,7 @@ async function abrirPendenciasFinanceiras() {
                             <button 
                                 onclick="aceitarCarenciaEspecial('${item.email}', '${item.docId}', this)" 
                                 class="bg-green-600 text-white py-2 rounded-lg font-bold text-[9px] uppercase">
-                                Aceitar carência
+                                Aceitar carÃªncia
                             </button>
 
                             <button 
@@ -924,7 +1412,7 @@ async function abrirPendenciasFinanceiras() {
         }).join('') : `
             <div class="bg-gray-50 border border-dashed rounded-xl p-4 text-center">
                 <p class="text-[10px] text-gray-400 font-bold uppercase">
-                    Nenhuma pendência financeira no momento.
+                    Nenhuma pendÃªncia financeira no momento.
                 </p>
             </div>
         `;
@@ -935,15 +1423,15 @@ async function abrirPendenciasFinanceiras() {
                     <button 
                         onclick="document.getElementById('m-pendencias-financeiras').remove()" 
                         class="absolute top-4 right-4 text-red-600 font-black text-xl">
-                        &times;
+                        X
                     </button>
 
                     <h2 class="font-bold text-xs uppercase mb-1 text-[#990000]">
-                        Pendências Financeiras
+                        PendÃªncias Financeiras
                     </h2>
 
                     <p class="text-[9px] text-gray-400 font-bold uppercase mb-4">
-                        Comprovantes, justificativas e carências aguardando análise
+                        Comprovantes, justificativas e carÃªncias aguardando anÃ¡lise
                     </p>
 
                     ${listaHtml}
@@ -954,8 +1442,8 @@ async function abrirPendenciasFinanceiras() {
         document.body.insertAdjacentHTML('beforeend', modal);
 
     } catch (e) {
-        console.error("Erro ao abrir pendências financeiras:", e);
-        alert("Não foi possível carregar as pendências financeiras.");
+        console.error("Erro ao abrir pendÃªncias financeiras:", e);
+        alert("NÃ£o foi possÃ­vel carregar as pendÃªncias financeiras.");
     }
 }
 
@@ -984,7 +1472,7 @@ async function atualizarFinanceiro(email, status, selectElement = null) {
         const emailLimpo = String(email || "").trim().toLowerCase();
 
         if (!emailLimpo) {
-            alert("E-mail do atleta não encontrado.");
+            alert("E-mail do atleta nÃ£o encontrado.");
             return;
         }
 
@@ -1074,7 +1562,7 @@ async function atualizarFinanceiro(email, status, selectElement = null) {
 
     } catch (e) {
         console.error("Erro ao atualizar financeiro:", e);
-        alert("Não foi possível atualizar o financeiro do atleta.");
+        alert("NÃ£o foi possÃ­vel atualizar o financeiro do atleta.");
     }
 }
 
@@ -1142,17 +1630,17 @@ async function verificarInadimplenciaProlongada() {
             const email = user.email || docUsuario.id;
 
             if (window.ehResponsavelTecnico(user)) return;
-            if (user.status === "Excluído") return;
+            if (user.status === "ExcluÃ­do") return;
             if (window.usuarioEstaEmCarenciaCadastro(user)) return;
 
-            const uÚltimoMesRegular = user.mesFinanceiro || "";
-            const mesesSemContribuicao = diferencaMeses(uÚltimoMesRegular, mesAtual);
-            if (!uÚltimoMesRegular) {
+            const uÃšltimoMesRegular = user.mesFinanceiro || "";
+            const mesesSemContribuicao = diferencaMeses(uÃšltimoMesRegular, mesAtual);
+            if (!uÃšltimoMesRegular) {
                 return;
             }
             const estaRegularNoMes = 
                 (window.usuarioEstaEmDia(user) || window.usuarioEstaJustificado(user)) &&
-                uÚltimoMesRegular === mesAtual;
+                uÃšltimoMesRegular === mesAtual;
 
             if (estaRegularNoMes) return;
 
@@ -1170,48 +1658,48 @@ async function verificarInadimplenciaProlongada() {
         });
 
         if (paraInativar.length === 0 && paraExcluir.length === 0) {
-            alert("Nenhum atleta atingiu o prazo de inativação ou exclusão neste mês.");
+            alert("Nenhum atleta atingiu o prazo de inativaÃ§Ã£o ou exclusÃ£o neste mÃªs.");
             return;
         }
 
         const corpoEmail = `
-RELATÓRIO DE CONTROLE FINANCEIRO DVC
-Mês de referência: ${mesAtual}
+RELATÃ“RIO DE CONTROLE FINANCEIRO DVC
+MÃªs de referÃªncia: ${mesAtual}
 
-ATLETAS QUE SERÃO INATIVADOS - 3 MESES SEM CONTRIBUIÇÃO
+ATLETAS QUE SERÃƒO INATIVADOS - 3 MESES SEM CONTRIBUIÃ‡ÃƒO
 Total: ${paraInativar.length}
 
 ${paraInativar.length > 0 
     ? paraInativar.map(window.formatarContatoFinanceiro).join("\n\n")
-    : "Nenhum atleta nesta situação."}
+    : "Nenhum atleta nesta situaÃ§Ã£o."}
 
 ------------------------------------------------------------
 
-ATLETAS QUE SERÃO MARCADOS COMO EXCLUÍDOS - 4 MESES OU MAIS SEM CONTRIBUIÇÃO
+ATLETAS QUE SERÃƒO MARCADOS COMO EXCLUÃDOS - 4 MESES OU MAIS SEM CONTRIBUIÃ‡ÃƒO
 Total: ${paraExcluir.length}
 
 ${paraExcluir.length > 0 
     ? paraExcluir.map(window.formatarContatoFinanceiro).join("\n\n")
-    : "Nenhum atleta nesta situação."}
+    : "Nenhum atleta nesta situaÃ§Ã£o."}
 
 ------------------------------------------------------------
 
-Observação:
-Este relatório foi gerado automaticamente pelo sistema DVC antes da aplicação das mudanças de status.
+ObservaÃ§Ã£o:
+Este relatÃ³rio foi gerado automaticamente pelo sistema DVC antes da aplicaÃ§Ã£o das mudanÃ§as de status.
 `;
 
         const destinatarios = "tainaradornas1@gmail.com,gabriel0barbosa0@gmail.com,drummondvoleibol@gmail.com";
-        const assunto = encodeURIComponent(`DVC - Inativações e Exclusões Financeiras - ${mesAtual}`);
+        const assunto = encodeURIComponent(`DVC - InativaÃ§Ãµes e ExclusÃµes Financeiras - ${mesAtual}`);
         const corpo = encodeURIComponent(corpoEmail);
 
         window.location.href = `mailto:${destinatarios}?subject=${assunto}&body=${corpo}`;
 
         setTimeout(async () => {
             const confirmar = confirm(
-                `O e-mail de relatório foi aberto.\n\n` +
-                `Após revisar/enviar o e-mail, deseja aplicar as mudanças agora?\n\n` +
+                `O e-mail de relatÃ³rio foi aberto.\n\n` +
+                `ApÃ³s revisar/enviar o e-mail, deseja aplicar as mudanÃ§as agora?\n\n` +
                 `Inativar: ${paraInativar.length}\n` +
-                `Marcar como excluído: ${paraExcluir.length}`
+                `Marcar como excluÃ­do: ${paraExcluir.length}`
             );
 
             if (!confirmar) return;
@@ -1221,23 +1709,23 @@ Este relatório foi gerado automaticamente pelo sistema DVC antes da aplicação
                     status: "Inativo",
                     financeiro: "Inadimplente",
                     inativadoEm: new Date().toISOString(),
-                    motivoInativacao: "3 meses seguidos sem contribuição"
+                    motivoInativacao: "3 meses seguidos sem contribuiÃ§Ã£o"
                 });
             }
 
             for (const atleta of paraExcluir) {
                 await updateDoc(doc(db, "users", atleta.email), {
-                    status: "Excluído",
+                    status: "ExcluÃ­do",
                     financeiro: "Inadimplente",
                     excluidoEm: new Date().toISOString(),
-                    motivoExclusao: "4 meses ou mais sem contribuição"
+                    motivoExclusao: "4 meses ou mais sem contribuiÃ§Ã£o"
                 });
             }
 
             alert(
                 `Controle aplicado com sucesso!\n\n` +
                 `Inativados: ${paraInativar.length}\n` +
-                `Marcados como excluídos: ${paraExcluir.length}`
+                `Marcados como excluÃ­dos: ${paraExcluir.length}`
             );
 
             window.limparCacheDados("atletas");
@@ -1246,8 +1734,8 @@ Este relatório foi gerado automaticamente pelo sistema DVC antes da aplicação
         }, 1000);
 
     } catch (e) {
-        console.error("Erro ao verificar inadimplência prolongada:", e);
-        alert("Não foi possível verificar a inadimplência prolongada agora.");
+        console.error("Erro ao verificar inadimplÃªncia prolongada:", e);
+        alert("NÃ£o foi possÃ­vel verificar a inadimplÃªncia prolongada agora.");
     }
 }
 
@@ -1272,8 +1760,8 @@ async function contarJustificativasConsecutivas(email, mesAtual) {
             if (
                 status === "Pendente" ||
                 status === "Justificado" ||
-                status === "Em análise" ||
-                status === "Carência aceita"
+                status === "Em anÃ¡lise" ||
+                status === "CarÃªncia aceita"
             ) {
                 mesesJustificados.push(window.normalizarMesAnoParaValor(mes));
             }
@@ -1312,20 +1800,16 @@ function abrirModalCarenciaEspecial(mes, textoJustificativa) {
                 <button 
                     onclick="document.getElementById('m-carencia-especial').remove()" 
                     class="absolute top-4 right-4 text-gray-400 font-black text-xl">
-                    &times;
+                    X
                 </button>
 
-                <div class="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-hand-holding-heart text-[#990000] text-xl"></i>
-                </div>
-
                 <h2 class="text-sm font-black text-[#990000] uppercase mb-2">
-                    Carência Especial
+                    CarÃªncia Especial
                 </h2>
 
                 <p class="text-[10px] text-gray-600 font-semibold leading-relaxed mb-4">
-                    Você está chegando a 3 meses consecutivos sem contribuir. 
-                    O tempo máximo de carência automática é de 3 meses consecutivos.
+                    VocÃª estÃ¡ chegando a 3 meses consecutivos sem contribuir. 
+                    O tempo mÃ¡ximo de carÃªncia automÃ¡tica Ã© de 3 meses consecutivos.
                 </p>
 
                 <div class="bg-red-50 border border-red-100 rounded-2xl p-3 mb-4">
@@ -1333,29 +1817,29 @@ function abrirModalCarenciaEspecial(mes, textoJustificativa) {
                         Antes de enviar, reflita:
                     </p>
                     <p class="text-[10px] text-gray-600 font-semibold leading-relaxed">
-                        O projeto busca acolher quem precisa, mas também depende da corresponsabilidade de todos para continuar existindo.
+                        O projeto busca acolher quem precisa, mas tambÃ©m depende da corresponsabilidade de todos para continuar existindo.
                     </p>
                 </div>
 
                 <label class="text-[9px] font-black text-gray-400 uppercase">
-                    Você realmente não pode realizar uma contribuição neste mês?
+                    VocÃª realmente nÃ£o pode realizar uma contribuiÃ§Ã£o neste mÃªs?
                 </label>
-                <textarea id="carencia-resposta-1" class="w-full p-3 border rounded-xl text-xs mb-3 h-20 outline-none" placeholder="Explique sua situação..."></textarea>
+                <textarea id="carencia-resposta-1" class="w-full p-3 border rounded-xl text-xs mb-3 h-20 outline-none" placeholder="Explique sua situaÃ§Ã£o..."></textarea>
 
                 <label class="text-[9px] font-black text-gray-400 uppercase">
-                    Qual o peso do projeto para você
+                    Qual o peso do projeto para vocÃª
                 </label>
                 <textarea id="carencia-resposta-2" class="w-full p-3 border rounded-xl text-xs mb-3 h-20 outline-none" placeholder="Conte o que o projeto representa..."></textarea>
 
                 <label class="text-[9px] font-black text-gray-400 uppercase">
-                    De que forma você poderá contribuir com o projeto?
+                    De que forma vocÃª poderÃ¡ contribuir com o projeto?
                 </label>
-                <textarea id="carencia-resposta-3" class="w-full p-3 border rounded-xl text-xs mb-4 h-20 outline-none" placeholder="Ex: ajudar na organização, pontualidade, apoio nos treinos, divulgação..."></textarea>
+                <textarea id="carencia-resposta-3" class="w-full p-3 border rounded-xl text-xs mb-4 h-20 outline-none" placeholder="Ex: ajudar na organizaÃ§Ã£o, pontualidade, apoio nos treinos, divulgaÃ§Ã£o..."></textarea>
 
                 <button 
                     onclick="enviarCarenciaEspecial('${mes}', \`${textoJustificativa.replace(/`/g, "'")}\`)" 
                     class="w-full bg-[#990000] text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-md">
-                    Enviar para análise
+                    Enviar para anÃ¡lise
                 </button>
             </div>
         </div>
@@ -1372,7 +1856,7 @@ async function enviarCarenciaEspecial(mes, textoJustificativaOriginal) {
         const r3 = document.getElementById("carencia-resposta-3")?.value.trim();
 
         if (!r1 || !r2 || !r3) {
-            return alert("Responda às três perguntas antes de enviar.");
+            return alert("Responda Ã s trÃªs perguntas antes de enviar.");
         }
 
         const docId = "carencia_especial_" + mes.replace("/", "_");
@@ -1382,7 +1866,7 @@ async function enviarCarenciaEspecial(mes, textoJustificativaOriginal) {
         const dadosCarencia = {
             mes: mes,
             tipo: "CarenciaEspecial",
-            status: "Em análise",
+            status: "Em anÃ¡lise",
             resultadoFinanceiro: "",
             justificativa: textoJustificativaOriginal,
             respostaPodeContribuir: r1,
@@ -1418,13 +1902,13 @@ async function enviarCarenciaEspecial(mes, textoJustificativaOriginal) {
 
         document.getElementById("m-carencia-especial")?.remove();
 
-        alert("Solicitação de carência especial enviada para análise.");
+        alert("SolicitaÃ§Ã£o de carÃªncia especial enviada para anÃ¡lise.");
 
         renderFinance();
 
     } catch (e) {
-        console.error("Erro ao enviar carência especial", e);
-        alert("Não foi possível enviar a solicitação de carência especial.");
+        console.error("Erro ao enviar carÃªncia especial", e);
+        alert("NÃ£o foi possÃ­vel enviar a solicitaÃ§Ã£o de carÃªncia especial.");
     }
 }
 
@@ -1435,7 +1919,7 @@ async function aceitarCarenciaEspecial(email, docId, btn) {
         const analisadoPor = get_currentUserData()?.nome || auth.currentUser?.email || "Gestao";
 
         await atualizarContribuicaoGlobalComEspelho(email, docId, {
-            status: "Carência aceita",
+            status: "CarÃªncia aceita",
             resultadoFinanceiro: "Justificado",
             analisadoEm: analisadoEm,
             analisadoPor: analisadoPor,
@@ -1467,14 +1951,14 @@ async function aceitarCarenciaEspecial(email, docId, btn) {
             btn.disabled = true;
         }
 
-        alert("Carência especial aceita.");
+        alert("CarÃªncia especial aceita.");
 
         document.getElementById("m-pendencias-financeiras")?.remove();
         abrirPendenciasFinanceiras();
 
     } catch (e) {
-        console.error("Erro ao aceitar carência especial:", e);
-        alert("Não foi possível aceitar a carência.");
+        console.error("Erro ao aceitar carÃªncia especial:", e);
+        alert("NÃ£o foi possÃ­vel aceitar a carÃªncia.");
     }
 }
 
@@ -1485,7 +1969,7 @@ async function recusarCarenciaEspecial(email, docId, btn) {
         const analisadoPor = get_currentUserData()?.nome || auth.currentUser?.email || "Gestao";
 
         await atualizarContribuicaoGlobalComEspelho(email, docId, {
-            status: "Carência recusada",
+            status: "CarÃªncia recusada",
             resultadoFinanceiro: "Recusado",
             analisadoEm: analisadoEm,
             analisadoPor: analisadoPor,
@@ -1508,14 +1992,14 @@ async function recusarCarenciaEspecial(email, docId, btn) {
             btn.disabled = true;
         }
 
-        alert("Carência especial recusada.");
+        alert("CarÃªncia especial recusada.");
 
         document.getElementById("m-pendencias-financeiras")?.remove();
         abrirPendenciasFinanceiras();
 
     } catch (e) {
-        console.error("Erro ao recusar carência especial", e);
-        alert("Não foi possível recusar a carência.");
+        console.error("Erro ao recusar carÃªncia especial", e);
+        alert("NÃ£o foi possÃ­vel recusar a carÃªncia.");
     }
 }
 
@@ -1531,7 +2015,7 @@ async function validarExpress(email, docId, btnElement) {
         const { snap: contribSnap } = await window.buscarContribuicaoGlobal(email, docId);
 
         if (!contribSnap.exists()) {
-            alert("Registro não encontrado.");
+            alert("Registro nÃ£o encontrado.");
             return;
         }
 
@@ -1581,7 +2065,7 @@ async function validarExpress(email, docId, btnElement) {
 
     } catch (e) {
         console.error("Erro ao validar comprovante:", e);
-        alert("Não foi possível validar o comprovante.");
+        alert("NÃ£o foi possÃ­vel validar o comprovante.");
     }
 }
 
@@ -1599,7 +2083,7 @@ async function aprovarJustificativa(email, docId, btnElement) {
         const { snap: contribSnap } = await window.buscarContribuicaoGlobal(email, docId);
 
         if (!contribSnap.exists()) {
-            alert("Justificativa não encontrada.");
+            alert("Justificativa nÃ£o encontrada.");
             return;
         }
 
@@ -1648,7 +2132,7 @@ async function aprovarJustificativa(email, docId, btnElement) {
         window.renderAdmin();
     } catch (e) {
         console.error("Erro ao aprovar justificativa:", e);
-        alert("Não foi possível aprovar a justificativa.");
+        alert("NÃ£o foi possÃ­vel aprovar a justificativa.");
     }
 }
 
@@ -1742,6 +2226,7 @@ window.sairModoTesteAtleta = sairModoTesteAtleta;
 window.enviarComprovanteLegadoDesativado = enviarComprovanteLegadoDesativado;
 window.enviarComprovante = enviarComprovante;
 window.enviarJustificativa = enviarJustificativa;
+window.copiarChavePixDVC = copiarChavePixDVC;
 window.carregarResumoPendenciasFinanceiras = carregarResumoPendenciasFinanceiras;
 window.abrirPendenciasFinanceiras = abrirPendenciasFinanceiras;
 window.atualizarFinanceiro = atualizarFinanceiro;
@@ -1758,3 +2243,5 @@ window.salvarContribuicaoGlobal = salvarContribuicaoGlobal;
 window.migrarContribuicoesLegadasDoAtleta = migrarContribuicoesLegadasDoAtleta;
 window.atualizarContribuicaoGlobalComEspelho = atualizarContribuicaoGlobalComEspelho;
 window.montarRastroFinanceiro = montarRastroFinanceiro;
+
+

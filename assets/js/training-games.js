@@ -10,7 +10,7 @@
 
 ﻿// TRAINING GAMES MODULE DVC APP
 
-import { auth, db, doc, getDoc, updateDoc } from "./firebase.js";
+import { auth, db, doc, getDoc, updateDoc, collection, getDocs, setDoc, serverTimestamp } from "./firebase.js";
 import { currentUserData } from "./state.js";
 
 import {
@@ -779,10 +779,15 @@ function renderizarListaAtletasTimeTreino(time) {
     return atletas.map((atleta, index) => `
         <div class="flex items-start justify-between gap-2 border-b border-gray-100 last:border-b-0 py-2">
             <div class="min-w-0">
-                <p class="text-[10px] font-bold text-gray-800 truncate">${index + 1}. ${atleta.nome || atleta.email}</p>
-                ${renderBadgesAtletaDVC(atleta)}
+                <p class="text-[10px] font-bold text-gray-800 truncate ${atleta.tipoParticipante !== 'visitante' ? 'cursor-pointer' : ''}" ${atleta.tipoParticipante !== 'visitante' ? `onclick="if(typeof abrirPerfil === 'function') abrirPerfil('${atleta.email}')"` : ''}>
+                    ${index + 1}. ${atleta.nome || atleta.email}
+                    ${atleta.tipoParticipante === 'visitante' ? `<span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[8px] font-black uppercase text-amber-800 ml-1">VISITANTE</span>` : ''}
+                </p>
+                ${atleta.tipoParticipante === 'visitante' 
+                    ? `<p class="text-[8px] font-bold text-gray-400 uppercase mt-0.5">${atleta.categoria || 'NÃO INFORMADO'} &middot; ${atleta.nivelEstimado || 'MÉDIA'}</p>`
+                    : renderBadgesAtletaDVC(atleta)}
             </div>
-            <span class="inline-flex items-center justify-center whitespace-nowrap leading-none text-[9px] font-black text-[#990000] shrink-0">${Number(atleta.scoreGeral || 0).toFixed(1)}</span>
+            ${atleta.tipoParticipante !== 'visitante' ? `<span class="inline-flex items-center justify-center whitespace-nowrap leading-none text-[9px] font-black text-[#990000] shrink-0">${Number(atleta.scoreGeral || atleta.score || 0).toFixed(1)}</span>` : ''}
         </div>
     `).join("");
 }
@@ -1284,18 +1289,22 @@ async function sortearTimesEquilibradosLegadoDVC(evId) {
                         ${time.atletas.map((atleta, i) => `
                     <div class="flex justify-between items-center text-[10px] border-b py-1 gap-2">
                         <div class="min-w-0">
-                            <p class="font-semibold text-gray-700 truncate">
+                            <p class="font-semibold text-gray-700 truncate ${atleta.tipoParticipante !== 'visitante' ? 'cursor-pointer' : ''}" ${atleta.tipoParticipante !== 'visitante' ? `onclick="if(typeof abrirPerfil === 'function') abrirPerfil('${atleta.email}')"` : ''}>
                                 ${i + 1}. ${atleta.nome}
+                                ${atleta.tipoParticipante === 'visitante' ? `<span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[8px] font-black uppercase text-amber-800 ml-1">VISITANTE</span>` : ''}
                             </p>
 
                             <p class="text-[8px] font-bold text-gray-400 uppercase">
-                                ${atleta.sexo === "M" ? "Masculino" : atleta.sexo === "F" ? "Feminino" : "Não informado"}
+                                ${atleta.tipoParticipante === 'visitante' 
+                                    ? `${atleta.categoria || 'NÃO INFORMADO'} &middot; ${atleta.nivelEstimado || 'MÉDIA'}`
+                                    : (atleta.sexo === "M" ? "Masculino" : atleta.sexo === "F" ? "Feminino" : "Não informado")}
                             </p>
                         </div>
 
+                        ${atleta.tipoParticipante !== 'visitante' ? `
                         <span class="font-black text-gray-500">
                             ${atleta.score}
-                        </span>
+                        </span>` : ''}
                     </div>
                 `).join('')}
                     </div>
@@ -1514,7 +1523,9 @@ function montarTimesEquilibradosTreino(atletas = [], atletasPorTime = 6) {
     }));
 
     const ordenados = [...atletas].sort((a, b) => {
-        if (b.scoreGeral !== a.scoreGeral) return b.scoreGeral - a.scoreGeral;
+        const scoreA = window.obterScoreParticipanteSorteioDVC(a);
+        const scoreB = window.obterScoreParticipanteSorteioDVC(b);
+        if (scoreB !== scoreA) return scoreB - scoreA;
         return a.nome.localeCompare(b.nome);
     });
 
@@ -1553,7 +1564,7 @@ function montarTimesEquilibradosTreino(atletas = [], atletasPorTime = 6) {
 
         const escolhido = candidatos[0];
         escolhido.atletas.push(atleta);
-        escolhido.somaScore += Number(atleta.scoreGeral || 0);
+        escolhido.somaScore += window.obterScoreParticipanteSorteioDVC(atleta);
         escolhido.sexoContagem[atleta.sexo] = (escolhido.sexoContagem[atleta.sexo] || 0) + 1;
         escolhido.funcaoContagem[atleta.funcaoVolei] = (escolhido.funcaoContagem[atleta.funcaoVolei] || 0) + 1;
     });
@@ -1565,7 +1576,7 @@ function montarTimesEquilibradosTreino(atletas = [], atletasPorTime = 6) {
             id: time.id,
             nome: time.nome,
             cor: time.cor,
-            atletas: time.atletas,
+            atletas: time.atletas.map(window.normalizarParticipanteJogoTreinoDVC),
             mediaHabilidades: media.mediaHabilidades,
             scoreMedio: media.scoreMedio
         };
@@ -1751,6 +1762,7 @@ async function buscarAtletasParticipantesTreino(eventId, evento = {}) {
         });
     });
     await Promise.allSettled(buscas);
+
     return participantes.sort((a, b) => a.nome.localeCompare(b.nome));
 }
 
@@ -1772,13 +1784,517 @@ async function atualizarTelasDepoisSorteioTreino(preferirMural = false) {
 }
 window.atualizarTelasDepoisSorteioTreino = atualizarTelasDepoisSorteioTreino;
 
+async function carregarVisitantesTreino(eventId) {
+    const cacheKey = `visitantes_treino_${eventId}`;
+    const cached = obterCacheDVC(cacheKey);
+    if (cached) return cached;
+
+    const snapshot = await getDocs(collection(db, "events", eventId, "visitantesTreino"));
+    const visitantes = [];
+    snapshot.forEach(doc => visitantes.push(doc.data()));
+    
+    salvarCacheDVC(cacheKey, visitantes);
+    return visitantes;
+}
+
+// DVC VISITANTES — REVISÃO ETAPA 2: mantém a função oficial de atletas isolada do sorteio.
+// DVC VISITANTES — REVISÃO ETAPA 2: usa score temporário na escala oficial de 1 a 5.
+// DVC VISITANTES — REVISÃO ETAPA 2: centraliza o acesso ao score do participante.
+// DVC VISITANTES — REVISÃO ETAPA 2: não renderiza handler de perfil para visitante.
+// DVC VISITANTES — REVISÃO ETAPA 2: impede visitantes em avaliações e presença oficial.
+
+window.visitantePodeParticiparSorteioDVC = function(visitante = {}) {
+    return (
+        visitante.ativo !== false &&
+        visitante.ativoNoSorteio !== false
+    );
+};
+
+// DVC VISITANTES — ETAPA 3: usa participanteId sem exigir e-mail.
+window.participanteEhVisitanteDVC = function(participante = {}) {
+    return String(
+        participante.tipoParticipante || ""
+    ).trim().toLowerCase() === "visitante";
+};
+
+// DVC VISITANTES — ETAPA 3: salva snapshot para preservar o histórico da partida.
+window.normalizarParticipanteJogoTreinoDVC = function(participante = {}) {
+    const isVisitante = window.participanteEhVisitanteDVC(participante);
+
+    if (isVisitante) {
+        return {
+            participanteId:
+                participante.participanteId ||
+                `visitante:${participante.visitanteId || participante.id}`,
+            tipoParticipante: "visitante",
+            visitanteId:
+                participante.visitanteId ||
+                participante.id ||
+                "",
+            nome:
+                participante.nome ||
+                "Visitante",
+            categoria:
+                participante.categoria ||
+                "NAO_INFORMADO",
+            genero:
+                participante.genero ||
+                "NAO_INFORMADO",
+            nivelEstimado:
+                participante.nivelEstimado ||
+                "MEDIA",
+            posicao:
+                participante.posicao ||
+                "UNIVERSAL",
+            scoreSorteio:
+                Number(participante.scoreSorteio || 3)
+        };
+    }
+
+    return {
+        ...participante,
+        tipoParticipante: "atleta"
+    };
+};
+
+window.obterChaveParticipanteTreinoDVC = function(participante = {}) {
+    const tipo = String(
+        participante.tipoParticipante ||
+        participante.tipo ||
+        "atleta"
+    ).trim().toLowerCase();
+
+    if (tipo === "visitante") {
+        const id = String(
+            participante.id ||
+            participante.visitanteId ||
+            participante.participanteId ||
+            ""
+        ).trim();
+
+        if (!id) return "";
+
+        return id.startsWith("visitante:")
+            ? id
+            : `visitante:${id}`;
+    }
+
+    const email = String(
+        participante.email ||
+        participante.usuarioEmail ||
+        participante.atletaEmail ||
+        ""
+    ).trim().toLowerCase();
+
+    if (email) {
+        return `atleta:${email}`;
+    }
+
+    const uid = String(
+        participante.uid ||
+        participante.userId ||
+        ""
+    ).trim();
+
+    return uid ? `atleta_uid:${uid}` : "";
+};
+
+const SCORE_VISITANTE_DVC = Object.freeze({
+    INICIANTE: 2,
+    INTERMEDIARIO: 3,
+    AVANCADO: 4
+});
+
+window.obterScoreParticipanteSorteioDVC = function(participante = {}) {
+    if (String(participante.tipoParticipante || "").toLowerCase() === "visitante") {
+        const scoreVisitante = Number(participante.scoreSorteio);
+        return Number.isFinite(scoreVisitante) ? Math.max(1, Math.min(5, scoreVisitante)) : 3;
+    }
+
+    const scoreAtleta = Number(
+        participante.scoreGeral ??
+        participante.scoreTecnico ??
+        participante.score ??
+        0
+    );
+
+    return Number.isFinite(scoreAtleta) ? Math.max(1, Math.min(5, scoreAtleta)) : 0;
+};
+
+window.calcularScoreVisitanteTreinoDVC = function(visitante = {}, atletasPresentes = []) {
+    const nivel = typeof normalizarTextoDVC === 'function' 
+        ? normalizarTextoDVC(visitante.nivelEstimado || "") 
+        : String(visitante.nivelEstimado || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+    if (nivel === "INICIANTE") return 2;
+    if (nivel === "INTERMEDIARIO") return 3;
+    if (nivel === "AVANCADO") return 4;
+
+    const scoresValidos = atletasPresentes
+        .map(window.obterScoreParticipanteSorteioDVC)
+        .filter(score => Number.isFinite(score) && score >= 1 && score <= 5);
+
+    if (!scoresValidos.length) {
+        return 3;
+    }
+
+    const media = scoresValidos.reduce((total, score) => total + score, 0) / scoresValidos.length;
+    return Math.max(1, Math.min(5, media));
+};
+
+window.normalizarAtletaParaSorteioDVC = function(atleta = {}) {
+    return {
+        ...atleta,
+        tipoParticipante: "atleta",
+        participanteId: window.obterChaveParticipanteTreinoDVC(atleta)
+    };
+};
+
+window.normalizarVisitanteParaSorteioDVC = function(visitante = {}, atletasPresentes = []) {
+    return {
+        ...visitante,
+        tipoParticipante: "visitante",
+        participanteId: window.obterChaveParticipanteTreinoDVC(visitante),
+        nome: String(visitante.nome || "Visitante").trim(),
+        categoria: visitante.categoria || "NAO_INFORMADO",
+        genero: visitante.genero || "NAO_INFORMADO",
+        posicao: visitante.posicao || "UNIVERSAL",
+        funcaoVolei: visitante.posicao || "UNIVERSAL",
+        scoreSorteio: window.calcularScoreVisitanteTreinoDVC(visitante, atletasPresentes)
+    };
+};
+
+window.deduplicarParticipantesSorteioDVC = function(participantes = []) {
+    const mapa = new Map();
+
+    participantes.forEach(participante => {
+        const chave = window.obterChaveParticipanteTreinoDVC(participante);
+        if (!chave) {
+            if (window.DVC_DEBUG_VISITANTES) {
+                console.warn("[DVC Visitantes] Participante sem chave:", participante);
+            }
+            return;
+        }
+
+        if (!mapa.has(chave)) {
+            mapa.set(chave, participante);
+        }
+    });
+
+    return [...mapa.values()];
+};
+
+window.buscarParticipantesSorteioTreinoDVC = async function(eventId) {
+    const atletasPresentes = await buscarAtletasParticipantesTreino(eventId);
+    const visitantes = await carregarVisitantesTreino(eventId);
+
+    const atletasNormalizados = atletasPresentes.map(window.normalizarAtletaParaSorteioDVC);
+
+    const visitantesNormalizados = visitantes
+        .filter(window.visitantePodeParticiparSorteioDVC)
+        .map(visitante => window.normalizarVisitanteParaSorteioDVC(visitante, atletasNormalizados));
+
+    return window.deduplicarParticipantesSorteioDVC([...atletasNormalizados, ...visitantesNormalizados]);
+};
+
+window.alternarVisitanteNoSorteioDVC = async function(eventId, visitanteId, novoValor) {
+    if (typeof window.usuarioEhEquipeTecnica !== "function" || !window.usuarioEhEquipeTecnica()) {
+        alert("Acesso permitido somente para a equipe técnica.");
+        return;
+    }
+    
+    try {
+        await updateDoc(doc(db, "events", eventId, "visitantesTreino", visitanteId), {
+            ativoNoSorteio: novoValor,
+            atualizadoEm: serverTimestamp()
+        });
+        invalidarCacheDVC(`visitantes_treino_${eventId}`);
+        renderizarListaVisitantesTreino(eventId);
+    } catch (e) {
+        console.error("Erro ao alternar visitante no sorteio:", e);
+        alert("Erro ao alterar o status do visitante.");
+    }
+};
+
+window.renderizarListaVisitantesTreino = async (eventId) => {
+    const container = document.getElementById("lista-visitantes-treino");
+    
+    try {
+        const visitantes = await carregarVisitantesTreino(eventId);
+        const ativos = visitantes.filter(v => v.ativo !== false);
+        
+        if (ativos.length === 0) {
+            container.innerHTML = '<p class="text-[8px] font-bold text-gray-400 uppercase text-center py-2">Nenhum visitante adicionado</p>';
+            return;
+        }
+        
+        container.innerHTML = ativos.map(v => `
+            <div class="flex flex-col bg-white border border-gray-100 p-2 rounded-xl gap-2">
+                <div class="flex items-center justify-between">
+                    <div class="min-w-0 pr-2">
+                        <p class="text-[10px] font-black text-gray-800 uppercase truncate">${escaparHtml(v.nome)}</p>
+                        <p class="text-[8px] font-bold text-gray-400 uppercase truncate">VISITANTE &middot; ${escaparHtml(v.categoria)} &middot; ${escaparHtml(v.nivelEstimado)}</p>
+                    </div>
+                    <div class="flex gap-1 shrink-0">
+                        <button onclick="abrirModalAddVisitanteTreino('${safeEditParam(eventId)}', '${safeEditParam(v.id)}')" class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-[8px] font-black uppercase">Editar</button>
+                        <button onclick="inativarVisitanteTreino('${safeEditParam(eventId)}', '${safeEditParam(v.id)}')" class="bg-red-50 text-red-600 px-2 py-1 rounded text-[8px] font-black uppercase">Remover</button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-100">
+                    <span class="text-[8px] font-black uppercase ${v.ativoNoSorteio !== false ? 'text-green-700' : 'text-gray-500'}">
+                        ${v.ativoNoSorteio !== false ? 'INCLUÍDO NO SORTEIO' : 'FORA DO SORTEIO'}
+                    </span>
+                    <button onclick="alternarVisitanteNoSorteioDVC('${safeEditParam(eventId)}', '${safeEditParam(v.id)}', ${v.ativoNoSorteio === false ? 'true' : 'false'})" 
+                            class="px-2 py-1 rounded text-[8px] font-black uppercase border ${v.ativoNoSorteio !== false ? 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors' : 'bg-[#990000] border-[#990000] text-white hover:bg-[#7a0000] transition-colors'}">
+                        ${v.ativoNoSorteio !== false ? 'Retirar' : 'Incluir'}
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = '<p class="text-[8px] font-bold text-red-400 uppercase text-center py-2">Erro ao carregar visitantes</p>';
+    }
+};
+
+window.abrirModalAddVisitanteTreino = async (eventId, visitanteId = null) => {
+    // DVC VISITANTES — ETAPA 1: valida permissão também dentro das ações.
+    if (typeof window.usuarioEhEquipeTecnica !== "function" || !window.usuarioEhEquipeTecnica()) {
+        alert("Acesso permitido somente para a equipe técnica.");
+        return;
+    }
+    
+    const visitantes = await carregarVisitantesTreino(eventId);
+    const ativos = visitantes.filter(v => v.ativo !== false);
+    
+    let visitante = null;
+    if (visitanteId) {
+        visitante = visitantes.find(v => v.id === visitanteId);
+    } else if (ativos.length >= 5) {
+        return alert("Este treino ja possui o limite de 5 visitantes temporarios.");
+    }
+    
+    const id = visitante ? visitante.id : (crypto.randomUUID ? crypto.randomUUID() : 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
+    
+    const modalId = 'modal-add-visitante';
+    document.getElementById(modalId)?.remove();
+    
+    const formHtml = `
+        <div id="${modalId}" class="fixed inset-0 z-[110] bg-black/80 p-4 flex items-center justify-center">
+            <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000] text-white p-4 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[8px] font-black uppercase text-white/60">Treino DVC</p>
+                        <h3 class="text-sm font-black uppercase">${visitante ? 'Editar' : 'Adicionar'} Visitante</h3>
+                    </div>
+                    <button onclick="document.getElementById('${modalId}').remove()" class="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                </div>
+                <div class="p-4 space-y-3">
+                    <div>
+                        <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">Nome completo (obrigatorio)</label>
+                        <input id="vis-nome" type="text" class="w-full p-3 rounded-2xl border border-gray-200 text-sm font-black bg-gray-50 outline-none uppercase" value="${escaparHtml(visitante?.nome || '')}" placeholder="NOME DO VISITANTE">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">Categoria</label>
+                            <select id="vis-categoria" class="w-full p-3 rounded-2xl border border-gray-200 text-[10px] font-black bg-gray-50 outline-none uppercase">
+                                <option value="ADULTO" ${visitante?.categoria === 'ADULTO' ? 'selected' : ''}>Adulto</option>
+                                <option value="SUB-17" ${visitante?.categoria === 'SUB-17' ? 'selected' : ''}>Sub-17</option>
+                                <option value="NAO_INFORMADO" ${visitante?.categoria === 'NAO_INFORMADO' ? 'selected' : (!visitante ? 'selected' : '')}>Nao informado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">Genero</label>
+                            <select id="vis-genero" class="w-full p-3 rounded-2xl border border-gray-200 text-[10px] font-black bg-gray-50 outline-none uppercase">
+                                <option value="MASCULINO" ${visitante?.genero === 'MASCULINO' ? 'selected' : ''}>Masculino</option>
+                                <option value="FEMININO" ${visitante?.genero === 'FEMININO' ? 'selected' : ''}>Feminino</option>
+                                <option value="NAO_INFORMADO" ${visitante?.genero === 'NAO_INFORMADO' ? 'selected' : (!visitante ? 'selected' : '')}>Nao informado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">Nivel Estimado</label>
+                            <select id="vis-nivel" class="w-full p-3 rounded-2xl border border-gray-200 text-[10px] font-black bg-gray-50 outline-none uppercase">
+                                <option value="MEDIA_DO_GRUPO" ${visitante?.nivelEstimado === 'MEDIA_DO_GRUPO' ? 'selected' : (!visitante ? 'selected' : '')}>Media do grupo</option>
+                                <option value="INICIANTE" ${visitante?.nivelEstimado === 'INICIANTE' ? 'selected' : ''}>Iniciante</option>
+                                <option value="INTERMEDIARIO" ${visitante?.nivelEstimado === 'INTERMEDIARIO' ? 'selected' : ''}>Intermediario</option>
+                                <option value="AVANCADO" ${visitante?.nivelEstimado === 'AVANCADO' ? 'selected' : ''}>Avancado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">Posicao</label>
+                            <select id="vis-posicao" class="w-full p-3 rounded-2xl border border-gray-200 text-[10px] font-black bg-gray-50 outline-none uppercase">
+                                <option value="UNIVERSAL" ${visitante?.posicao === 'UNIVERSAL' ? 'selected' : (!visitante ? 'selected' : '')}>Universal</option>
+                                <option value="LEVANTADOR" ${visitante?.posicao === 'LEVANTADOR' ? 'selected' : ''}>Levantador</option>
+                                <option value="OPOSTO" ${visitante?.posicao === 'OPOSTO' ? 'selected' : ''}>Oposto</option>
+                                <option value="PONTEIRO" ${visitante?.posicao === 'PONTEIRO' ? 'selected' : ''}>Ponteiro</option>
+                                <option value="CENTRAL" ${visitante?.posicao === 'CENTRAL' ? 'selected' : ''}>Central</option>
+                                <option value="LIBERO" ${visitante?.posicao === 'LIBERO' ? 'selected' : ''}>Libero</option>
+                                <option value="NAO_INFORMADO" ${visitante?.posicao === 'NAO_INFORMADO' ? 'selected' : ''}>Nao informado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- DVC VISITANTES — ETAPA 1: checkbox ativoNoSorteio removido temporariamente da interface. -->                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button onclick="document.getElementById('${modalId}').remove()" class="bg-white border border-gray-200 text-gray-500 py-3 rounded-xl text-[9px] font-black uppercase">Cancelar</button>
+                        <button onclick="salvarVisitanteTreino('${safeEditParam(eventId)}', '${id}', ${!!visitante})" class="bg-[#990000] text-white py-3 rounded-xl text-[9px] font-black uppercase shadow-sm">Salvar Visitante</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', formHtml);
+};
+
+window.salvarVisitanteTreino = async (eventId, visitanteId, isEdit) => {
+    // DVC VISITANTES — ETAPA 1: valida permissão também dentro das ações.
+    if (typeof window.usuarioEhEquipeTecnica !== "function" || !window.usuarioEhEquipeTecnica()) {
+        alert("Acesso permitido somente para a equipe técnica.");
+        return;
+    }
+    
+    const nome = document.getElementById('vis-nome').value.trim();
+    if (!nome) return alert("O nome do visitante e obrigatorio.");
+    
+    const visitantes = await carregarVisitantesTreino(eventId);
+    if (!isEdit && visitantes.some(v => v.ativo !== false && v.nome.toUpperCase() === nome.toUpperCase())) {
+        if (!confirm("Ja existe um visitante ativo com este nome. Deseja continuar mesmo assim?")) return;
+    }
+    
+    // DVC VISITANTES — ETAPA 1: separa os dados editáveis dos metadados de criação.
+    const dadosEditaveis = {
+        nome: nome,
+        categoria: document.getElementById('vis-categoria').value,
+        genero: document.getElementById('vis-genero').value,
+        nivelEstimado: document.getElementById('vis-nivel').value,
+        posicao: document.getElementById('vis-posicao').value,
+        atualizadoEm: serverTimestamp()
+    };
+    
+    try {
+        const btn = event.currentTarget;
+        const oldText = btn.innerText;
+        btn.innerText = "Salvando...";
+        btn.disabled = true;
+        
+        const docRef = doc(db, "events", eventId, "visitantesTreino", visitanteId);
+        
+        if (isEdit) {
+            // DVC VISITANTES — ETAPA 1: não altera ativoNoSorteio durante a edição.
+            await updateDoc(docRef, dadosEditaveis);
+        } else {
+            const novoVisitante = {
+                ...dadosEditaveis,
+                id: visitanteId,
+                tipoParticipante: "visitante",
+                ativo: true,
+                ativoNoSorteio: true,
+                criadoEm: serverTimestamp(),
+                criadoPorEmail: auth.currentUser?.email || "",
+                criadoPorNome: currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica"
+            };
+            await setDoc(docRef, novoVisitante);
+        }
+        
+        // DVC VISITANTES — ETAPA 1: invalida apenas o cache dos visitantes deste evento.
+        invalidarCacheDVC(`visitantes_treino_${eventId}`);
+        
+        document.getElementById('modal-add-visitante')?.remove();
+        renderizarListaVisitantesTreino(eventId);
+    } catch (e) {
+        console.error("Erro ao salvar visitante:", e);
+        alert("Erro ao salvar visitante.");
+        if (event && event.currentTarget) {
+            event.currentTarget.disabled = false;
+            event.currentTarget.innerText = "Salvar Visitante";
+        }
+    }
+};
+
+window.inativarVisitanteTreino = async (eventId, visitanteId) => {
+    // DVC VISITANTES — ETAPA 1: valida permissão também dentro das ações.
+    if (typeof window.usuarioEhEquipeTecnica !== "function" || !window.usuarioEhEquipeTecnica()) {
+        alert("Acesso permitido somente para a equipe técnica.");
+        return;
+    }
+    
+    if (!confirm("Tem certeza que deseja remover este visitante do treino?")) return;
+    
+    try {
+        // DVC VISITANTES — ETAPA 1: preserva o documento ao inativar.
+        await updateDoc(doc(db, "events", eventId, "visitantesTreino", visitanteId), {
+            ativo: false,
+            atualizadoEm: serverTimestamp()
+        });
+        
+        invalidarCacheDVC(`visitantes_treino_${eventId}`);
+        renderizarListaVisitantesTreino(eventId);
+    } catch (e) {
+        console.error("Erro ao remover visitante:", e);
+        alert("Erro ao remover visitante.");
+    }
+};
+
+// DVC CHAMADA — PARTE 1.2: impede sorteio com alterações ainda não persistidas.
+window.salvarESortearDVC = async (eventId) => {
+    const btn = document.getElementById('btn-salvar-sortear');
+    if (btn) {
+        btn.innerText = "SALVANDO...";
+        btn.disabled = true;
+    }
+    
+    // DVC CHAMADA — PARTE 1.2: continua somente após o salvamento bem-sucedido.
+    if (typeof window.salvarChamadaEvento === "function") {
+        await window.salvarChamadaEvento(eventId);
+    }
+    
+    // DVC CHAMADA — PARTE 1.2: atualiza a réplica salva apenas após sucesso.
+    // DVC CHAMADA — PARTE 1.2: mantém alterações pendentes quando a gravação falha.
+    if (!chamadaTemAlteracoesPendentes(eventId)) {
+        document.getElementById('modal-pendentes-sorteio')?.remove();
+        window.abrirModalConfigSorteioTreino(eventId);
+    } else {
+        if (btn) {
+            btn.innerText = "SALVAR E SORTEAR";
+            btn.disabled = false;
+        }
+    }
+};
+
 window.abrirModalConfigSorteioTreino = async (eventId) => {
     if (!usuarioEhEquipeTecnica()) {
         return alert("Apenas ADM, Treinador ou Auxiliar podem gerar sorteio.");
     }
 
     if (chamadaTemAlteracoesPendentes(eventId)) {
-        return alert("Salve a chamada antes de sortear os times.");
+        document.getElementById("modal-config-sorteio-treino")?.remove();
+        
+        const modalHtml = `
+            <div id="modal-pendentes-sorteio" class="fixed inset-0 z-[100] bg-black/75 p-4 flex items-center justify-center">
+                <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-full">
+                    <div class="bg-amber-50 p-4 border-b border-amber-100 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-black uppercase text-amber-900 leading-tight">Alterações Pendentes</h3>
+                            <p class="text-[9px] font-bold uppercase text-amber-700 mt-0.5">A chamada foi modificada e ainda não foi salva</p>
+                        </div>
+                    </div>
+                    <div class="p-5 text-xs font-bold text-gray-700 bg-white">
+                        <p>Salve antes de montar os times para que somente os atletas ativos sejam considerados.</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 flex gap-2 justify-end border-t border-gray-100">
+                        <button onclick="document.getElementById('modal-pendentes-sorteio').remove()" class="px-4 py-3 rounded-xl text-[9px] font-black uppercase text-gray-600 bg-white border border-gray-200 flex-1 hover:bg-gray-50 transition-colors">Voltar à chamada</button>
+                        <button id="btn-salvar-sortear" onclick="window.salvarESortearDVC('${eventId}')" class="px-4 py-3 rounded-xl text-[9px] font-black uppercase text-white bg-amber-600 shadow-sm flex-1 hover:bg-amber-700 transition-colors">Salvar e Sortear</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        return;
     }
 
     document.getElementById("modal-config-sorteio-treino")?.remove();
@@ -1800,9 +2316,25 @@ window.abrirModalConfigSorteioTreino = async (eventId) => {
                 </div>
 
                 <div class="p-4 space-y-3">
+                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-[9px] font-black uppercase text-gray-700">Visitantes do Treino</p>
+                            <button onclick="abrirModalAddVisitanteTreino('${safeEditParam(eventId)}')" class="bg-white border border-gray-200 px-2 py-1 rounded text-[8px] font-bold text-[#990000] shadow-sm uppercase">+ Adicionar</button>
+                        </div>
+                        <div id="lista-visitantes-treino" class="space-y-2">
+                            <p class="text-[8px] font-bold text-gray-400 uppercase text-center py-2">Carregando visitantes...</p>
+                        </div>
+                    </div>
+
                     <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
-                        <p class="text-[9px] font-black uppercase text-amber-900">Times sorteados apenas com atletas ativos no treino.</p>
+                        <p class="text-[9px] font-black uppercase text-amber-900">Times sorteados apenas com atletas ativos no treino e visitantes incluídos.</p>
                         ${avisoForaSorteioModal ? `<p class="text-[8px] font-bold uppercase text-amber-700 mt-1">${avisoForaSorteioModal}</p>` : ''}
+                        
+                        <div class="mt-2 pt-2 border-t border-amber-200/50">
+                            <p class="text-[8px] font-bold text-amber-700 uppercase">Atletas presentes: <span id="contador-atletas-presentes">${resumoPresencasModal.totalValido || 0}</span></p>
+                            <p class="text-[8px] font-bold text-amber-700 uppercase">Visitantes incluídos: <span id="contador-visitantes-incluidos">...</span></p>
+                            <p class="text-[9px] font-black text-amber-900 mt-1">Total para o sorteio: <span id="contador-total-sorteio">...</span></p>
+                        </div>
                     </div>
 
                     <div>
@@ -1832,6 +2364,20 @@ window.abrirModalConfigSorteioTreino = async (eventId) => {
     `;
 
     document.body.insertAdjacentHTML("beforeend", modal);
+    
+    // Update the visitor counts async
+    carregarVisitantesTreino(eventId).then(visitantes => {
+        const inclusos = visitantes.filter(visitantePodeParticiparSorteioDVC).length;
+        const presentes = resumoPresencasModal.totalValido || 0;
+        
+        const elVisitantes = document.getElementById('contador-visitantes-incluidos');
+        const elTotal = document.getElementById('contador-total-sorteio');
+        
+        if (elVisitantes) elVisitantes.innerText = inclusos;
+        if (elTotal) elTotal.innerText = presentes + inclusos;
+    }).catch(err => console.error("Erro ao atualizar contadores", err));
+
+    renderizarListaVisitantesTreino(eventId);
 };
 
         // [Autoavaliacoes module code extracted to js/evaluations.js]
@@ -1863,7 +2409,7 @@ window.gerarSorteioTimesTreino = async (eventId, config = {}) => {
             ? config.todosContraTodos
             : (checkTodosContraTodos ? checkTodosContraTodos.checked : true);
 
-        const participantes = await buscarAtletasParticipantesTreino(eventId, evento);
+        const participantes = await window.buscarParticipantesSorteioTreinoDVC(eventId);
         const resumoPresencasSorteio = window.resumoUltimoSorteioTreinoDVC?.[eventId] || {};
         const avisoForaSorteio = getTextoForaSorteioTreinoDVC(Number(resumoPresencasSorteio.foraSorteio || 0));
 
@@ -2011,6 +2557,68 @@ window.abrirModalTimesTreino = async (eventId) => {
         const statusAvaliacao = getStatusAvaliacaoTreinoDVC(evento);
         const campeaoTreino = finalizado && classificacao.length ? classificacao[0] : null;
 
+        // DVC VISITANTES — PARTE 4.3: separa visitantes sem alterar métricas oficiais.
+        const participantesTimes = times.flatMap(time => Array.isArray(time?.atletas) ? time.atletas : []);
+        function obterChaveContagemParticipanteDVC(participante = {}, indice = 0) {
+            const chaveOficial = typeof window.obterChaveParticipanteTreinoDVC === "function"
+                ? window.obterChaveParticipanteTreinoDVC(participante)
+                : "";
+
+            if (chaveOficial) {
+                return chaveOficial;
+            }
+
+            const participanteId = String(participante.participanteId || "").trim();
+            if (participanteId) return `participante:${participanteId}`;
+
+            const email = String(participante.email || participante.usuarioEmail || participante.atletaEmail || "").trim().toLowerCase();
+            if (email) return `atleta:${email}`;
+
+            const uid = String(participante.uid || participante.userId || "").trim();
+            if (uid) return `atleta_uid:${uid}`;
+
+            const visitanteId = String(participante.visitanteId || participante.id || "").trim();
+            if (visitanteId) return `registro:${visitanteId}`;
+
+            const nome = String(participante.nome || participante.name || "").trim().toLowerCase().replace(/\s+/g, " ");
+            const nascimento = String(participante.dataNascimento || participante.nascimento || participante.birthDate || "").trim();
+            const telefone = String(participante.telefone || participante.phone || "").replace(/\D/g, "");
+
+            if (nome && (nascimento || telefone)) return `legado:${nome}|${nascimento}|${telefone}`;
+
+            const posicao = String(participante.posicao || participante.funcaoVolei || "").trim().toLowerCase();
+            const genero = String(participante.genero || participante.sexo || "").trim().toLowerCase();
+
+            if (nome) return `legado:${nome}|${posicao}|${genero}`;
+
+            return `registro_sem_identificacao:${indice}`;
+        }
+
+        const mapaParticipantes = new Map();
+
+        participantesTimes.forEach((participante, indice) => {
+            if (!participante || typeof participante !== "object") return;
+            const chave = obterChaveContagemParticipanteDVC(participante, indice);
+            if (!mapaParticipantes.has(chave)) {
+                mapaParticipantes.set(chave, participante);
+            }
+        });
+
+        const participantesUnicos = [...mapaParticipantes.values()];
+
+        // DVC VISITANTES — PARTE 4.3: mantém registros antigos classificados como atletas.
+        function participanteEhVisitanteContagemDVC(participante = {}) {
+            if (typeof window.participanteEhVisitanteDVC === "function") {
+                return window.participanteEhVisitanteDVC(participante);
+            }
+            return String(participante.tipoParticipante || participante.tipo || "atleta").trim().toLowerCase() === "visitante";
+        }
+
+        // DVC VISITANTES — PARTE 4.3: calcula os totais apenas com os integrantes já sorteados.
+        const totalVisitantes = participantesUnicos.filter(participanteEhVisitanteContagemDVC).length;
+        const totalParticipantes = participantesUnicos.length;
+        const totalAtletasOficiais = Math.max(0, totalParticipantes - totalVisitantes);
+
         document.getElementById("m-times-treino-dvc")?.remove();
 
         const modal = `
@@ -2031,6 +2639,43 @@ window.abrirModalTimesTreino = async (eventId) => {
                     </div>
 
                     <div class="p-4 space-y-4">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                            <p class="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                                Participantes do treino
+                            </p>
+
+                            <div class="mt-3 grid grid-cols-3 gap-2">
+                                <div class="rounded-xl border border-slate-200 bg-white px-2 py-3 text-center" title="Atletas oficiais">
+                                    <p class="text-lg font-black text-slate-950">
+                                        ${totalAtletasOficiais}
+                                    </p>
+
+                                    <p class="mt-1 text-[8px] font-black uppercase leading-tight text-slate-500">
+                                        Atletas
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl border border-amber-200 bg-amber-50 px-2 py-3 text-center" title="Visitantes temporários">
+                                    <p class="text-lg font-black text-amber-900">
+                                        ${totalVisitantes}
+                                    </p>
+
+                                    <p class="mt-1 text-[8px] font-black uppercase leading-tight text-amber-800">
+                                        Visitantes
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl border border-red-200 bg-red-50 px-2 py-3 text-center" title="Total de presentes">
+                                    <p class="text-lg font-black text-red-900">
+                                        ${totalParticipantes}
+                                    </p>
+
+                                    <p class="mt-1 text-[8px] font-black uppercase leading-tight text-red-800">
+                                        Total
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-center">
                                 <p class="text-[8px] font-black uppercase text-gray-400">Times</p>
@@ -2424,3 +3069,4 @@ window.renderizarCardJogoTreinoMural = renderizarCardJogoTreinoMural;
 window.renderizarEventoJogosTreinoMural = renderizarEventoJogosTreinoMural;
 window.renderizarCardTreinoFinalizadoCompactoDVC = renderizarCardTreinoFinalizadoCompactoDVC;
 window.renderizarListaAtletasTimeTreino = renderizarListaAtletasTimeTreino;
+
