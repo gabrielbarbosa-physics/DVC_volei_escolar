@@ -231,31 +231,31 @@ function dashboardTopAgrupadoDVC(contagem = {}, limite = 8, rotuloOutros = "Outr
 
 function dashboardCardDVC(titulo, valor, apoio = "", cor = "text-[#990000]") {
     return `
-        <div class="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm">
-            <p class="text-[8px] font-black uppercase text-gray-400">${dashboardEscapeHtmlDVC(titulo)}</p>
+        <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 shadow-sm text-gray-900 dark:text-gray-100">
+            <p class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">${dashboardEscapeHtmlDVC(titulo)}</p>
             <p class="text-2xl font-black ${cor} leading-none mt-1">${dashboardEscapeHtmlDVC(valor)}</p>
-            ${apoio ? `<p class="text-[9px] font-semibold text-gray-500 mt-1 leading-snug">${dashboardEscapeHtmlDVC(apoio)}</p>` : ""}
+            ${apoio ? `<p class="text-[9px] font-semibold text-gray-500 dark:text-gray-450 mt-1 leading-snug">${dashboardEscapeHtmlDVC(apoio)}</p>` : ""}
         </div>
     `;
 }
 
 function dashboardListaTopDVC(titulo, itens = []) {
     const lista = itens.length ? itens.map(([label, total], index) => `
-        <div class="flex items-center justify-between gap-3 bg-gray-50 border border-gray-100 rounded-xl p-2">
+        <div class="flex items-center justify-between gap-3 bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-2">
             <div class="min-w-0">
-                <p class="text-[10px] font-black uppercase text-gray-700 truncate">${index + 1}. ${dashboardEscapeHtmlDVC(label)}</p>
+                <p class="text-[10px] font-black uppercase text-gray-700 dark:text-gray-300 truncate">${index + 1}. ${dashboardEscapeHtmlDVC(label)}</p>
             </div>
-            <span class="bg-white border border-gray-100 text-gray-700 text-[9px] font-black px-2 py-1 rounded-full shrink-0">${total}</span>
+            <span class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-[9px] font-black px-2 py-1 rounded-full shrink-0">${total}</span>
         </div>
     `).join("") : `
-        <div class="bg-gray-50 border border-dashed rounded-xl p-3 text-center">
-            <p class="text-[10px] font-black uppercase text-gray-400">Sem dados suficientes.</p>
+        <div class="bg-gray-50 dark:bg-gray-950 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-3 text-center">
+            <p class="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500">Sem dados suficientes.</p>
         </div>
     `;
 
     return `
-        <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-            <p class="text-[10px] font-black uppercase text-gray-800 mb-3">${dashboardEscapeHtmlDVC(titulo)}</p>
+        <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100">
+            <p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">${dashboardEscapeHtmlDVC(titulo)}</p>
             <div class="space-y-2">${lista}</div>
         </div>
     `;
@@ -304,8 +304,8 @@ async function renderDashboard() {
 
     if (!window.usuarioEhADM()) {
         c.innerHTML = `
-            <div class="p-6 text-center bg-red-50 border border-red-200 rounded-xl">
-                <p class="text-red-700 font-black text-xs uppercase">
+            <div class="p-6 text-center bg-red-50 dark:bg-red-955 border border-red-200 dark:border-red-900/50 rounded-xl">
+                <p class="text-red-700 dark:text-red-400 font-black text-xs uppercase">
                     Acesso restrito ao ADM.
                 </p>
             </div>
@@ -316,73 +316,73 @@ async function renderDashboard() {
     destruirGraficosDashboard();
 
     c.innerHTML = `
-        <h3 class="font-bold mb-4 uppercase text-gray-800">
+        <h3 class="font-bold mb-4 uppercase text-gray-800 dark:text-gray-100">
             Painel Administrativo
         </h3>
 
         <div id="dashboard-cards" class="grid grid-cols-2 gap-2 mb-4">
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Ativos</p>
-                <p id="dash-ativos" class="text-2xl font-black text-green-600">-</p>
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+                <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase">Ativos</p>
+                <p id="dash-ativos" class="text-2xl font-black text-green-600 dark:text-green-450">-</p>
             </div>
 
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Inativos</p>
-                <p id="dash-inativos" class="text-2xl font-black text-red-600">-</p>
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+                <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase">Inativos</p>
+                <p id="dash-inativos" class="text-2xl font-black text-red-600 dark:text-red-450">-</p>
             </div>
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Acessaram hoje</p>
-                <p id="dash-acessos-hoje" class="text-2xl font-black text-indigo-600">-</p>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Sem acessar 7 dias</p>
-                <p id="dash-sem-acesso" class="text-2xl font-black text-red-700">-</p>
-            </div>
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Pagamentos</p>
-                <p id="dash-pagos" class="text-2xl font-black text-blue-600">-</p>
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+                <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase">Acessaram hoje</p>
+                <p id="dash-acessos-hoje" class="text-2xl font-black text-indigo-600 dark:text-indigo-405">-</p>
             </div>
 
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Justificativas</p>
-                <p id="dash-justificados" class="text-2xl font-black text-yellow-600">-</p>
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+                <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase">Sem acessar 7 dias</p>
+                <p id="dash-sem-acesso" class="text-2xl font-black text-red-700 dark:text-red-455">-</p>
+            </div>
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+                <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase">Pagamentos</p>
+                <p id="dash-pagos" class="text-2xl font-black text-blue-600 dark:text-blue-450">-</p>
             </div>
 
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Avisos ativos</p>
-                <p id="dash-avisos-ativos" class="text-2xl font-black text-[#990000]">-</p>
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+                <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase">Justificativas</p>
+                <p id="dash-justificados" class="text-2xl font-black text-yellow-600 dark:text-yellow-450">-</p>
             </div>
 
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Avaliações equipe</p>
-                <p id="dash-avaliacoes-equipe" class="text-2xl font-black text-indigo-600">-</p>
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+                <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase">Avisos ativos</p>
+                <p id="dash-avisos-ativos" class="text-2xl font-black text-[#990000] dark:text-red-450">-</p>
+            </div>
+
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+                <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase">Avaliações equipe</p>
+                <p id="dash-avaliacoes-equipe" class="text-2xl font-black text-indigo-600 dark:text-indigo-405">-</p>
             </div>
         </div>
 
-        <div class="bg-white p-4 rounded-xl border shadow-sm mb-4">
-            <p class="text-[10px] font-black text-gray-600 uppercase mb-3">
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm mb-4">
+            <p class="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase mb-3">
                 Alunos ativos x inativos
             </p>
             <canvas id="chart-status-alunos" height="180"></canvas>
         </div>
 
-        <div class="bg-white p-4 rounded-xl border shadow-sm mb-4">
-            <p class="text-[10px] font-black text-gray-600 uppercase mb-3">
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm mb-4">
+            <p class="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase mb-3">
                 Presenças registradas por mês
             </p>
             <canvas id="chart-presencas-mes" height="220"></canvas>
         </div>
 
-        <div class="bg-white p-4 rounded-xl border shadow-sm mb-4">
-            <p class="text-[10px] font-black text-gray-600 uppercase mb-3">
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm mb-4">
+            <p class="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase mb-3">
                 Pagamentos x justificativas por mês
             </p>
             <canvas id="chart-financeiro-mes" height="220"></canvas>
         </div>
 
-        <div class="bg-white p-4 rounded-xl border shadow-sm mb-4">
-            <p class="text-[10px] font-black text-gray-600 uppercase mb-3">
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm mb-4">
+            <p class="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase mb-3">
                 Comparativo geral financeiro
             </p>
             <canvas id="chart-financeiro-geral" height="180"></canvas>
@@ -392,8 +392,8 @@ async function renderDashboard() {
     try {
         if (typeof Chart === "undefined") {
             c.innerHTML += `
-                <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-                    <p class="text-xs font-bold text-red-700">
+                <div class="bg-red-50 dark:bg-red-955 border border-red-200 dark:border-red-900/50 rounded-xl p-4 text-center">
+                    <p class="text-xs font-bold text-red-700 dark:text-red-400">
                         Biblioteca de gráficos não carregada. Verifique se o script do Chart.js foi adicionado no &lt;head&gt;.
                     </p>
                 </div>
@@ -617,8 +617,8 @@ async function renderDashboard() {
         console.error("Erro ao carregar dashboard:", e);
 
         c.innerHTML += `
-            <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-                <p class="text-xs font-bold text-red-700">
+            <div class="bg-red-50 dark:bg-red-955 border border-red-200 dark:border-red-900/50 rounded-xl p-4 text-center">
+                <p class="text-xs font-bold text-red-700 dark:text-red-400">
                     Não foi possível carregar o painel agora.
                 </p>
             </div>
@@ -854,19 +854,19 @@ function renderizarRespostaTextoPesquisaDVC(resposta = "") {
     const texto = textoPesquisaDVC(resposta).trim();
 
     if (!texto) {
-        return `<p class="text-[10px] font-semibold italic text-gray-400">Nao respondida</p>`;
+        return `<p class="text-[10px] font-semibold italic text-gray-400 dark:text-gray-500">Nao respondida</p>`;
     }
 
     if (texto.length <= 220) {
-        return `<p class="text-[11px] font-semibold leading-relaxed text-gray-700 whitespace-pre-wrap">${escaparHtmlPesquisaDVC(texto)}</p>`;
+        return `<p class="text-[11px] font-semibold leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${escaparHtmlPesquisaDVC(texto)}</p>`;
     }
 
     const resumo = `${texto.slice(0, 220).trim()}...`;
     return `
-        <p class="text-[11px] font-semibold leading-relaxed text-gray-700 whitespace-pre-wrap">${escaparHtmlPesquisaDVC(resumo)}</p>
+        <p class="text-[11px] font-semibold leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${escaparHtmlPesquisaDVC(resumo)}</p>
         <details class="mt-2">
-            <summary class="cursor-pointer text-[9px] font-black uppercase text-red-800">Ler resposta completa</summary>
-            <p class="mt-2 text-[11px] font-semibold leading-relaxed text-gray-700 whitespace-pre-wrap">${escaparHtmlPesquisaDVC(texto)}</p>
+            <summary class="cursor-pointer text-[9px] font-black uppercase text-red-800 dark:text-red-400">Ler resposta completa</summary>
+            <p class="mt-2 text-[11px] font-semibold leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${escaparHtmlPesquisaDVC(texto)}</p>
         </details>
     `;
 }
@@ -885,23 +885,23 @@ function renderizarCardRespostaPorPerguntaDVC(documento = {}, pergunta = {}) {
 
     const dados = obterDadosParticipantePesquisaDVC(documento);
     return `
-        <article class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="rounded-xl border border-red-100 bg-red-50 px-3 py-2">
-                <p class="text-[8px] font-black uppercase text-red-800">Pergunta visualizada</p>
-                <p class="mt-1 text-[10px] font-black leading-snug text-gray-800">${escaparHtmlPesquisaDVC(pergunta.pergunta)}</p>
+        <article class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-gray-900 dark:text-gray-100">
+            <div class="rounded-xl border border-red-100 dark:border-red-950/40 bg-red-50 dark:bg-red-955/20 px-3 py-2">
+                <p class="text-[8px] font-black uppercase text-red-800 dark:text-red-400">Pergunta visualizada</p>
+                <p class="mt-1 text-[10px] font-black leading-snug text-gray-800 dark:text-gray-200">${escaparHtmlPesquisaDVC(pergunta.pergunta)}</p>
             </div>
 
             <div class="mt-3 flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                    <p class="text-[11px] font-black uppercase text-gray-900">${escaparHtmlPesquisaDVC(dados.nome)}</p>
-                    <p class="mt-1 text-[9px] font-bold uppercase text-gray-400">
+                    <p class="text-[11px] font-black uppercase text-gray-900 dark:text-gray-100">${escaparHtmlPesquisaDVC(dados.nome)}</p>
+                    <p class="mt-1 text-[9px] font-bold uppercase text-gray-400 dark:text-gray-500">
                         ${escaparHtmlPesquisaDVC([dados.funcao, dados.genero, dados.categoria].filter(Boolean).join(" - "))}
                     </p>
-                    <p class="mt-1 text-[9px] font-semibold text-gray-400">Respondido em ${escaparHtmlPesquisaDVC(dados.dataResposta)}</p>
+                    <p class="mt-1 text-[9px] font-semibold text-gray-400 dark:text-gray-550">Respondido em ${escaparHtmlPesquisaDVC(dados.dataResposta)}</p>
                 </div>
             </div>
 
-            <div class="mt-3 border-t border-gray-100 pt-3">
+            <div class="mt-3 border-t border-gray-100 dark:border-gray-800 pt-3">
                 ${renderizarRespostaTextoPesquisaDVC(resposta)}
             </div>
         </article>
@@ -920,7 +920,7 @@ function renderizarListaPorPerguntaPesquisaDVC(dados = []) {
     });
 
     if (html.length === 0) {
-        return `<div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-5 text-center text-[10px] font-black uppercase text-gray-400">Nenhuma resposta aberta encontrada.</div>`;
+        return `<div class="rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-955 p-5 text-center text-[10px] font-black uppercase text-gray-400 dark:text-gray-500">Nenhuma resposta aberta encontrada.</div>`;
     }
 
     return html.join("");
@@ -940,18 +940,18 @@ function renderizarCardParticipantePesquisaDVC(documento = {}) {
     const dados = obterDadosParticipantePesquisaDVC(documento);
 
     return `
-        <article class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-black uppercase text-gray-900">${escaparHtmlPesquisaDVC(dados.nome)}</p>
-            <p class="mt-1 text-[9px] font-bold uppercase text-gray-400">
+        <article class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-gray-900 dark:text-gray-100">
+            <p class="text-[11px] font-black uppercase text-gray-900 dark:text-gray-100">${escaparHtmlPesquisaDVC(dados.nome)}</p>
+            <p class="mt-1 text-[9px] font-bold uppercase text-gray-400 dark:text-gray-500">
                 ${escaparHtmlPesquisaDVC([dados.funcao, dados.genero, dados.categoria].filter(Boolean).join(" - "))}
             </p>
-            <p class="mt-1 text-[9px] font-semibold text-gray-400">Respondido em ${escaparHtmlPesquisaDVC(dados.dataResposta)}</p>
+            <p class="mt-1 text-[9px] font-semibold text-gray-400 dark:text-gray-550">Respondido em ${escaparHtmlPesquisaDVC(dados.dataResposta)}</p>
 
-            <div class="mt-3 space-y-3 border-t border-gray-100 pt-3">
+            <div class="mt-3 space-y-3 border-t border-gray-100 dark:border-gray-800 pt-3">
                 ${respostas.map((item, index) => `
                     <div>
-                        <p class="text-[8px] font-black uppercase text-red-800">Pergunta ${index + 1}</p>
-                        <p class="mt-1 text-[10px] font-black leading-snug text-gray-800">${escaparHtmlPesquisaDVC(item.pergunta.pergunta)}</p>
+                        <p class="text-[8px] font-black uppercase text-red-800 dark:text-red-400">Pergunta ${index + 1}</p>
+                        <p class="mt-1 text-[10px] font-black leading-snug text-gray-800 dark:text-gray-200">${escaparHtmlPesquisaDVC(item.pergunta.pergunta)}</p>
                         <div class="mt-2">${renderizarRespostaTextoPesquisaDVC(item.resposta)}</div>
                     </div>
                 `).join("")}
@@ -966,7 +966,7 @@ function renderizarListaPorParticipantePesquisaDVC(dados = []) {
         .filter(Boolean);
 
     if (html.length === 0) {
-        return `<div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-5 text-center text-[10px] font-black uppercase text-gray-400">Nenhum participante encontrado.</div>`;
+        return `<div class="rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-955 p-5 text-center text-[10px] font-black uppercase text-gray-400 dark:text-gray-500">Nenhum participante encontrado.</div>`;
     }
 
     return html.join("");
@@ -985,7 +985,7 @@ function renderizarPainelRespostasAbertasPesquisaDVC() {
 
     const dadosFiltrados = estado.dados.filter(documentoPassaFiltrosPesquisaDVC);
     const listaHtml = estado.carregando
-        ? `<div class="rounded-2xl border border-gray-200 bg-white p-5 text-center shadow-sm"><p class="text-[10px] font-black uppercase text-gray-400">Carregando coment&aacute;rios...</p></div>`
+        ? `<div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 text-center shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500">Carregando coment&aacute;rios...</p></div>`
         : estado.modo === "participante"
             ? renderizarListaPorParticipantePesquisaDVC(dadosFiltrados)
             : renderizarListaPorPerguntaPesquisaDVC(dadosFiltrados);
@@ -1016,11 +1016,11 @@ function renderizarPainelRespostasAbertasPesquisaDVC() {
             </div>
         </div>
 
-        <div class="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-gray-900 dark:text-gray-100">
             <div class="grid grid-cols-1 gap-3">
                 <label class="block">
-                    <span class="text-[8px] font-black uppercase text-gray-400">Trimestre</span>
-                    <select id="comentarios-pesquisa-trimestre-dvc" onchange="selecionarTrimestreComentariosPesquisaDVC(this.value)" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-[11px] font-black text-gray-800 outline-none">
+                    <span class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Trimestre</span>
+                    <select id="comentarios-pesquisa-trimestre-dvc" onchange="selecionarTrimestreComentariosPesquisaDVC(this.value)" class="mt-1 h-11 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 px-3 text-[11px] font-black text-gray-800 dark:text-gray-200 outline-none">
                         ${obterTrimestresComentariosPesquisaDVC().map(chave => `
                             <option value="${chave}" ${estado.chaveTrimestre === chave ? "selected" : ""}>${formatarChaveTrimestrePesquisaDVC(chave)}</option>
                         `).join("")}
@@ -1028,16 +1028,16 @@ function renderizarPainelRespostasAbertasPesquisaDVC() {
                 </label>
 
                 <label class="block">
-                    <span class="text-[8px] font-black uppercase text-gray-400">Pergunta</span>
-                    <select id="comentarios-pesquisa-pergunta-dvc" onchange="atualizarFiltrosComentariosPesquisaDVC()" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-[11px] font-black text-gray-800 outline-none">
+                    <span class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Pergunta</span>
+                    <select id="comentarios-pesquisa-pergunta-dvc" onchange="atualizarFiltrosComentariosPesquisaDVC()" class="mt-1 h-11 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-955 px-3 text-[11px] font-black text-gray-800 dark:text-gray-200 outline-none">
                         ${perguntaOptions}
                     </select>
                 </label>
 
                 <div class="grid grid-cols-2 gap-2">
                     <label class="block">
-                        <span class="text-[8px] font-black uppercase text-gray-400">Respondente</span>
-                        <select id="comentarios-pesquisa-tipo-dvc" onchange="atualizarFiltrosComentariosPesquisaDVC()" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-[11px] font-black text-gray-800 outline-none">
+                        <span class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Respondente</span>
+                        <select id="comentarios-pesquisa-tipo-dvc" onchange="atualizarFiltrosComentariosPesquisaDVC()" class="mt-1 h-11 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-955 px-3 text-[11px] font-black text-gray-800 dark:text-gray-200 outline-none">
                             <option value="todos" ${estado.tipoRespondente === "todos" ? "selected" : ""}>Todos</option>
                             <option value="sub17" ${estado.tipoRespondente === "sub17" ? "selected" : ""}>Sub-17</option>
                             <option value="adulto" ${estado.tipoRespondente === "adulto" ? "selected" : ""}>Adulto</option>
@@ -1045,19 +1045,19 @@ function renderizarPainelRespostasAbertasPesquisaDVC() {
                     </label>
 
                     <label class="block">
-                        <span class="text-[8px] font-black uppercase text-gray-400">Busca por nome</span>
-                        <input id="comentarios-pesquisa-busca-dvc" value="${escaparHtmlPesquisaDVC(estado.busca)}" oninput="atualizarFiltrosComentariosPesquisaDVC()" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-[11px] font-semibold text-gray-800 outline-none" placeholder="Nome">
+                        <span class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Busca por nome</span>
+                        <input id="comentarios-pesquisa-busca-dvc" value="${escaparHtmlPesquisaDVC(estado.busca)}" oninput="atualizarFiltrosComentariosPesquisaDVC()" class="mt-1 h-11 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-955 px-3 text-[11px] font-semibold text-gray-800 dark:text-gray-200 outline-none" placeholder="Nome">
                     </label>
                 </div>
 
-                <label class="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
+                <label class="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-955 px-3 py-3">
                     <input id="comentarios-pesquisa-vazias-dvc" type="checkbox" onchange="atualizarFiltrosComentariosPesquisaDVC()" class="accent-[#990000]" ${estado.mostrarVazias ? "checked" : ""}>
-                    <span class="text-[9px] font-black uppercase text-gray-600">Mostrar n&atilde;o respondidas</span>
+                    <span class="text-[9px] font-black uppercase text-gray-600 dark:text-gray-400">Mostrar n&atilde;o respondidas</span>
                 </label>
 
                 <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="alternarVisualizacaoComentariosPesquisaDVC('pergunta')" class="rounded-xl px-3 py-3 text-[9px] font-black uppercase ${estado.modo === "pergunta" ? "bg-[#990000] text-white" : "bg-gray-100 text-gray-500"}">Por pergunta</button>
-                    <button type="button" onclick="alternarVisualizacaoComentariosPesquisaDVC('participante')" class="rounded-xl px-3 py-3 text-[9px] font-black uppercase ${estado.modo === "participante" ? "bg-[#990000] text-white" : "bg-gray-100 text-gray-500"}">Por participante</button>
+                    <button type="button" onclick="alternarVisualizacaoComentariosPesquisaDVC('pergunta')" class="rounded-xl px-3 py-3 text-[9px] font-black uppercase ${estado.modo === "pergunta" ? "bg-[#990000] text-white" : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"}">Por pergunta</button>
+                    <button type="button" onclick="alternarVisualizacaoComentariosPesquisaDVC('participante')" class="rounded-xl px-3 py-3 text-[9px] font-black uppercase ${estado.modo === "participante" ? "bg-[#990000] text-white" : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"}">Por participante</button>
                 </div>
             </div>
         </div>
@@ -1128,13 +1128,13 @@ function abrirRespostasAbertasPesquisaDVC() {
     // DVC PESQUISA: reutiliza o painel existente de comentarios quando disponivel.
     const modalHtml = `
         <div id="m-comentarios-pesquisa-dvc" class="fixed inset-0 bg-black/80 z-[130] p-4 flex items-center justify-center fade-in">
-            <div class="bg-gray-50 w-full max-w-md rounded-3xl shadow-2xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-100">
-                <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3">
+            <div class="bg-gray-50 dark:bg-gray-950 w-full max-w-md rounded-3xl shadow-2xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800">
+                <div class="flex items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-850 bg-white dark:bg-gray-900 px-4 py-3">
                     <div>
-                        <p class="text-[8px] font-black uppercase text-red-800">Pesquisa trimestral</p>
-                        <p class="text-[12px] font-black uppercase text-gray-900">Coment&aacute;rios abertos</p>
+                        <p class="text-[8px] font-black uppercase text-red-800 dark:text-red-450">Pesquisa trimestral</p>
+                        <p class="text-[12px] font-black uppercase text-gray-900 dark:text-gray-150 font-bold">Coment&aacute;rios abertos</p>
                     </div>
-                    <button type="button" onclick="fecharRespostasAbertasPesquisaDVC()" class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-[9px] font-black uppercase text-gray-600">Fechar</button>
+                    <button type="button" onclick="fecharRespostasAbertasPesquisaDVC()" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-[9px] font-black uppercase text-gray-600 dark:text-gray-400">Fechar</button>
                 </div>
 
                 <div id="comentarios-pesquisa-corpo-dvc" class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4"></div>
@@ -1306,8 +1306,8 @@ function mudarSubAbaDashboard(aba) {
         if (botao) {
             botao.className = `flex-1 px-1 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${
                 window.subAbaDashboardAtiva === nomeAba
-                    ? "bg-white text-[#990000] shadow-sm ring-1 ring-red-100"
-                    : "text-gray-400 hover:text-gray-700"
+                    ? "bg-white dark:bg-gray-850 text-[#990000] dark:text-red-400 shadow-sm ring-1 ring-red-100 dark:ring-red-950/50"
+                    : "text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             }`;
         }
     });
@@ -1319,8 +1319,8 @@ window.mudarSubAbaDashboard = mudarSubAbaDashboard;
 
 function renderProgressoDVC(titulo, contagem, total, legendaMap) {
     let html = `
-        <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm text-left">
-            <p class="text-[10px] font-black uppercase text-gray-800 mb-3">${titulo}</p>
+        <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-left text-gray-900 dark:text-gray-100">
+            <p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">${titulo}</p>
             <div class="space-y-3">
     `;
     
@@ -1336,11 +1336,11 @@ function renderProgressoDVC(titulo, contagem, total, legendaMap) {
         
         html += `
             <div>
-                <div class="flex justify-between items-center text-[9px] font-bold text-gray-600 mb-1">
+                <div class="flex justify-between items-center text-[9px] font-bold text-gray-600 dark:text-gray-400 mb-1">
                     <span class="truncate pr-2">${desc}</span>
                     <span>${count} (${pct}%)</span>
                 </div>
-                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                <div class="w-full bg-gray-100 dark:bg-gray-950 h-2 rounded-full overflow-hidden">
                     <div class="bg-[#990000] h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
                 </div>
             </div>
@@ -1349,7 +1349,7 @@ function renderProgressoDVC(titulo, contagem, total, legendaMap) {
     
     if (!hasData) {
         html += `
-            <p class="text-[9px] text-gray-400 font-bold uppercase text-center py-2">Sem respostas registradas.</p>
+            <p class="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase text-center py-2">Sem respostas registradas.</p>
         `;
     }
     
@@ -1639,7 +1639,7 @@ async function renderDashboardEditaisDVC() {
                 </div>
             </div>
             
-            <div class="bg-gray-100 border border-gray-200/50 rounded-2xl p-1 mb-4 flex gap-1 sticky top-[58px] z-20 backdrop-blur-md shadow-sm">
+            <div class="bg-gray-100 dark:bg-gray-950 border border-gray-200/50 dark:border-gray-850 rounded-2xl p-1 mb-4 flex gap-1 sticky top-[58px] z-20 backdrop-blur-md shadow-sm">
                 <button id="btn-subaba-dash-visao" onclick="window.mudarSubAbaDashboard('visao')" class="flex-1 px-1 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition">
                     Visão Geral
                 </button>
@@ -1668,23 +1668,23 @@ async function renderDashboardEditaisDVC() {
                     ${dashboardCardDVC("Avaliações equipe", avaliacoesMes, "Realizadas no mês", "text-indigo-600")}
                 </div>
 
-                <div class="bg-white p-4 rounded-xl border shadow-sm">
-                    <p class="text-[10px] font-black text-gray-600 uppercase mb-3">Alunos ativos x inativos</p>
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-gray-900 dark:text-gray-100">
+                    <p class="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase mb-3">Alunos ativos x inativos</p>
                     <div class="h-48"><canvas id="chart-status-alunos"></canvas></div>
                 </div>
 
-                <div class="bg-white p-4 rounded-xl border shadow-sm">
-                    <p class="text-[10px] font-black text-gray-600 uppercase mb-3">Presenças registradas por mês</p>
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-gray-900 dark:text-gray-100">
+                    <p class="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase mb-3">Presenças registradas por mês</p>
                     <div class="h-56"><canvas id="chart-presencas-mes"></canvas></div>
                 </div>
 
-                <div class="bg-white p-4 rounded-xl border shadow-sm">
-                    <p class="text-[10px] font-black text-gray-600 uppercase mb-3">Pagamentos x justificativas por mês</p>
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-gray-900 dark:text-gray-100">
+                    <p class="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase mb-3">Pagamentos x justificativas por mês</p>
                     <div class="h-56"><canvas id="chart-financeiro-mes"></canvas></div>
                 </div>
 
-                <div class="bg-white p-4 rounded-xl border shadow-sm">
-                    <p class="text-[10px] font-black text-gray-600 uppercase mb-3">Comparativo geral financeiro</p>
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-gray-900 dark:text-gray-100">
+                    <p class="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase mb-3">Comparativo geral financeiro</p>
                     <div class="h-48"><canvas id="chart-financeiro-geral"></canvas></div>
                 </div>
             </div>
@@ -1699,21 +1699,21 @@ async function renderDashboardEditaisDVC() {
                     ${dashboardCardDVC("Adultos", totalAdultos, "18 anos ou mais", "text-gray-800")}
                     ${dashboardCardDVC("Voluntários", totalVoluntarios, "Vínculo declarado", "text-blue-700")}
                     ${dashboardCardDVC("Ex-alunos", totalExAlunos, "Vínculo declarado", "text-purple-700")}
-                    ${dashboardCardDVC("Dados atualizados", `${percentualSocio}%`, `${totalSocioAtualizados} pessoa(s)`, "text-green-700")}
+                    ${dashboardCardDVC("Dados updated", `${percentualSocio}%`, `${totalSocioAtualizados} pessoa(s)`, "text-green-700")}
                     ${dashboardCardDVC("Pendências", pendenciasSocio, "Atualização socioeconômica", pendenciasSocio ? "text-red-700" : "text-green-700")}
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Distribuição por gênero</p><div class="h-56"><canvas id="chart-dashboard-genero"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Faixa etária</p><div class="h-56"><canvas id="chart-dashboard-faixa-etaria"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Raça/cor autodeclarada</p><div class="h-64"><canvas id="chart-dashboard-raca-cor"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Vínculo com o DVC</p><div class="h-56"><canvas id="chart-dashboard-vinculo"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Top bairros</p><div class="h-72"><canvas id="chart-dashboard-bairros"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Regionais</p><div class="h-72"><canvas id="chart-dashboard-regionais"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Faixa de renda familiar</p><div class="h-64"><canvas id="chart-dashboard-renda"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Benefício social</p><div class="h-56"><canvas id="chart-dashboard-beneficio"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Programa social declarado</p><div class="h-64"><canvas id="chart-dashboard-programa"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Composição familiar</p><div class="h-56"><canvas id="chart-dashboard-composicao"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Distribuição por gênero</p><div class="h-56"><canvas id="chart-dashboard-genero"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Faixa etária</p><div class="h-56"><canvas id="chart-dashboard-faixa-etaria"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Raça/cor autodeclarada</p><div class="h-64"><canvas id="chart-dashboard-raca-cor"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Vínculo com o DVC</p><div class="h-56"><canvas id="chart-dashboard-vinculo"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Top bairros</p><div class="h-72"><canvas id="chart-dashboard-bairros"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Regionais</p><div class="h-72"><canvas id="chart-dashboard-regionais"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Faixa de renda familiar</p><div class="h-64"><canvas id="chart-dashboard-renda"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Benefício social</p><div class="h-56"><canvas id="chart-dashboard-beneficio"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Programa social declarado</p><div class="h-64"><canvas id="chart-dashboard-programa"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Composição familiar</p><div class="h-56"><canvas id="chart-dashboard-composicao"></canvas></div></div>
                 </div>
             </div>
         `;
@@ -1788,18 +1788,18 @@ async function renderDashboardEditaisDVC() {
                     ${dashboardCardDVC("Novos no trimestre", `${percentualEntrada}%`, "Entraram recentemente", "text-indigo-700")}
                 </div>
 
-                <div class="bg-white p-4 rounded-xl border shadow-sm">
-                    <p class="text-[10px] font-black text-gray-600 uppercase mb-3">Tempo de participação dos respondentes</p>
+                <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-xl shadow-sm text-gray-900 dark:text-gray-100">
+                    <p class="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase mb-3">Tempo de participação dos respondentes</p>
                     <div class="h-56"><canvas id="chart-dashboard-survey-tempo"></canvas></div>
                 </div>
 
                 <div class="pt-2">
-                    <p class="text-[10px] font-black uppercase text-[#990000] mb-1">Pesquisas Completas (Participação >= 3 meses)</p>
-                    <p class="text-[9px] font-semibold text-gray-500 mb-3">Resultados agregados das respostas de impacto (Total: ${totalImpacto}).</p>
+                    <p class="text-[10px] font-black uppercase text-[#990000] dark:text-red-400 mb-1">Pesquisas Completas (Participação >= 3 meses)</p>
+                    <p class="text-[9px] font-semibold text-gray-500 dark:text-gray-400 mb-3">Resultados agregados das respostas de impacto (Total: ${totalImpacto}).</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         ${renderProgressoDVC("Organização e compromisso", contagemImpacto.organizacao, totalImpacto, legendaOrganizacao)}
                         ${renderProgressoDVC("Pertencimento e segurança", contagemImpacto.pertencimento, totalImpacto, legendaPertencimento)}
-                        ${renderProgressoDVC("Convivência com o grupo", contagemImpacto.convivencia, totalImpacto, legendaConvivencia)}
+                        ${renderProgressoDVC("Convivência com o group", contagemImpacto.convivencia, totalImpacto, legendaConvivencia)}
                         ${renderProgressoDVC("Principal objetivo no DVC", contagemImpacto.objetivo, totalImpacto, legendaObjetivo)}
                         ${renderProgressoDVC("Avaliação de treinos (Adultos)", contagemImpacto.treinos, totalImpactoAdulto, legendaTreinos)}
                         ${renderProgressoDVC("Percepção de evolução", contagemImpacto.evolucao, totalImpacto, legendaEvolucao)}
@@ -1807,8 +1807,8 @@ async function renderDashboardEditaisDVC() {
                 </div>
 
                 <div class="pt-4">
-                    <p class="text-[10px] font-black uppercase text-[#990000] mb-1">Pesquisas de Entrada (Participação < 3 meses)</p>
-                    <p class="text-[9px] font-semibold text-gray-500 mb-3">Resultados agregados dos novos participantes (Total: ${totalEntrada}).</p>
+                    <p class="text-[10px] font-black uppercase text-[#990000] dark:text-red-400 mb-1">Pesquisas de Entrada (Participação < 3 meses)</p>
+                    <p class="text-[9px] font-semibold text-gray-500 dark:text-gray-400 mb-3">Resultados agregados dos novos participantes (Total: ${totalEntrada}).</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         ${renderProgressoDVC("Motivo da chegada", contagemEntrada.motivos, totalEntrada, legendaMotivos)}
                         ${renderProgressoDVC("Expectativas para os próximos meses", contagemEntrada.expectativas, totalEntrada, legendaExpectativas)}
@@ -1828,14 +1828,14 @@ async function renderDashboardEditaisDVC() {
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Tipo de escola - Sub17</p><div class="h-64"><canvas id="chart-dashboard-tipo-escola"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Ano/Série - Sub17</p><div class="h-64"><canvas id="chart-dashboard-ano-serie"></canvas></div></div>
-                    <div class="md:col-span-2 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Situação escolar - adultos</p><div class="h-64"><canvas id="chart-dashboard-escolar-adulto"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Tipo de escola - Sub17</p><div class="h-64"><canvas id="chart-dashboard-tipo-escola"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Ano/Série - Sub17</p><div class="h-64"><canvas id="chart-dashboard-ano-serie"></canvas></div></div>
+                    <div class="md:col-span-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Situação escolar - adultos</p><div class="h-64"><canvas id="chart-dashboard-escolar-adulto"></canvas></div></div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Status financeiro geral</p><div class="h-56"><canvas id="chart-dashboard-financeiro"></canvas></div></div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"><p class="text-[10px] font-black uppercase text-gray-800 mb-3">Presenças em cache por mês</p><div class="h-56"><canvas id="chart-dashboard-presencas"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Status financeiro geral</p><div class="h-56"><canvas id="chart-dashboard-financeiro"></canvas></div></div>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-gray-900 dark:text-gray-100"><p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">Presenças em cache por mês</p><div class="h-56"><canvas id="chart-dashboard-presencas"></canvas></div></div>
                 </div>
             </div>
         `;
@@ -1874,8 +1874,8 @@ async function renderDashboardEditaisDVC() {
     } catch (e) {
         console.error("Erro ao carregar dashboard:", e);
         c.innerHTML = `
-            <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-                <p class="text-xs font-bold text-red-700">Não foi possível carregar o painel agora.</p>
+            <div class="bg-red-50 dark:bg-red-955 border border-red-200 dark:border-red-900/50 rounded-xl p-4 text-center">
+                <p class="text-xs font-bold text-red-700 dark:text-red-400">Não foi possível carregar o painel agora.</p>
             </div>
         `;
     }
@@ -1887,8 +1887,8 @@ async function renderAdmin() {
 
     if (!window.usuarioEhADM()) {
         c.innerHTML = `
-            <div class="p-6 text-center bg-red-50 border border-red-200 rounded-xl">
-                <p class="text-red-700 font-black text-xs uppercase">
+            <div class="p-6 text-center bg-red-50 dark:bg-red-955 border border-red-200 dark:border-red-900/50 rounded-xl">
+                <p class="text-red-700 dark:text-red-400 font-black text-xs uppercase">
                     Acesso restrito ao ADM.
                 </p>
             </div>
@@ -1959,38 +1959,38 @@ async function renderAdmin() {
         </div>
 
         <div id="gestao-resumo" class="grid grid-cols-2 gap-2 mb-5">
-            <div class="bg-white p-4 rounded-2xl border shadow-sm text-center">
-                <p class="text-[8px] font-black text-gray-400 uppercase">
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm text-center text-gray-900 dark:text-gray-100">
+                <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
                     Ativos
                 </p>
-                <p id="gestao-count-ativos" class="text-2xl font-black text-green-600">
+                <p id="gestao-count-ativos" class="text-2xl font-black text-green-600 dark:text-green-450">
                     -
                 </p>
             </div>
 
-            <div class="bg-white p-4 rounded-2xl border shadow-sm text-center">
-                <p class="text-[8px] font-black text-gray-400 uppercase">
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm text-center text-gray-900 dark:text-gray-100">
+                <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
                     Novos
                 </p>
-                <p id="gestao-count-novos" class="text-2xl font-black text-[#990000]">
+                <p id="gestao-count-novos" class="text-2xl font-black text-[#990000] dark:text-red-450">
                     -
                 </p>
             </div>
 
-            <div class="bg-white p-4 rounded-2xl border shadow-sm text-center">
-                <p class="text-[8px] font-black text-gray-400 uppercase">
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm text-center text-gray-900 dark:text-gray-100">
+                <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
                     Inadimplentes
                 </p>
-                <p id="gestao-count-inadimplentes" class="text-2xl font-black text-red-700">
+                <p id="gestao-count-inadimplentes" class="text-2xl font-black text-red-700 dark:text-red-450">
                     -
                 </p>
             </div>
 
-            <div class="bg-white p-4 rounded-2xl border shadow-sm text-center">
-                <p class="text-[8px] font-black text-gray-400 uppercase">
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm text-center text-gray-900 dark:text-gray-100">
+                <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
                     Justificados
                 </p>
-                <p id="gestao-count-justificados" class="text-2xl font-black text-blue-600">
+                <p id="gestao-count-justificados" class="text-2xl font-black text-blue-600 dark:text-blue-450">
                     -
                 </p>
             </div>
@@ -2015,13 +2015,13 @@ async function renderAdmin() {
             </button>
         </div>
 
-        <div id="box-pendencias-financeiras" class="bg-white border rounded-2xl p-4 shadow-sm mb-5">
+        <div id="box-pendencias-financeiras" class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm mb-5 text-gray-900 dark:text-gray-100">
             <div class="flex justify-between items-center mb-3 gap-3">
                 <div>
-                    <p class="text-[10px] font-black text-[#990000] uppercase">
+                    <p class="text-[10px] font-black text-[#990000] dark:text-red-400 uppercase">
                         Pendências Financeiras
                     </p>
-                    <p class="text-[8px] font-bold text-gray-400 uppercase">
+                    <p class="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase">
                         Comprovantes, justificativas e carências aguardando análise
                     </p>
                 </div>
@@ -2032,32 +2032,32 @@ async function renderAdmin() {
                 </button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <div class="bg-green-50 border border-green-100 rounded-xl p-3 text-center">
-                    <p id="count-comprovantes-pendentes" class="text-2xl font-black text-green-700">-</p>
-                    <p class="text-[8px] font-bold text-green-800 uppercase">
+                <div class="bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30 rounded-xl p-3 text-center">
+                    <p id="count-comprovantes-pendentes" class="text-2xl font-black text-green-700 dark:text-green-400">-</p>
+                    <p class="text-[8px] font-bold text-green-800 dark:text-green-500 uppercase">
                         Comprovantes
                     </p>
                 </div>
 
-                <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center">
-                    <p id="count-justificativas-pendentes" class="text-2xl font-black text-blue-700">-</p>
-                    <p class="text-[8px] font-bold text-blue-800 uppercase">
+                <div class="bg-blue-50 dark:bg-blue-955/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-3 text-center">
+                    <p id="count-justificativas-pendentes" class="text-2xl font-black text-blue-700 dark:text-blue-400">-</p>
+                    <p class="text-[8px] font-bold text-blue-800 dark:text-blue-500 uppercase">
                         Justificativas
                     </p>
                 </div>
             </div>
         </div>
-        <div class="bg-white border rounded-2xl p-4 shadow-sm mb-5">
+        <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm mb-5 text-gray-900 dark:text-gray-100">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center">
-                    <i class="fa-solid fa-filter text-[#990000]"></i>
+                <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/50 flex items-center justify-center">
+                    <i class="fa-solid fa-filter text-[#990000] dark:text-red-400"></i>
                 </div>
 
                 <div>
-                    <p class="text-[8px] font-black text-gray-400 uppercase">
+                    <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
                         Filtros
                     </p>
-                    <p class="text-xs font-black text-gray-800 uppercase">
+                    <p class="text-xs font-black text-gray-800 dark:text-gray-250 uppercase">
                         Localizar atletas
                     </p>
                 </div>
@@ -2069,10 +2069,10 @@ async function renderAdmin() {
                     id="admin-search" 
                     oninput="buscarGestaoDVC()" 
                     placeholder="Pesquisar atleta..." 
-                    class="w-full p-3 border rounded-xl text-xs outline-none bg-gray-50 font-semibold">
+                    class="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-xs outline-none bg-gray-50 dark:bg-gray-950 font-semibold text-gray-900 dark:text-gray-100">
 
                 <div class="grid grid-cols-2 gap-2">
-                    <select id="admin-filter-role" onchange="filterAdminList()" class="p-3 border rounded-xl text-[10px] font-bold uppercase bg-gray-50">
+                    <select id="admin-filter-role" onchange="filterAdminList()" class="p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-bold uppercase bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
                         <option value="todos">Cargos</option>
                         <option value="Membro">Membros</option>
                         <option value="Auxiliar">Auxiliares</option>
@@ -2080,27 +2080,28 @@ async function renderAdmin() {
                         <option value="ADM">ADMs</option>
                     </select>
 
-                    <select id="admin-filter-sex" onchange="filterAdminList()" class="p-3 border rounded-xl text-[10px] font-bold uppercase bg-gray-50">
+                    <select id="admin-filter-sex" onchange="filterAdminList()" class="p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-bold uppercase bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
                         <option value="todos">Sexos</option>
                         <option value="M">Masc</option>
                         <option value="F">Fem</option>
                     </select>
 
-                    <select id="admin-filter-status" onchange="filterAdminList()" class="p-3 border rounded-xl text-[10px] font-bold uppercase text-blue-600 bg-gray-50">
+                    <select id="admin-filter-status" onchange="filterAdminList()" class="p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-bold uppercase text-blue-600 dark:text-blue-400 bg-gray-50 dark:bg-gray-955">
                         <option value="todos">Status</option>
                         <option value="Ativo">Ativos</option>
                         <option value="Inativo">Inativos</option>
                     </select>
 
-                    <select id="admin-filter-finance" onchange="filterAdminList()" class="p-3 border rounded-xl text-[10px] font-bold uppercase text-green-600 bg-gray-50">
+                    <select id="admin-filter-finance" onchange="filterAdminList()" class="p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-bold uppercase text-green-600 dark:text-green-400 bg-gray-50 dark:bg-gray-955">
                         <option value="todos">Financ.</option>
                         <option value="Em dia">Em dia</option>
                         <option value="Inadimplente">Inadimpl.</option>
                         <option value="Justificado">Justificado</option>
                         <option value="${STATUS_FINANCEIRO_CARENCIA}">Carência</option>
+                        <option value="Em carência">Em carência</option>
                     </select>
 
-                    <select id="admin-filter-month" onchange="filterAdminList()" class="col-span-2 p-3 border rounded-xl text-[10px] font-bold uppercase text-red-600 bg-gray-50">
+                    <select id="admin-filter-month" onchange="filterAdminList()" class="col-span-2 p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-bold uppercase text-red-600 dark:text-red-400 bg-gray-50 dark:bg-gray-955">
                         ${gerarOpcoesMesesGestao()}
                     </select>
                 </div>
@@ -2379,6 +2380,7 @@ async function filterAdminList() {
                     <option value="Inadimplente" ${financeiroEfetivo === 'Inadimplente' ? 'selected' : ''}>Inadimplente</option>
                     <option value="Justificado" ${financeiroEfetivo === 'Justificado' ? 'selected' : ''}>Justificado</option>
                     <option value="${STATUS_FINANCEIRO_CARENCIA}" ${financeiroEfetivo === STATUS_FINANCEIRO_CARENCIA ? 'selected' : ''}>Carência</option>
+                    <option value="Em carência" ${financeiroEfetivo === 'Em carência' ? 'selected' : ''}>Em carência</option>
                 </select>
             </div>
 
@@ -2497,7 +2499,7 @@ async function renderMembers() {
     const c = document.getElementById('main-content'); 
     
     // Ícone de "carregando" enquanto conta as presenças no banco
-    c.innerHTML = `<h3 class="font-bold mb-4 uppercase text-gray-800 flex items-center">Atletas <i class="fa-solid fa-circle-notch fa-spin text-xs ml-2 text-gray-400" id="loading-atletas"></i></h3>`;
+    c.innerHTML = `<h3 class="font-bold mb-4 uppercase text-gray-800 dark:text-gray-200 flex items-center">Atletas <i class="fa-solid fa-circle-notch fa-spin text-xs ml-2 text-gray-400 dark:text-gray-500" id="loading-atletas"></i></h3>`;
     
     // 1. Busca a lista de todos os usuários
     const snap = await window.carregarUsuariosCacheMockDVC(); 
@@ -2523,7 +2525,7 @@ async function renderMembers() {
     // 4. Remove o ícone de carregando
     const loadingIcon = document.getElementById('loading-atletas');
     if (loadingIcon) loadingIcon.remove();
-
+ 
     // 5. Renderiza a lista na tela
     uArr.forEach(user => { 
         let corDaFaixa = "border-gray-200"; 
@@ -2532,20 +2534,20 @@ async function renderMembers() {
         if (user.sexo === "F") corDaFaixa = "border-pink-500";
         else if (user.sexo === "M") corDaFaixa = "border-blue-500";
         if (financeiroEfetivo === "Justificado" || financeiroEfetivo === STATUS_FINANCEIRO_CARENCIA) corDaFaixa = "border-yellow-400";
-
+ 
         // Pega o número de presenças calculado (ou 0 se não tiver nenhuma)
         const qtdPresencas = contagemPresencas[user.email] || 0;
-
+ 
         c.innerHTML += `
-        <div class="p-3 border-b flex justify-between bg-white items-center mb-1 rounded shadow-sm text-gray-800 border-l-4 ${corDaFaixa}">
+        <div class="p-3 border-b border-gray-100 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 items-center mb-1 rounded shadow-sm text-gray-800 dark:text-gray-255 border-l-4 ${corDaFaixa}">
             <div class="flex flex-col">
                 <span class="text-sm font-semibold">${user.nome}</span>
-                <span class="text-[9px] font-bold text-gray-400 uppercase">${user.funcao}</span>
+                <span class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">${user.funcao}</span>
             </div>
             
-            <div class="bg-gray-50 px-3 py-1 rounded-lg border border-gray-100 flex flex-col items-center justify-center min-w-[50px]">
-                <span class="text-[7px] text-gray-400 font-black uppercase mb-1">Presenças</span>
-                <span class="text-sm font-black text-[#990000] leading-none">${qtdPresencas}</span>
+            <div class="bg-gray-50 dark:bg-gray-950 px-3 py-1 rounded-lg border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center min-w-[50px]">
+                <span class="text-[7px] text-gray-400 dark:text-gray-500 font-black uppercase mb-1">Presenças</span>
+                <span class="text-sm font-black text-[#990000] dark:text-red-400 leading-none">${qtdPresencas}</span>
             </div>
         </div>`; 
     });
@@ -2735,61 +2737,61 @@ async function verDocs(email, nome) {
 
         let modal = `
             <div id="m-fin" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
-                <div class="bg-white w-full max-w-sm rounded-2xl p-6 max-h-[85vh] overflow-y-auto relative shadow-2xl">
+                <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 w-full max-w-sm rounded-2xl p-6 max-h-[85vh] overflow-y-auto relative shadow-2xl text-gray-900 dark:text-gray-100">
                     <button 
                         onclick="document.getElementById('m-fin').remove()" 
                         class="absolute top-4 right-4 text-red-600 font-black text-xl">
                         &times;
                     </button>
 
-                    <h2 class="font-bold text-xs uppercase mb-1 text-[#990000]">
+                    <h2 class="font-bold text-xs uppercase mb-1 text-[#990000] dark:text-red-400">
                         Histórico Financeiro
                     </h2>
 
-                    <p class="text-[10px] font-black text-gray-800 uppercase mb-4">
+                    <p class="text-[10px] font-black text-gray-800 dark:text-gray-250 uppercase mb-4">
                         ${nome}
                     </p>
 
                     <div class="grid grid-cols-3 gap-2 mb-4">
-                        <div class="bg-green-50 border border-green-100 rounded-xl p-3 text-center">
-                            <p class="text-xl font-black text-green-700">
+                        <div class="bg-green-50 dark:bg-green-955/20 border border-green-100 dark:border-green-900/30 rounded-xl p-3 text-center">
+                            <p class="text-xl font-black text-green-700 dark:text-green-400">
                                 ${pagos}
                             </p>
-                            <p class="text-[7px] font-bold text-green-800 uppercase">
+                            <p class="text-[7px] font-bold text-green-800 dark:text-green-500 uppercase">
                                 Pagos
                             </p>
                         </div>
 
-                        <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center">
-                            <p class="text-xl font-black text-blue-700">
+                        <div class="bg-blue-50 dark:bg-blue-955/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-3 text-center">
+                            <p class="text-xl font-black text-blue-700 dark:text-blue-400">
                                 ${justificados}
                             </p>
-                            <p class="text-[7px] font-bold text-blue-800 uppercase">
+                            <p class="text-[7px] font-bold text-blue-800 dark:text-blue-500 uppercase">
                                 Justificados
                             </p>
                         </div>
 
-                        <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-3 text-center">
-                            <p class="text-xl font-black text-yellow-700">
+                        <div class="bg-yellow-50 dark:bg-yellow-955/20 border border-yellow-100 dark:border-yellow-900/30 rounded-xl p-3 text-center">
+                            <p class="text-xl font-black text-yellow-700 dark:text-yellow-400">
                                 ${pendentes}
                             </p>
-                            <p class="text-[7px] font-bold text-yellow-800 uppercase">
+                            <p class="text-[7px] font-bold text-yellow-800 dark:text-yellow-500 uppercase">
                                 Pendentes
                             </p>
                         </div>
                     </div>
 
-                    <div class="bg-gray-50 border rounded-xl p-3 mb-5">
-                        <p class="text-[9px] font-black text-gray-500 uppercase">
+                    <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl p-3 mb-5">
+                        <p class="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase">
                             Última regularização
                         </p>
 
-                        <p class="text-xs font-black text-gray-800 uppercase mt-1">
+                        <p class="text-xs font-black text-gray-800 dark:text-gray-200 uppercase mt-1">
                             ${ultimaRegularizacao ? ultimaRegularizacao.mes : "Nenhuma regularização validada ainda"}
                         </p>
                     </div>
 
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-2">
+                    <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase mb-2">
                         Registros enviados
                     </p>
         `;
@@ -2798,34 +2800,34 @@ async function verDocs(email, nome) {
             const isJustificativa = item.tipo === "Justificativa";
             const isCarenciaEspecial = item.tipo === "CarenciaEspecial";
 
-            let corStatus = "bg-yellow-100 text-yellow-800";
+            let corStatus = "bg-yellow-100 text-yellow-800 dark:bg-yellow-955/40 dark:text-yellow-400";
             let textoStatus = "Pendente";
 
             if (item.status === "Validado" || item.resultadoFinanceiro === "Pago") {
-                corStatus = "bg-green-100 text-green-800";
+                corStatus = "bg-green-100 text-green-800 dark:bg-green-955/40 dark:text-green-400";
                 textoStatus = "Validado";
             }
 
             if (item.status === "Justificado" || item.resultadoFinanceiro === "Justificado") {
-                corStatus = "bg-blue-100 text-blue-800";
+                corStatus = "bg-blue-100 text-blue-800 dark:bg-blue-955/40 dark:text-blue-400";
                 textoStatus = "Justificado";
             }
 
             if (item.status === "Em análise") {
-                corStatus = "bg-red-100 text-red-800";
+                corStatus = "bg-red-100 text-red-800 dark:bg-red-955/40 dark:text-red-400";
                 textoStatus = "Em análise";
             }
 
             if (item.status === "Carência recusada") {
-                corStatus = "bg-red-100 text-red-800";
+                corStatus = "bg-red-100 text-red-800 dark:bg-red-955/40 dark:text-red-400";
                 textoStatus = "Recusada";
             }
 
             if (isCarenciaEspecial) {
                 modal += `
-                    <div class="bg-red-50 p-4 rounded-xl mb-4 border border-red-200">
+                    <div class="bg-red-50 dark:bg-red-955/20 p-4 rounded-xl mb-4 border border-red-200 dark:border-red-900/50">
                         <div class="flex justify-between items-center mb-2">
-                            <p class="font-bold text-xs text-[#990000]">
+                            <p class="font-bold text-xs text-[#990000] dark:text-red-400">
                                 ${item.mes}
                             </p>
 
@@ -2834,23 +2836,23 @@ async function verDocs(email, nome) {
                             </span>
                         </div>
 
-                        <p class="text-[9px] font-black text-[#990000] uppercase mb-1">
+                        <p class="text-[9px] font-black text-[#990000] dark:text-red-400 uppercase mb-1">
                             Carência especial
                         </p>
 
-                        <p class="text-[10px] text-gray-700 bg-white p-3 rounded-lg border mb-3 leading-relaxed">
+                        <p class="text-[10px] text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-950 p-3 rounded-lg border border-gray-100 dark:border-gray-850 mb-3 leading-relaxed">
                             ${item.justificativa || "Sem justificativa original."}
                         </p>
 
-                        <div class="bg-white border rounded-lg p-3 mb-3">
-                            <p class="text-[9px] font-black text-gray-500 uppercase mb-1">1. Pode contribuir com algum valor?</p>
-                            <p class="text-[10px] text-gray-700 leading-relaxed mb-3">${item.respostaPodeContribuir || "Sem resposta."}</p>
+                        <div class="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-lg p-3 mb-3 text-gray-900 dark:text-gray-100">
+                            <p class="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase mb-1">1. Pode contribuir com algum valor?</p>
+                            <p class="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed mb-3">${item.respostaPodeContribuir || "Sem resposta."}</p>
 
-                            <p class="text-[9px] font-black text-gray-500 uppercase mb-1">2. Peso do projeto</p>
-                            <p class="text-[10px] text-gray-700 leading-relaxed mb-3">${item.respostaImportanciaProjeto || "Sem resposta."}</p>
+                            <p class="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase mb-1">2. Peso do projeto</p>
+                            <p class="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed mb-3">${item.respostaImportanciaProjeto || "Sem resposta."}</p>
 
-                            <p class="text-[9px] font-black text-gray-500 uppercase mb-1">3. Como poderá contribuir</p>
-                            <p class="text-[10px] text-gray-700 leading-relaxed">${item.respostaContribuicaoProjeto || "Sem resposta."}</p>
+                            <p class="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase mb-1">3. Como poderá contribuir</p>
+                            <p class="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed">${item.respostaContribuicaoProjeto || "Sem resposta."}</p>
                         </div>
 
                         ${window.montarRastroFinanceiro ? window.montarRastroFinanceiro(item) : ""}
@@ -2865,9 +2867,9 @@ async function verDocs(email, nome) {
                 `;
             } else if (isJustificativa) {
                 modal += `
-                    <div class="bg-blue-50 p-4 rounded-xl mb-4 border border-blue-200">
+                    <div class="bg-blue-50 dark:bg-blue-955/20 p-4 rounded-xl mb-4 border border-blue-200 dark:border-blue-900/50">
                         <div class="flex justify-between items-center mb-2">
-                            <p class="font-bold text-xs text-blue-800">
+                            <p class="font-bold text-xs text-blue-800 dark:text-blue-400">
                                 ${item.mes}
                             </p>
 
@@ -2876,11 +2878,11 @@ async function verDocs(email, nome) {
                             </span>
                         </div>
 
-                        <p class="text-[9px] font-black text-blue-800 uppercase mb-1">
+                        <p class="text-[9px] font-black text-blue-800 dark:text-blue-400 uppercase mb-1">
                             Justificativa enviada:
                         </p>
 
-                        <p class="text-[10px] text-gray-700 bg-white p-3 rounded-lg border mb-3 leading-relaxed">
+                        <p class="text-[10px] text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-955 p-3 rounded-lg border border-gray-100 dark:border-gray-850 mb-3 leading-relaxed">
                             ${item.justificativa || "Sem texto informado."}
                         </p>
 
@@ -2897,9 +2899,9 @@ async function verDocs(email, nome) {
                 `;
             } else {
                 modal += `
-                    <div class="bg-gray-50 p-4 rounded-xl mb-4 border">
+                    <div class="bg-gray-50 dark:bg-gray-950/20 p-4 rounded-xl mb-4 border border-gray-200 dark:border-gray-850 text-gray-900 dark:text-gray-100">
                         <div class="flex justify-between items-center mb-2">
-                            <p class="font-bold text-xs text-red-800">
+                            <p class="font-bold text-xs text-red-800 dark:text-red-400">
                                 ${item.mes}
                             </p>
 

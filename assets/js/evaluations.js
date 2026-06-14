@@ -411,7 +411,16 @@ window.salvarAvaliacao = async (email) => {
         alert("Não foi possível salvar a avaliação.");
     }
 };
-    async function carregarHistoricoHabilidadeHtml(emailAluno, criterio) {
+function escapeHtmlDVC(valor) {
+    return String(valor || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+async function carregarHistoricoHabilidadeHtml(emailAluno, criterio) {
     try {
         if (!emailAluno || !criterio) return "";
 
@@ -436,8 +445,8 @@ window.salvarAvaliacao = async (email) => {
 
         if (registros.length === 0) {
             return `
-                <div class="mt-3 bg-white border border-dashed rounded-lg p-2">
-                    <p class="text-[8px] text-gray-400 font-bold uppercase">
+                <div class="mt-3 bg-white dark:bg-gray-950 border border-dashed dark:border-gray-800 rounded-lg p-2">
+                    <p class="text-[8px] text-gray-400 dark:text-gray-400 font-bold uppercase">
                         Ainda não há histórico registrado para esta habilidade.
                     </p>
                 </div>
@@ -445,31 +454,59 @@ window.salvarAvaliacao = async (email) => {
         }
 
         return `
-            <div class="mt-3 bg-white border rounded-lg p-2">
-                <p class="text-[8px] text-gray-400 font-black uppercase mb-2">
+            <div class="mt-3 bg-white dark:bg-gray-950 border dark:border-gray-800 rounded-lg p-2">
+                <p class="text-[8px] text-gray-400 dark:text-gray-450 font-black uppercase mb-2">
                     Histórico recente
                 </p>
 
                 <div class="space-y-2">
                     ${registros.map(reg => {
                         const diff = Number(reg.diferenca || 0);
-                        const sinal = diff > 0 ? "+" : "";
-                        const cor = diff >= 0 ? "text-green-700" : "text-red-700";
+                        const semAlteracao = Math.abs(diff) < 0.001;
+
+                        const textoDiferenca = semAlteracao
+                            ? "Sem alteração"
+                            : `${diff > 0 ? "+" : ""}${diff.toFixed(1)}`;
+
+                        const corDiferenca = semAlteracao
+                            ? "text-gray-500 dark:text-gray-450"
+                            : diff > 0
+                                ? "text-green-700 dark:text-green-400"
+                                : "text-red-700 dark:text-red-400";
 
                         return `
-                            <div class="flex justify-between items-start gap-2 border-b last:border-0 pb-1">
-                                <div>
-                                    <p class="text-[9px] font-bold text-gray-700">
-                                        ${reg.origem || "Atualização"}
-                                    </p>
-                                    <p class="text-[8px] text-gray-400 font-semibold">
-                                        ${formatarDataSeguraDVC(reg.registradoEm)}
+                            <div class="border-b dark:border-gray-800/60 last:border-0 pb-2 pt-1">
+                                <div class="flex justify-between items-start gap-2">
+                                    <div>
+                                        <p class="text-[9px] font-bold text-gray-700 dark:text-gray-200">
+                                            ${reg.origem || "Atualização"}
+                                        </p>
+                                        <p class="text-[8px] text-gray-400 dark:text-gray-500 font-semibold">
+                                            ${formatarDataSeguraDVC(reg.registradoEm)}
+                                        </p>
+                                    </div>
+                                    <span class="${corDiferenca} text-[9px] font-black">
+                                        ${textoDiferenca}
+                                    </span>
+                                </div>
+                                ${reg.detalhes ? `
+                                <div class="mt-1">
+                                    <p class="text-[8px] text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-900 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800">
+                                        ${reg.detalhes}
                                     </p>
                                 </div>
-
-                                <span class="${cor} text-[9px] font-black">
-                                    ${sinal}${diff.toFixed(1)}
-                                </span>
+                                ` : ""}
+                                ${reg.observacao ? `
+                                    <div class="mt-2 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/40 rounded-lg p-2">
+                                        <p class="text-[8px] font-black text-[#990000] dark:text-red-400 uppercase mb-1">
+                                            <i class="fa-solid fa-comment-dots mr-1"></i>
+                                            Feedback do treinador
+                                        </p>
+                                        <p class="text-[9px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                                            ${escapeHtmlDVC(reg.observacao)}
+                                        </p>
+                                    </div>
+                                ` : ""}
                             </div>
                         `;
                     }).join('')}
@@ -481,8 +518,8 @@ window.salvarAvaliacao = async (email) => {
         console.warn("Erro ao carregar histórico da habilidade:", e);
 
         return `
-            <div class="mt-3 bg-white border border-dashed rounded-lg p-2">
-                <p class="text-[8px] text-gray-400 font-bold uppercase">
+            <div class="mt-3 bg-white dark:bg-gray-950 border border-dashed dark:border-gray-800 rounded-lg p-2">
+                <p class="text-[8px] text-gray-400 dark:text-gray-450 font-bold uppercase">
                     Não foi possível carregar o histórico agora.
                 </p>
             </div>

@@ -129,3 +129,25 @@ document.addEventListener('click', function(e) {
         e.target.remove();
     }
 });
+
+// Sincronização e escuta do tema (Dark Mode)
+document.addEventListener('DOMContentLoaded', () => {
+    const atualizarIconesTema = (isDark) => {
+        const icons = document.querySelectorAll('#login-dark-mode-btn i, #header-dark-mode-btn i');
+        icons.forEach(icon => {
+            if (isDark) {
+                icon.className = 'fa-solid fa-sun text-sm text-amber-400';
+            } else {
+                icon.className = 'fa-solid fa-moon text-sm text-gray-600';
+            }
+        });
+    };
+
+    const isDark = document.documentElement.classList.contains('dark');
+    atualizarIconesTema(isDark);
+
+    window.addEventListener('themeChanged', (e) => {
+        atualizarIconesTema(e.detail.isDark);
+    });
+});
+

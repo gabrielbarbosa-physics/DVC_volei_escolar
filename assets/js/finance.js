@@ -487,7 +487,6 @@ function montarEnviosAgrupadosFinanceiroDVC(envios = []) {
 
 function montarAvisoCarenciaCadastroFinanceiroDVC(dadosCarenciaCadastro = {}) {
     if (!dadosCarenciaCadastro.ativa) return "";
-
     return `
         <div class="rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-955/20 p-4">
             <p class="text-[9px] font-black uppercase text-amber-700 dark:text-amber-400">
@@ -511,11 +510,11 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
 
             <div class="mt-4 space-y-5">
                 <section>
-                    <div class="relative overflow-hidden bg-white dark:bg-gray-950 rounded-2xl px-5 pb-5 pt-7 border border-gray-100 dark:border-gray-850 shadow-sm text-left space-y-4" style="padding: 28px 20px 20px 20px;">
+                    <div class="relative overflow-hidden bg-white dark:bg-gray-900 rounded-2xl px-5 pb-5 pt-7 border border-gray-100 dark:border-gray-850 shadow-sm text-left space-y-4" style="padding: 28px 20px 20px 20px;">
                         <div class="absolute top-0 left-0 right-0 h-[4px] z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000]" style="height: 4px;"></div>
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-[9px] font-black uppercase tracking-wider text-[#990000] dark:text-red-400">
+                                <p class="text-[9px] font-black uppercase tracking-wider text-[#990000] dark:text-gray-100">
                                     ETAPA 01
                                 </p>
 
@@ -524,7 +523,7 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
                                 </h3>
                             </div>
                             <div class="text-right">
-                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-100">
                                     VALOR SUGERIDO
                                 </p>
                                 <p class="text-base font-black text-gray-955 dark:text-gray-100 mt-0.5">
@@ -535,11 +534,11 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
 
                         <div class="space-y-3">
                             <div>
-                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
+                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-100 mb-1.5">
                                     CHAVE PIX &mdash; E-MAIL
                                 </p>
 
-                                <span class="bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-mono text-center p-4 rounded-xl border border-gray-200 dark:border-gray-800 block break-all text-[11px] font-bold">
+                                <span class="bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-100 font-mono text-center p-4 rounded-xl border border-gray-200 dark:border-gray-800 block break-all text-[11px] font-bold">
                                     ${CHAVE_PIX_DVC}
                                 </span>
                             </div>
@@ -547,7 +546,7 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
                             <button
                                 type="button"
                                 onclick="copiarChavePixDVC()"
-                                class="w-full bg-[#990000] hover:bg-red-800 text-white font-black uppercase text-[10px] py-3 rounded-2xl shadow-md transition-all active:scale-95"
+                                class="w-full bg-[#990000] hover:bg-red-800 text-white font-black uppercase text-[10px] py-3 rounded-2xl shadow-md transition-all active:scale-95 shadow-glow-vinho-light dark:shadow-glow-vinho-dark animate-pulse-slow"
                             >
                                 COPIAR CHAVE
                             </button>
@@ -556,10 +555,10 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
                 </section>
 
                 <section>
-                    <div class="relative overflow-hidden bg-white dark:bg-gray-955 rounded-2xl px-5 pb-5 pt-7 border border-gray-100 dark:border-gray-850 shadow-sm text-left space-y-4" style="padding: 28px 20px 20px 20px;">
+                    <div class="relative overflow-hidden bg-white dark:bg-gray-900 rounded-2xl px-5 pb-5 pt-7 border border-gray-100 dark:border-gray-850 shadow-sm text-left space-y-4" style="padding: 28px 20px 20px 20px;">
                         <div class="absolute top-0 left-0 right-0 h-[4px] z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000]" style="height: 4px;"></div>
                         <div>
-                            <p class="text-[9px] font-black uppercase tracking-wider text-[#990000] dark:text-red-400">
+                            <p class="text-[9px] font-black uppercase tracking-wider text-[#990000] dark:text-gray-100">
                                 ETAPA 02
                             </p>
 
@@ -567,7 +566,7 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
                                 Enviar comprovante
                             </h3>
 
-                            <p class="mt-1 text-[11px] font-medium leading-relaxed text-gray-500 dark:text-gray-405">
+                            <p class="mt-1 text-[11px] font-medium leading-relaxed text-gray-500 dark:text-gray-100">
                                 Selecione a compet&ecirc;ncia e envie uma imagem do comprovante.
                             </p>
                         </div>
@@ -578,16 +577,16 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
 
                         <div class="space-y-3">
                             <label for="f-file" class="bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-850/50 transition-all block">
-                                <i class="fa-solid fa-cloud-arrow-up text-gray-400 dark:text-gray-500 text-2xl mb-2"></i>
-                                <p class="text-[10px] font-black uppercase text-gray-700 dark:text-gray-300">
+                                <i class="fa-solid fa-cloud-arrow-up text-gray-400 dark:text-gray-100 text-2xl mb-2"></i>
+                                <p class="text-[10px] font-black uppercase text-gray-700 dark:text-gray-100">
                                     ANEXAR COMPROVANTE
                                 </p>
 
-                                <p class="mt-1 text-[11px] font-semibold leading-relaxed text-gray-500 dark:text-gray-405">
+                                <p class="mt-1 text-[11px] font-semibold leading-relaxed text-gray-500 dark:text-gray-100">
                                     Selecione uma imagem do pagamento.
                                 </p>
 
-                                <span class="mt-3 inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-850 bg-white dark:bg-gray-950 px-5 py-2.5 text-[10px] font-black uppercase text-gray-700 dark:text-gray-300 shadow-sm transition active:scale-95">
+                                <span class="mt-3 inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-850 bg-white dark:bg-gray-950 px-5 py-2.5 text-[10px] font-black uppercase text-gray-700 dark:text-gray-100 shadow-sm transition active:scale-95">
                                     SELECIONAR IMAGEM
                                 </span>
                             </label>
@@ -599,11 +598,11 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
                                 class="sr-only"
                             >
 
-                            <p id="f-file-nome" class="break-all text-[10px] font-semibold text-gray-500 dark:text-gray-450 text-center">
+                            <p id="f-file-nome" class="break-all text-[10px] font-semibold text-gray-500 dark:text-gray-100 text-center">
                                 Nenhum arquivo selecionado
                             </p>
 
-                            <p class="text-[9px] font-semibold text-gray-400 dark:text-gray-500 text-center">
+                            <p class="text-[9px] font-semibold text-gray-400 dark:text-gray-100 text-center">
                                 M&aacute;ximo 800 KB. Prefira tirar um print do comprovante.
                             </p>
                         </div>
@@ -612,7 +611,7 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
                             type="button"
                             id="btn-enviar-comprovante"
                             onclick="enviarComprovante()"
-                            class="w-full bg-[#990000] hover:bg-red-800 text-white font-black uppercase text-[11px] py-3.5 rounded-2xl shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                            class="w-full bg-[#990000] hover:bg-red-800 text-white font-black uppercase text-[11px] py-3.5 rounded-2xl shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 shadow-glow-vinho-light dark:shadow-glow-vinho-dark animate-pulse-slow"
                         >
                             ENVIAR COMPROVANTE
                         </button>

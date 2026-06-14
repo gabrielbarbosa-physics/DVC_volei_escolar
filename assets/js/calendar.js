@@ -10,7 +10,7 @@
 
 // CALENDAR MODULE DVC APP
 
-import { auth, db, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc } from "./firebase.js";
+import { auth, db, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc } from "./firebase.js";
 import { PROJETO_ATUAL_DVC } from "./state.js";
 import {
     escaparHtml,
@@ -261,15 +261,8 @@ function renderChipsResponsaveisEvento(ev = {}) {
 
     if (!responsaveis.length) return "";
 
-    return `
-        <div class="flex flex-wrap gap-1 mb-2">
-            ${responsaveis.map(r => `
-                <span class="bg-red-50 border border-red-100 text-[#990000] text-[8px] font-black px-2 py-1 rounded-full uppercase">
-                    ${escaparHtml(r.funcao)}: ${escaparHtml(r.nome)}
-                </span>
-            `).join("")}
-        </div>
-    `;
+    const nomes = responsaveis.map(r => escaparHtml(r.nome)).join(", ");
+    return `<p class="text-[10px] font-bold text-red-700 dark:text-red-400 uppercase mt-2">STAFF: ${nomes}</p>`;
 }
 
 function getTipoEventoAgenda(ev) {
@@ -344,8 +337,7 @@ async function carregarAtletasChamadaTreinoDVC(evento = {}) {
         if (!email) return;
         if (!usuarioPodeSerEscaladoComoAtleta(dados)) return;
         if (!usuarioTemStatusConvocavel(dados)) return;
-        if (!usuarioPodeSerConvocadoPorFinanceiro(dados)) return;
-        if (!usuarioPodeSerConvocadoPorFinanceiro(dados)) return;
+        // Removido bloqueio por financeiro para exibir as cores no card
         // DVC CHAMADA — PARTE 2B: não restringe mais o Adulto na fonte de dados para que os atletas fiquem disponíveis no "Ver Todos".
 
         atletas.push({
@@ -366,9 +358,17 @@ window.setAgendaFiltro = (filtro) => {
     window.agendaFiltroAtual = filtro === "jogo" ? "jogo" : "treino";
     window.renderCalendar();
 };
-window.mostrarHistoricoCompletoAgendaDVC = window.mostrarHistoricoCompletoAgendaDVC || false;
+window.limiteHistoricoAgendaDVC = typeof window.limiteHistoricoAgendaDVC === "number" ? window.limiteHistoricoAgendaDVC : 0;
 window.toggleHistoricoAgendaDVC = () => {
-    window.mostrarHistoricoCompletoAgendaDVC = !window.mostrarHistoricoCompletoAgendaDVC;
+    if (window.limiteHistoricoAgendaDVC > 0) {
+        window.limiteHistoricoAgendaDVC = 0;
+    } else {
+        window.limiteHistoricoAgendaDVC = 3;
+    }
+    window.renderCalendar();
+};
+window.carregarMaisHistoricoAgendaDVC = () => {
+    window.limiteHistoricoAgendaDVC += 3;
     window.renderCalendar();
 };
 window.fecharFormularioAgenda = () => {
@@ -408,13 +408,217 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
     await window.carregarResponsaveisTecnicos([]);
     form.scrollIntoView({ behavior: "smooth", block: "start" });
 };
+const cacheParticipacaoAgendaDVC = new Map();
+
+async function carregarContagemParticipacaoEvento(ev) {
+    if (!ev || !ev.id) return {
+        totalPresentes: 0,
+        totalConvocados: 0,
+        possuiRegistroPresenca: false,
+        possuiRegistroConvocacao: false
+    };
+
+    if (cacheParticipacaoAgendaDVC.has(ev.id)) {
+        return await cacheParticipacaoAgendaDVC.get(ev.id);
+    }
+
+    const promessa = (async () => {
+        const resultado = {
+            totalPresentes: 0,
+            totalConvocados: 0,
+            possuiRegistroPresenca: false,
+            possuiRegistroConvocacao: false
+        };
+
+        const tipoNormalizado = String(ev.tipo || "treino").toLowerCase();
+        const ehJogoOuAmistoso = tipoNormalizado === "jogo" || tipoNormalizado === "amistoso";
+
+        if (Array.isArray(ev.presentes)) {
+            resultado.totalPresentes = ev.presentes.length;
+            resultado.possuiRegistroPresenca = true;
+        } else if (Array.isArray(ev.presentesEmails)) {
+            resultado.totalPresentes = ev.presentesEmails.length;
+            resultado.possuiRegistroPresenca = true;
+        } else if (ev.chamada && Object.keys(ev.chamada).length > 0) {
+            resultado.totalPresentes = Object.values(ev.chamada).filter(v => v === true || v?.presente === true || v?.ativoNoTreino !== false).length;
+            resultado.possuiRegistroPresenca = true;
+        } else if (ev.presencas && Object.keys(ev.presencas).length > 0) {
+            resultado.totalPresentes = Object.values(ev.presencas).filter(v => v === true || v?.presente === true || v?.ativoNoTreino !== false).length;
+            resultado.possuiRegistroPresenca = true;
+        } else {
+            try {
+                const presencasSnap = await getDocs(collection(db, "events", ev.id, "presencas"));
+                if (!presencasSnap.empty) {
+                    resultado.possuiRegistroPresenca = true;
+                    presencasSnap.forEach(docPres => {
+                        const dados = docPres.data();
+                        const estaPresente = dados.presente === true || dados.status === "Presente" || dados.status === "presente" || dados.selecionado === true || dados.ativoNoTreino !== false;
+                        if (estaPresente) resultado.totalPresentes++;
+                    });
+                }
+            } catch(e) {
+                console.error("Erro contagem presencas:", e);
+            }
+        }
+
+        if (ehJogoOuAmistoso) {
+            if (Array.isArray(ev.convocadosEmails)) {
+                resultado.totalConvocados = ev.convocadosEmails.length;
+                resultado.possuiRegistroConvocacao = true;
+            } else if (Array.isArray(ev.convocados)) {
+                resultado.totalConvocados = ev.convocados.length;
+                resultado.possuiRegistroConvocacao = true;
+            } else {
+                try {
+                    const convocadosSnap = await getDocs(collection(db, "events", ev.id, "convocados"));
+                    if (!convocadosSnap.empty) {
+                        resultado.possuiRegistroConvocacao = true;
+                        resultado.totalConvocados = convocadosSnap.size;
+                    } else if (ev.convocadosTexto) {
+                        const limpo = String(ev.convocadosTexto).trim();
+                        if (limpo && limpo.toLowerCase() !== "ninguém ainda." && limpo.toLowerCase() !== "ninguem ainda.") {
+                            resultado.totalConvocados = limpo.split(',').filter(n => n.trim()).length;
+                            resultado.possuiRegistroConvocacao = true;
+                        }
+                    }
+                } catch(e) {
+                    console.error("Erro contagem convocados:", e);
+                }
+            }
+        }
+
+        return resultado;
+    })();
+
+    cacheParticipacaoAgendaDVC.set(ev.id, promessa);
+    return await promessa;
+}
+
+function normalizarIdEventoParaDOM(id) {
+    return String(id || "").replace(/[^a-zA-Z0-9_-]/g, "_");
+}function gerarHtmlParticipacaoEvento(ev, participacao) {
+    const isJogo = getTipoEventoAgenda(ev) === "jogo" || String(ev.tipo || "").toLowerCase() === "jogo" || String(ev.tipo || "").toLowerCase() === "amistoso";
+    const isConcluido = isJogo ? String(ev.status).trim().toLowerCase() === "concluido" : window.treinoEstaFinalizadoDVC(ev);
+    
+    const { totalPresentes, totalConvocados, possuiRegistroPresenca, possuiRegistroConvocacao } = participacao;
+
+    if (!isConcluido) {
+        if (!isJogo) {
+            return possuiRegistroPresenca ? `
+            <span class="inline-flex items-center gap-1 rounded-full border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-955/40 px-2.5 py-0.5 text-[10px] font-black text-green-700 dark:text-green-400 uppercase">
+                <i class="fa-solid fa-user-check mr-1"></i>
+                ${totalPresentes} presente${totalPresentes === 1 ? "" : "s"}
+            </span>` : `
+            <span class="bg-gray-50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-[8px] font-black px-2 py-1 rounded-full uppercase dark-gray-chip">
+                <i class="fa-solid fa-circle-info mr-1"></i>
+                Presença não registrada
+            </span>`;
+        } else {
+            return `
+            ${possuiRegistroConvocacao ? `
+            <span class="bg-blue-50 dark:bg-blue-955/40 border border-blue-100 dark:border-blue-900/50 text-blue-700 dark:text-blue-400 text-[8px] font-black px-2 py-1 rounded-full uppercase dark-blue-chip">
+                <i class="fa-solid fa-users mr-1"></i>
+                ${totalConvocados} convocado${totalConvocados === 1 ? "" : "s"}
+            </span>` : ''}
+            ${possuiRegistroPresenca ? `
+            <span class="inline-flex items-center gap-1 rounded-full border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-955/40 px-2.5 py-0.5 text-[10px] font-black text-green-700 dark:text-green-400 uppercase">
+                <i class="fa-solid fa-user-check mr-1"></i>
+                ${totalPresentes} presente${totalPresentes === 1 ? "" : "s"}
+            </span>` : `
+            <span class="bg-gray-50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-[8px] font-black px-2 py-1 rounded-full uppercase dark-gray-chip">
+                <i class="fa-solid fa-circle-info mr-1"></i>
+                Presença não registrada
+            </span>`}
+            `;
+        }
+    } else {
+        return `
+        <div class="mt-3 mb-3 bg-gray-50 border border-gray-100 rounded-xl p-3 flex items-center justify-between w-full">
+            <div>
+                <p class="text-[8px] font-black text-gray-400 uppercase">
+                    Participação
+                </p>
+                <p class="text-xs font-black text-gray-800">
+                    ${possuiRegistroPresenca ? `${totalPresentes} presente${totalPresentes === 1 ? "" : "s"}` : "Presença não registrada"}
+                </p>
+            </div>
+            ${isJogo && possuiRegistroConvocacao && possuiRegistroPresenca ? `
+            <span class="text-[9px] font-bold text-gray-500">
+                de ${totalConvocados} convocado${totalConvocados === 1 ? "" : "s"}
+            </span>
+            ` : ""}
+        </div>
+        `;
+    }
+}
+
+async function atualizarBadgeParticipacaoEvento(ev) {
+    try {
+        const idSeguro = normalizarIdEventoParaDOM(ev.id);
+        const containerId = `participacao-evento-${idSeguro}`;
+        const container = document.getElementById(containerId);
+        
+        if (!container) {
+            console.warn("Container de participação não encontrado:", ev?.id, containerId);
+            return;
+        }
+
+        const participacao = await carregarContagemParticipacaoEvento(ev);
+        container.innerHTML = gerarHtmlParticipacaoEvento(ev, participacao);
+
+        // Atualização reativa dos botões de ação do jogo
+        if (usuarioEhEquipeTecnica()) {
+            const isJogo = getTipoEventoAgenda(ev) === "jogo" || String(ev.tipo || "").toLowerCase() === "jogo" || String(ev.tipo || "").toLowerCase() === "amistoso";
+            if (isJogo) {
+                const isConcluido = String(ev.status).trim().toLowerCase() === "concluido";
+                const dataPassou = new Date(ev.data) < new Date();
+                const chamadaSalva = ev.chamadaSalva === true || participacao.possuiRegistroPresenca === true;
+
+                const btnAcao = document.getElementById(`btn-acao-jogo-${idSeguro}`);
+                if (btnAcao) {
+                    if (isConcluido) {
+                        btnAcao.outerHTML = `<button id="btn-acao-jogo-${idSeguro}" onclick="abrirAvaliacaoAtletasDoJogo('${ev.id}')" class="bg-[#990000] text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Avaliar Atletas</button>`;
+                    } else if (dataPassou && chamadaSalva) {
+                        btnAcao.outerHTML = `<button id="btn-acao-jogo-${idSeguro}" onclick="abrirModalConclusaoJogo('${ev.id}')" class="bg-black text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Concluir Jogo</button>`;
+                    } else if (!dataPassou) {
+                        btnAcao.outerHTML = `<button id="btn-acao-jogo-${idSeguro}" onclick="renderConvocacao('${ev.id}')" class="bg-[#990000] text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Convocar</button>`;
+                    } else {
+                        btnAcao.outerHTML = `<button id="btn-acao-jogo-${idSeguro}" disabled class="bg-gray-200 text-gray-400 py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm cursor-not-allowed">Convocar</button>`;
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Erro ao carregar participação do evento:", ev?.id, e);
+        const idSeguro = normalizarIdEventoParaDOM(ev.id);
+        const container = document.getElementById(`participacao-evento-${idSeguro}`);
+        if (container) {
+            container.innerHTML = `
+                <span class="bg-gray-50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-[8px] font-black px-2 py-1 rounded-full uppercase dark-gray-chip">
+                    <i class="fa-solid fa-circle-info mr-1"></i>
+                    Participação indisponível
+                </span>
+            `;
+        }
+    }
+}
+
+async function carregarParticipacoesEmLotes(eventos, tamanhoLote = 4) {
+    for (let i = 0; i < eventos.length; i += tamanhoLote) {
+        const lote = eventos.slice(i, i + tamanhoLote);
+        await Promise.allSettled(
+            lote.map(ev => atualizarBadgeParticipacaoEvento(ev))
+        );
+    }
+}
+
         window.renderCalendar = async () => {
     const c = document.getElementById('main-content');
     const podeGerenciarAgenda = usuarioEhEquipeTecnica();
     const filtroAtual = getAgendaFiltroAtual();
     const projetoLogo = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
     const projetoLogoFundoClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || "assets/img/loki1.webp";
-    const projetoMarcaDvc = "assets/img/logo.webp";
+    const projetoMarcaDvc = "assets/img/logo.svg";
 
     let eventos = await carregarEventosCache();
     if (window.__abaAtualDVC !== "calendar") return;
@@ -464,14 +668,14 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-4">
-            <div onclick="setAgendaFiltro('treino')" class="relative cursor-pointer overflow-hidden p-4 rounded-2xl border shadow-sm transition ${treinoAtivo ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-white border-gray-900 shadow-lg' : 'bg-white text-gray-800 border-gray-200'}">
-                <div class="absolute inset-x-0 top-0 h-1 ${treinoAtivo ? 'bg-gradient-to-r from-orange-400 to-white/70' : 'bg-gradient-to-r from-orange-500 to-[#990000]'}"></div>
+            <div onclick="setAgendaFiltro('treino')" class="relative cursor-pointer overflow-hidden p-4 rounded-2xl border shadow-sm transition ${treinoAtivo ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-white border-gray-900 shadow-lg' : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-855'}">
+                <div class="absolute inset-x-0 top-0 h-1 ${treinoAtivo ? 'bg-gradient-to-r from-[#990000] to-red-400' : 'bg-gradient-to-r from-[#990000] to-gray-900'}"></div>
                 ${podeGerenciarAgenda ? `
-                    <button onclick="event.stopPropagation(); abrirNovoEventoAgenda('treino')" class="absolute top-3 right-3 w-8 h-8 rounded-full ${treinoAtivo ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'} flex items-center justify-center text-[10px] shadow-sm">
+                    <button onclick="event.stopPropagation(); abrirNovoEventoAgenda('treino')" class="absolute top-3 right-3 w-8 h-8 rounded-full ${treinoAtivo ? 'bg-white text-gray-900' : 'bg-gray-900 dark:bg-gray-850 text-white'} flex items-center justify-center text-[10px] shadow-sm cursor-pointer">
                         <i class="fa-solid fa-plus"></i>
                     </button>
                 ` : ''}
-                <div class="w-11 h-11 rounded-2xl ${treinoAtivo ? 'bg-white/15 border-white/20' : 'bg-orange-50 border-orange-100'} border flex items-center justify-center mb-3">
+                <div class="w-11 h-11 rounded-2xl ${treinoAtivo ? 'bg-white/15 border-white/20' : 'bg-orange-50 dark:bg-orange-955/20 border-orange-100 dark:border-orange-900/50'} border flex items-center justify-center mb-3 dark:bg-gray-100 dark:text-gray-900">
                     <div class="relative w-7 h-7">
                         <span class="absolute left-1/2 top-1 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-b-[22px] border-l-transparent border-r-transparent border-b-orange-500"></span>
                         <span class="absolute left-1/2 top-3 -translate-x-1/2 w-3 h-[2px] bg-white"></span>
@@ -482,14 +686,14 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
                 <p class="text-3xl font-black leading-none mt-1">${qtdTreinos}</p>
             </div>
 
-            <div onclick="setAgendaFiltro('jogo')" class="relative cursor-pointer overflow-hidden p-4 rounded-2xl border shadow-sm transition ${jogoAtivo ? 'bg-gradient-to-br from-[#990000] via-[#760707] to-gray-950 text-white border-[#990000] shadow-lg' : 'bg-white text-gray-800 border-red-100'}">
-                <div class="absolute inset-x-0 top-0 h-1 ${jogoAtivo ? 'bg-gradient-to-r from-white/90 to-red-200' : 'bg-gradient-to-r from-[#990000] to-gray-900'}"></div>
+            <div onclick="setAgendaFiltro('jogo')" class="relative cursor-pointer overflow-hidden p-4 rounded-2xl border shadow-sm transition ${jogoAtivo ? 'bg-gradient-to-br from-[#990000] via-[#760707] to-gray-950 text-white border-[#990000] shadow-lg' : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 border-red-100 dark:border-red-955'}">
+                <div class="absolute inset-x-0 top-0 h-1 ${jogoAtivo ? 'bg-gradient-to-r from-[#990000] to-red-400' : 'bg-gradient-to-r from-[#990000] to-gray-900'}"></div>
                 ${podeGerenciarAgenda ? `
-                    <button onclick="event.stopPropagation(); abrirNovoEventoAgenda('jogo')" class="absolute top-3 right-3 w-8 h-8 rounded-full ${jogoAtivo ? 'bg-white text-[#990000]' : 'bg-[#990000] text-white'} flex items-center justify-center text-[10px] shadow-sm">
+                    <button onclick="event.stopPropagation(); abrirNovoEventoAgenda('jogo')" class="absolute top-3 right-3 w-8 h-8 rounded-full ${jogoAtivo ? 'bg-white text-[#990000]' : 'bg-[#990000] text-white'} flex items-center justify-center text-[10px] shadow-sm cursor-pointer">
                         <i class="fa-solid fa-plus"></i>
                     </button>
                 ` : ''}
-                <div class="w-11 h-11 rounded-2xl ${jogoAtivo ? 'bg-white/15 border-white/20' : 'bg-red-50 border-red-100'} border flex items-center justify-center mb-3 p-1">
+                <div class="w-11 h-11 rounded-2xl ${jogoAtivo ? 'bg-white/15 border-white/20' : 'bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/50'} border flex items-center justify-center mb-3 p-1">
                     <img src="${jogoAtivo ? projetoLogo : projetoLogoFundoClaro}" class="w-full h-full object-contain">
                 </div>
                 <p class="text-[9px] font-black uppercase opacity-75">Jogos</p>
@@ -500,44 +704,50 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
 
     if(podeGerenciarAgenda) {
         c.innerHTML += `
-        <div id="agenda-form-evento" class="hidden bg-white rounded-3xl mb-5 border border-red-100 shadow-xl overflow-hidden">
+        <div id="agenda-form-evento" class="hidden bg-white dark:bg-gray-900 rounded-3xl mb-5 border border-red-100 dark:border-gray-800 shadow-xl overflow-hidden transition-colors duration-200">
             <div class="bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000] text-white p-4 flex items-center justify-between gap-3">
                 <div>
                     <p class="text-[8px] font-black text-white/60 uppercase">Cadastrar agenda</p>
                     <p id="form-title" class="text-sm font-black uppercase leading-tight">Novo Evento</p>
                 </div>
-                <button onclick="fecharFormularioAgenda()" class="w-9 h-9 rounded-full bg-white/10 border border-white/20 text-white flex items-center justify-center">
+                <button onclick="fecharFormularioAgenda()" class="w-9 h-9 rounded-full bg-white/10 border border-white/20 text-white flex items-center justify-center cursor-pointer">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
 
-            <div class="p-4">
-                <input id="ev-title" placeholder="Título" class="w-full p-3 mb-2 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none font-semibold">
+            <div class="p-4 space-y-3">
+                <div>
+                    <input id="ev-title" placeholder="Título" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-800 text-sm bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none font-semibold">
+                </div>
                 
-                <select id="ev-tipo" onchange="toggleCamposJogo()" class="w-full p-3 mb-2 rounded-xl border border-gray-200 text-sm font-bold bg-gray-50 outline-none">
-                    <option value="treino">Treino</option>
-                    <option value="jogo">Jogo / Amistoso</option>
-                </select>
+                <div>
+                    <select id="ev-tipo" onchange="toggleCamposJogo()" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-800 text-sm font-bold bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none">
+                        <option value="treino">Treino</option>
+                        <option value="jogo">Jogo / Amistoso</option>
+                    </select>
+                </div>
 
-                <select id="ev-responsavel" class="w-full p-3 mb-2 rounded-xl border border-gray-200 text-sm font-bold bg-gray-50 outline-none">
-                    <option value="">Carregando responsáveis...</option>
-                </select>
+                <div>
+                    <select id="ev-responsavel" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-800 text-sm font-bold bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none">
+                        <option value="">Carregando responsáveis...</option>
+                    </select>
+                </div>
 
                 <div id="ev-responsaveis" class="mb-2"></div>
 
-                <div id="campos-treino" class="bg-gray-50 border border-gray-100 rounded-2xl p-3 mb-3">
-                    <select id="ev-categoria-treino" class="w-full p-3 rounded-xl border border-gray-200 text-sm font-bold bg-white outline-none">
+                <div id="campos-treino" class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-3">
+                    <select id="ev-categoria-treino" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-850 text-sm font-bold bg-white dark:bg-gray-900 dark:text-gray-100 outline-none">
                         <option value="">Categoria do treino</option>
                         <option value="Adulto">Adulto</option>
                         <option value="Sub-17">Sub-17</option>
                     </select>
                 </div>
 
-                <div id="campos-jogo" class="hidden bg-red-50 border border-red-100 rounded-2xl p-3 mb-3">
-                    <input id="ev-adversario" placeholder="Adversário. Ex: DVC x Time X" class="w-full p-3 mb-2 rounded-xl border border-red-100 text-sm bg-white outline-none font-semibold">
-                    <input id="ev-local" placeholder="Local do jogo" class="w-full p-3 mb-2 rounded-xl border border-red-100 text-sm bg-white outline-none font-semibold">
+                <div id="campos-jogo" class="hidden bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 rounded-2xl p-3">
+                    <input id="ev-adversario" placeholder="Adversário. Ex: DVC x Time X" class="w-full p-3 mb-2 rounded-xl border border-red-100 dark:border-red-900/50 text-sm bg-white dark:bg-gray-900 dark:text-gray-100 outline-none font-semibold">
+                    <input id="ev-local" placeholder="Local do jogo" class="w-full p-3 mb-2 rounded-xl border border-red-100 dark:border-red-900/50 text-sm bg-white dark:bg-gray-900 dark:text-gray-100 outline-none font-semibold">
 
-                    <select id="ev-equipe" class="w-full p-3 rounded-xl border border-red-100 text-sm font-bold bg-white outline-none">
+                    <select id="ev-equipe" class="w-full p-3 rounded-xl border border-red-100 dark:border-red-900/50 text-sm font-bold bg-white dark:bg-gray-900 dark:text-gray-100 outline-none">
                         <option value="">Equipe / Categoria</option>
                         <option value="Masculino">Masculino</option>
                         <option value="Feminino">Feminino</option>
@@ -547,20 +757,22 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
                     </select>
                 </div>
 
-                <div id="ev-opcoes" class="grid grid-cols-1 gap-2 mb-3 text-[10px] font-bold text-gray-600 bg-gray-50 border border-gray-100 rounded-2xl p-3">
+                <div id="ev-opcoes" class="grid grid-cols-1 gap-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-3">
                     <label><input type="checkbox" value="Toque e Levantamento" class="mr-2"> Toque e Levantamento</label>
                     <label><input type="checkbox" value="Manchete" class="mr-2"> Manchete</label>
                     <label><input type="checkbox" value="Movimentação e Rotação" class="mr-2"> Movimentação e Rotação</label>
                     <label><input type="checkbox" value="Bloqueio e Ataque" class="mr-2"> Bloqueio e Ataque</label>
                 </div>
                 
-                <input id="ev-date" type="datetime-local" class="w-full p-3 mb-3 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none font-semibold">
+                <div>
+                    <input id="ev-date" type="datetime-local" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-800 text-sm bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none font-semibold">
+                </div>
                 
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="fecharFormularioAgenda()" class="bg-white border border-gray-200 text-gray-500 w-full py-3 rounded-xl font-black text-[10px] uppercase">
+                    <button onclick="fecharFormularioAgenda()" class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 w-full py-3 rounded-xl font-black text-[10px] uppercase cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
                         Cancelar
                     </button>
-                    <button id="btn-save-ev" onclick="addEvent()" class="bg-[#990000] text-white w-full py-3 rounded-xl font-black text-[10px] uppercase shadow-sm">
+                    <button id="btn-save-ev" onclick="addEvent()" class="bg-[#990000] text-white w-full py-3 rounded-xl font-black text-[10px] uppercase shadow-sm cursor-pointer">
                         Criar
                     </button>
                 </div>
@@ -578,15 +790,15 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
         const isConcluido = isJogo ? String(ev.status).trim().toLowerCase() === "concluido" : window.treinoEstaFinalizadoDVC(ev);
 
         const cardTemaAgenda = isJogo
-            ? 'bg-gradient-to-br from-white via-red-50/70 to-white border-red-100 shadow-[0_14px_35px_rgba(153,0,0,0.12)]'
-            : 'bg-white border-gray-200 shadow-sm';
-        let cardHtml = `<div class="p-4 ${cardTemaAgenda} border rounded-2xl mb-3 relative overflow-hidden fade-in ${isConcluido ? 'opacity-70' : ''}">`;
+            ? 'bg-gradient-to-br from-white via-red-50/70 to-white dark:from-gray-900 dark:via-red-950/15 dark:to-gray-900 border-red-100 dark:border-red-950 shadow-[0_14px_35px_rgba(153,0,0,0.12)] dark:shadow-[0_14px_35px_rgba(0,0,0,0.5)] dark:bg-gray-900 dark:border-gray-800 dark-match-card'
+            : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm';
+        let cardHtml = `<div class="p-4 ${cardTemaAgenda} border rounded-2xl mb-3 relative overflow-hidden fade-in transition-colors duration-200 ${isConcluido ? 'opacity-70' : ''}">`;
 
         cardHtml += `<div class="absolute inset-x-0 top-0 h-1 ${isJogo ? 'bg-gradient-to-r from-[#990000] via-red-500 to-gray-950' : 'bg-gradient-to-r from-gray-900 via-gray-400 to-[#990000]'}"></div>`;
 
         if (isJogo) {
             cardHtml += `
-                <div class="absolute top-3 right-3 z-10 w-16 h-11 rounded-2xl bg-white/95 border border-red-100 shadow-sm flex items-center justify-center px-2">
+                <div class="absolute top-3 right-3 z-10 w-16 h-11 rounded-2xl bg-white/95 dark:bg-gray-100 border border-red-100 dark:border-gray-800 shadow-sm flex items-center justify-center px-2">
                     <img src="${projetoMarcaDvc}" alt="DVC" class="max-w-full max-h-full object-contain">
                 </div>
             `;
@@ -606,15 +818,15 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
     '${safeEditParam(ev.equipe || '')}',
     '${safeEditParam(ev.responsavelEmail || '')}',
     '${safeEditParam(ev.responsavelNome || '')}'
-)" class="text-blue-400"><i class="fa-solid fa-pen text-xs"></i></button>`;
+)" class="text-blue-400 dark:text-blue-400"><i class="fa-solid fa-pen text-xs"></i></button>`;
             }
-            cardHtml += `<button onclick="apagarEvento('${ev.id}')" class="text-red-200"><i class="fa-solid fa-trash-alt text-xs"></i></button></div>`;
+            cardHtml += `<button onclick="apagarEvento('${ev.id}')" class="text-red-200 dark:text-red-400"><i class="fa-solid fa-trash-alt text-xs"></i></button></div>`;
         }
 
         cardHtml += `
     <div class="flex justify-between items-start gap-2 mb-2 ${isJogo ? 'pr-20' : ''}">
         <div class="min-w-0">
-            <p class="font-black text-base uppercase leading-tight ${isJogo ? 'text-[#990000]' : 'text-gray-900'}">
+            <p class="font-black text-base uppercase leading-tight ${isJogo ? 'text-[#990000] dark:text-gray-100' : 'text-gray-900 dark:text-gray-100'}">
                 ${ev.titulo || 'Sem Título'}
             </p>
             ${isJogo ? `
@@ -622,11 +834,11 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
                     Jogo / Amistoso
                 </span>
             ` : `
-                <span class="inline-block mt-1 mb-1 bg-gray-100 text-gray-500 text-[8px] font-black px-2 py-1 rounded-full uppercase">
+                <span class="inline-block mt-1 mb-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[8px] font-black px-2 py-1 rounded-full uppercase">
                     Treino
                 </span>
                 ${ev.equipe ? `
-                    <span class="inline-block mt-1 mb-1 ml-1 bg-blue-50 text-blue-700 text-[8px] font-black px-2 py-1 rounded-full uppercase">
+                    <span class="inline-block mt-1 mb-1 ml-1 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 text-[8px] font-black px-2 py-1 rounded-full uppercase">
                         ${ev.equipe}
                     </span>
                 ` : ''}
@@ -636,7 +848,7 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
 
     ${renderChipsResponsaveisEvento(ev)}
 
-    <p class="text-[10px] text-gray-500 my-1">
+    <p class="text-[10px] text-gray-500 dark:text-gray-400 my-1">
         ${ev.descricao || 'Sem descrição.'}
     </p>
 
@@ -659,86 +871,177 @@ window.abrirNovoEventoAgenda = async (tipo = "treino") => {
                         <i class="fa-solid fa-people-group mr-1"></i> ${ev.equipe}
                     </p>
                 ` : ''}
+
+                ${ev.resultado ? `
+                    <div class="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-white">
+                         <div class="flex items-center gap-1.5">
+                             <span class="text-[9px] font-black tracking-wider">DVC</span>
+                             <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-black">${ev.resultado.placarDVC}</span>
+                         </div>
+                         <span class="text-[7px] font-black text-white/50 tracking-wider">FIM DE JOGO</span>
+                         <div class="flex items-center gap-1.5">
+                             <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-black">${ev.resultado.placarAdversario}</span>
+                             <span class="text-[9px] font-black truncate max-w-[80px]">${escaparHtml(ev.adversario || 'RIVAL')}</span>
+                         </div>
+                    </div>
+                    ${Array.isArray(ev.resultado.sets) && ev.resultado.sets.length > 0 ? `
+                         <div class="flex flex-wrap gap-1 justify-center mt-1.5 text-[8px] text-white/60 font-black tracking-wider">
+                             ${ev.resultado.sets.map(s => `<span>Set ${s.set}: ${s.dvc}-${s.adversario}</span>`).join('<span class="text-white/20 px-1">|</span>')}
+                         </div>
+                    ` : ''}
+                ` : ''}
             </div>
         </div>
     ` : ''}
-    <p class="text-[9px] text-gray-400 mb-2 font-semibold">
+    <p class="text-[9px] text-gray-400 dark:text-gray-500 mb-2 font-semibold">
         <i class="fa-regular fa-clock mr-1"></i> ${new Date(ev.data).toLocaleString('pt-BR')}
     </p>
 
-    <div class="${isJogo ? 'bg-white border-red-100 text-red-900' : 'bg-gray-50 border-gray-100 text-gray-600'} p-3 rounded-2xl text-[10px] mb-3 border">
-        <span class="font-black uppercase text-[8px] block mb-1 ${isJogo ? 'text-[#990000]' : 'text-gray-400'}">
-            ${isJogo ? 'Convocados para o jogo:' : 'Chamada do treino:'}
-        </span>
-        <span id="text-conv-${ev.id}">${isJogo ? (ev.convocadosTexto || 'Ninguém ainda.') : 'Registre presenças pelo botão Chamada.'}</span>
-    </div>`;
+    ${!isConcluido ? `
+        <div id="participacao-evento-${normalizarIdEventoParaDOM(ev.id)}" class="flex gap-2 flex-wrap mt-2 mb-3">
+            <span class="bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-[8px] font-black px-2 py-1 rounded-full uppercase">
+                <i class="fa-solid fa-spinner fa-spin mr-1"></i>
+                Carregando participação...
+            </span>
+        </div>
+    ` : `
+        <div id="participacao-evento-${normalizarIdEventoParaDOM(ev.id)}" class="w-full">
+            <div class="mt-3 mb-3 bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl p-3 flex items-center justify-between w-full">
+                <div>
+                    <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
+                        Participação
+                    </p>
+                    <p class="text-xs font-black text-gray-800 dark:text-gray-200">
+                        <i class="fa-solid fa-spinner fa-spin mr-1"></i> Carregando...
+                    </p>
+                </div>
+            </div>
+        </div>
+    `}
+
+    ${isJogo ? `
+        <div class="bg-white dark:bg-gray-950 border-red-100 dark:border-gray-850 text-red-900 dark:text-red-400 p-3 rounded-2xl text-[10px] mb-3 border dark-convocados-box">
+            <span class="font-black uppercase text-[8px] block mb-1 text-[#990000] dark:text-red-400">
+                Convocados para o jogo:
+            </span>
+            <span id="text-conv-${ev.id}" class="dark:text-gray-300">${ev.convocadosTexto || 'Ninguém ainda.'}</span>
+        </div>
+    ` : ''}`;
 
         if(usuarioEhEquipeTecnica()) {
+             const idSeguro = normalizarIdEventoParaDOM(ev.id);
+             const dataPassou = new Date(ev.data) < new Date();
+             const chamadaSalva = ev.chamadaSalva === true ||
+                                  (Array.isArray(ev.presentes) && ev.presentes.length > 0) ||
+                                  (Array.isArray(ev.presentesEmails) && ev.presentesEmails.length > 0);
+
              cardHtml += isJogo ? `
              <div class="grid grid-cols-3 gap-2">
-                <button onclick="renderConvocacao('${ev.id}')" class="bg-[#990000] text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Convocar</button>
-                <button onclick="renderChamada('${ev.id}')" class="bg-green-600 text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Chamada</button>
+                ${
+                    isConcluido
+                        ? `<button id="btn-acao-jogo-${idSeguro}" onclick="abrirAvaliacaoAtletasDoJogo('${ev.id}')" class="bg-[#990000] text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Avaliar Atletas</button>`
+                        : (dataPassou && chamadaSalva)
+                            ? `<button id="btn-acao-jogo-${idSeguro}" onclick="abrirModalConclusaoJogo('${ev.id}')" class="bg-black text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Concluir Jogo</button>`
+                            : !dataPassou
+                                ? `<button id="btn-acao-jogo-${idSeguro}" onclick="renderConvocacao('${ev.id}')" class="bg-[#990000] text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Convocar</button>`
+                                : `<button id="btn-acao-jogo-${idSeguro}" disabled class="bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm cursor-not-allowed">Convocar</button>`
+                }
+                ${!isConcluido ? `<button onclick="renderChamada('${ev.id}')" class="bg-green-600 text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Chamada</button>` : ''}
                 <button onclick="abrirEscaladorTaticoDVC('${ev.id}')" class="bg-indigo-600 text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm flex items-center justify-center gap-1">
                     <img src="assets/img/icon/alvo.webp" alt="Escalador" class="inline-block object-contain w-3.5 h-3.5 opacity-100">
                     Escalador
                 </button>
              </div>` : `
+             ${!isConcluido ? `
              <div class="grid grid-cols-3 gap-2">
                 <button onclick="renderChamada('${ev.id}')" class="bg-green-600 text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm">Chamada</button>
                 <button onclick="abrirModalConfigSorteioTreino('${ev.id}')" class="bg-[#990000] text-white py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm"><i class="fa-solid fa-shuffle mr-1"></i> Sortear Times</button>
                 <button onclick="concluirTreino('${ev.id}')" class="bg-gray-800 text-white px-3 py-2.5 rounded-xl text-[9px] font-black uppercase shadow-sm"><i class="fa-solid fa-check mr-1"></i> Concluir</button>
-             </div>`;
+             </div>
+             ` : ''}`;
         }
 
         cardHtml += `<div id="gestao-${ev.id}" class="hidden mt-4 border-t pt-3"></div></div>`;
 
-        if (isConcluido) cardsConcluidosAgenda.push(cardHtml);
+        if (isConcluido) cardsConcluidosAgenda.push({ ev, cardHtml });
         else htmlAtivos += cardHtml;
     });
+
+    cardsConcluidosAgenda.sort((a, b) => {
+        return new Date(b.ev.data || 0) - new Date(a.ev.data || 0);
+    });
+    cardsConcluidosAgenda = cardsConcluidosAgenda.map(item => item.cardHtml);
 
     c.innerHTML += `
         <div class="flex items-center justify-between mb-3 mt-2">
             <div>
-                <p class="text-[8px] font-black text-gray-400 uppercase">Agenda selecionada</p>
-                <p class="text-xs font-black text-gray-900 uppercase">${tituloLista}</p>
+                <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">Agenda selecionada</p>
+                <p class="text-xs font-black text-gray-900 dark:text-gray-100 uppercase">${tituloLista}</p>
             </div>
-            <span class="${filtroAtual === 'jogo' ? 'bg-red-50 text-[#990000] border-red-100' : 'bg-gray-50 text-gray-700 border-gray-100'} border text-[8px] font-black px-3 py-1.5 rounded-full uppercase">
+            <span class="${filtroAtual === 'jogo' ? 'bg-red-50 dark:bg-red-950/20 text-[#990000] dark:text-red-400 border-red-100 dark:border-red-900/50' : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-100 dark:border-gray-700'} border text-[8px] font-black px-3 py-1.5 rounded-full uppercase">
                 ${filtroAtual === 'jogo' ? '<i class="fa-solid fa-volleyball mr-1"></i> Jogos' : '<i class="fa-solid fa-person-running mr-1"></i> Treinos'}
             </span>
         </div>
     `;
 
     c.innerHTML += htmlAtivos || `
-        <div class="bg-gradient-to-br from-gray-50 to-white border border-dashed border-gray-200 rounded-2xl p-5 text-center mb-4">
-            <div class="w-10 h-10 mx-auto mb-3 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-[#990000]">
+        <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-5 text-center mb-4 transition-colors duration-200">
+            <div class="w-10 h-10 mx-auto mb-3 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex items-center justify-center text-[#990000]">
                 <i class="fa-regular fa-calendar"></i>
             </div>
-            <p class="text-[10px] text-gray-400 font-black uppercase">${vazioLista}</p>
+            <p class="text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase">${vazioLista}</p>
         </div>
     `;
 
     if (cardsConcluidosAgenda.length > 0) {
-        const limitarHistoricoTreinos = filtroAtual === "treino" && !window.mostrarHistoricoCompletoAgendaDVC;
-        const cardsConcluidosVisiveis = limitarHistoricoTreinos
-            ? cardsConcluidosAgenda.slice(0, 3)
-            : cardsConcluidosAgenda;
+        const cardsConcluidosVisiveis = cardsConcluidosAgenda.slice(0, window.limiteHistoricoAgendaDVC);
+        const mostrarBotaoCarregarMais = window.limiteHistoricoAgendaDVC > 0 && window.limiteHistoricoAgendaDVC < cardsConcluidosAgenda.length;
+        const botaoCarregarMaisHtml = mostrarBotaoCarregarMais ? `
+            <div class="mt-4 mb-6 flex justify-center w-full">
+                <button onclick="window.carregarMaisHistoricoAgendaDVC()" class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-750 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider shadow-sm transition active:scale-98 cursor-pointer">
+                    Carregar mais antigos (+3)
+                </button>
+            </div>
+        ` : '';
 
         c.innerHTML += `
             <div class="my-6 rounded-2xl bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000] text-white p-4 shadow-sm flex items-center justify-between gap-3">
                 <div>
                     <p class="text-[8px] font-black uppercase text-white/55">Arquivo da agenda</p>
                     <h4 class="font-black uppercase text-sm mt-1"><i class="fa-solid fa-history mr-2"></i>${historicoTitulo}</h4>
-                    ${filtroAtual === "treino" ? `<p class="text-[8px] font-bold uppercase text-white/55 mt-1">${window.mostrarHistoricoCompletoAgendaDVC ? 'Histórico completo' : 'ÚÚltimos 3 registros'}</p>` : ''}
+                    ${window.limiteHistoricoAgendaDVC > 0 ? `<p class="text-[8px] font-bold uppercase text-white/55 mt-1">Exibindo ${cardsConcluidosVisiveis.length} de ${cardsConcluidosAgenda.length} registros</p>` : `<p class="text-[8px] font-bold uppercase text-white/55 mt-1">Histórico oculto</p>`}
                 </div>
-                ${filtroAtual === "treino" && cardsConcluidosAgenda.length > 3 ? `
-                    <button onclick="toggleHistoricoAgendaDVC()" class="bg-white/10 border border-white/20 text-white px-3 py-2 rounded-full text-[8px] font-black uppercase whitespace-nowrap">
-                        ${window.mostrarHistoricoCompletoAgendaDVC ? 'Ocultar histórico' : 'Ver histórico completo'}
-                    </button>
-                ` : ''}
+                <button onclick="toggleHistoricoAgendaDVC()" class="bg-white/10 border border-white/20 text-white px-3 py-2 rounded-full text-[8px] font-black uppercase whitespace-nowrap">
+                    ${window.limiteHistoricoAgendaDVC > 0 ? 'Ocultar histórico' : 'Ver histórico completo'}
+                </button>
             </div>
             ${cardsConcluidosVisiveis.join("")}
+            ${botaoCarregarMaisHtml}
         `;
     }
+
+    const eventosRenderizados = eventos.filter(ev => getTipoEventoAgenda(ev) === filtroAtual);
+    const eventosAtivosOrdenados = eventosRenderizados.filter(ev => {
+        const isJogo = getTipoEventoAgenda(ev) === "jogo";
+        return !(isJogo ? String(ev.status).trim().toLowerCase() === "concluido" : window.treinoEstaFinalizadoDVC(ev));
+    });
+    
+    const eventosConcluidosOrdenados = [...eventosRenderizados].filter(ev => {
+        const isJogo = getTipoEventoAgenda(ev) === "jogo";
+        return isJogo ? String(ev.status).trim().toLowerCase() === "concluido" : window.treinoEstaFinalizadoDVC(ev);
+    }).sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+
+    const eventosPriorizados = [...eventosAtivosOrdenados, ...eventosConcluidosOrdenados];
+
+    const eventosComContainerRenderizado = eventosPriorizados.filter(ev => {
+        const idSeguro = normalizarIdEventoParaDOM(ev.id);
+        return document.getElementById(`participacao-evento-${idSeguro}`) !== null;
+    });
+
+    carregarParticipacoesEmLotes(eventosComContainerRenderizado, 4)
+        .catch(erro => {
+            console.warn("Erro ao carregar participações da Agenda:", erro);
+        });
 };
 window.carregarResponsaveisTecnicos = async (selecionados = []) => {
     const selectLegado = document.getElementById('ev-responsavel');
@@ -847,35 +1150,45 @@ function atletaCompleta18NoAno(atleta, anoReferencia) {
             
             // 2. Usamos o uArr.forEach (a lista ordenada) em vez do snap.forEach
             uArr.forEach(async (at) => {
-                const podeSerEscalado = usuarioPodeSerConvocadoPorFinanceiro(at);
+                const financeiroEfetivo = obterStatusFinanceiroEfetivo(at);
+                const podeSerEscalado = [
+                    "Em dia",
+                    "Justificado",
+                    "Em carência"
+                ].includes(financeiroEfetivo);
 
-if(!usuarioPodeSerEscaladoComoAtleta(at) || !usuarioTemStatusConvocavel(at) || !podeSerEscalado) return;
+                if (at.status !== "Ativo" || !podeSerEscalado) return;
+
                 if (filtrarAdulto && !atletaCompleta18NoAno(at, anoReferenciaAdulto)) return;
                 
                 const convRef = doc(db, "events", evId, "convocados", at.email);
                 const isConv = (await getDoc(convRef)).exists();
                 
-                const financeiroEfetivo = obterStatusFinanceiroEfetivo(at);
                 const isJustificado = financeiroEfetivo === 'Justificado';
-                const isCarencia = financeiroEfetivo === window.STATUS_FINANCEIRO_CARENCIA;
+                const isCarencia = financeiroEfetivo === window.STATUS_FINANCEIRO_CARENCIA || financeiroEfetivo === 'Em carência';
+
+const classeFinanceira = isCarencia 
+    ? 'bg-purple-50 border-purple-300' 
+    : isJustificado 
+        ? 'bg-yellow-50 border-yellow-300' 
+        : 'bg-white border-gray-100';
 
 const item = document.createElement('div'); 
-item.className = `flex justify-between items-start p-2 border-b rounded-lg mb-1 ${
-    isJustificado 
-        ? 'bg-yellow-50 border-yellow-300' 
-        : isCarencia
-            ? 'bg-amber-50 border-amber-300'
-        : 'bg-white border-gray-100'
-}`;
+item.className = `flex justify-between items-start p-2 border-b rounded-lg mb-1 ${classeFinanceira}`;
 
 item.innerHTML = `
     <div class="flex items-start justify-between gap-3 min-w-0 flex-1">
         <div class="min-w-0">
-        <span class="block text-xs font-semibold ${isJustificado || isCarencia ? 'text-yellow-800' : 'text-gray-800'} truncate">
+        <span class="block text-xs font-semibold ${isJustificado ? 'text-yellow-800' : isCarencia ? 'text-purple-800' : 'text-gray-800'} truncate">
             ${at.nome}
         </span>
+        <p class="text-[8px] font-bold text-gray-400 uppercase">
+            ${at.funcao || "Membro"}
+        </p>
 
-        ${renderBadgesAtletaDVC(at, { financeiro: financeiroEfetivo })}
+        ${isJustificado ? `<span class="mt-1 inline-block w-fit px-2 py-1 rounded-full text-[8px] font-black bg-yellow-200 text-yellow-800 uppercase">Justificado</span>` : ""}
+        ${isCarencia ? `<span class="mt-1 inline-block w-fit px-2 py-1 rounded-full text-[8px] font-black bg-purple-200 text-purple-800 uppercase">Em carência</span>` : ""}
+        ${renderBadgesAtletaDVC(at, {})}
         </div>
     </div>
 
@@ -1301,14 +1614,37 @@ window.mudarAbaChamada = (evId, abaId) => {
                     tagsHtml = `<span class="text-[9px] font-semibold text-gray-500">${catText} · ${genero} · ${funcText}</span>`;
                 }
 
-                const bgColor = presente ? (ehEquipe ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200') : 'bg-white border-gray-100';
+                const financeiroStatus = obterStatusFinanceiroEfetivo(at);
+                const finNorm = String(financeiroStatus).toLowerCase().trim();
+                let corSelinho = "bg-gray-100 text-gray-600";
+                let borderColor = "border-gray-200";
+                
+                if (finNorm === "em dia" || finNorm === "justificado" || finNorm === "pago" || finNorm === "validado") {
+                    corSelinho = "bg-green-100 text-green-700";
+                    borderColor = "border-green-400";
+                } else if (finNorm === "inadimplente" || finNorm === "inativo" || finNorm === "suspenso" || finNorm === "recusado") {
+                    corSelinho = "bg-red-100 text-red-700";
+                    borderColor = "border-red-400";
+                } else if (finNorm === "em carência" || finNorm === "em carǧncia" || finNorm === "em análise" || finNorm === "pendente" || finNorm === "atrasado" || finNorm.includes("car")) {
+                    corSelinho = "bg-yellow-100 text-yellow-700";
+                    borderColor = "border-yellow-400";
+                }
+
+                if (!ehEquipe && financeiroStatus) {
+                    tagsHtml += ` <span class="ml-1 text-[8px] font-black px-1.5 py-0.5 rounded ${corSelinho}">${String(financeiroStatus).toUpperCase()}</span>`;
+                }
+
+                let bgColor = presente ? (ehEquipe ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200') : 'bg-white border-gray-100';
+                if (!ehEquipe) {
+                    bgColor += ` border-l-4 ${borderColor}`;
+                }
+                
                 const textBtn = presente ? (ehEquipe ? 'MARCADO' : 'MARCADO') : 'PRESENTE';
                 const btnClass = presente ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 border border-gray-200';
 
                 const foraSorteio = presente && atletaEstaForaSorteioChamadaDVC(evId, email);
 
                 let btnSorteioHtml = "";
-                // DVC CHAMADA — PARTE 1.1: retira o atleta apenas dos próximos sorteios.
                 if (presente && !ehEquipe) {
                     if (foraSorteio) {
                         btnSorteioHtml = `<button onclick="event.stopPropagation(); window.toggleAtivoSorteioTreino('${evId}', '${email}')" class="text-[9px] font-black uppercase text-amber-700 bg-amber-100/50 hover:bg-amber-200 px-2 py-1 rounded-md transition-colors mt-1">Retornou ao treino</button>`;
@@ -1439,6 +1775,18 @@ window.mudarAbaChamada = (evId, abaId) => {
                     atualizarCachePresencaChamadaDVC(evId, email, {}, true);
                     window.chamadaStatusTreinoDVC?.[evId]?.delete(email);
                 });
+                // Atualiza o documento principal do evento para marcar a chamada como salva
+                try {
+                    await updateDoc(doc(db, "events", evId), {
+                        chamadaSalva: true,
+                        chamadaSalvaEm: agora,
+                        chamadaSalvaPor: responsavel
+                    });
+                } catch (errUpd) {
+                    console.warn("Erro ao marcar chamadaSalva no evento:", errUpd);
+                }
+
+                if (typeof cacheParticipacaoAgendaDVC !== "undefined") cacheParticipacaoAgendaDVC.delete(evId);
                 return { sucesso: true };
             } catch (e) {
                 console.error("[DVC Chamada] Erro ao salvar chamada no Firestore:", e);
@@ -1718,11 +2066,323 @@ window.apagarEvento = async (id) => {
     if(confirm("Apagar?")) { await deleteDoc(doc(db, "events", id)); limparCacheDados("eventos"); window.renderCalendar(); }
 };
 
+// ============================================================================
+// NOVAS FUNÇÕES PARA O FLUXO DE CONCLUSÃO DE JOGOS E AMISTOSOS (PLACAR E SETS)
+// ============================================================================
+
+/**
+ * Calcula automaticamente o placar de sets vencidos (DVC x Adversário)
+ * com base nos pontos digitados para cada um dos 5 sets no modal.
+ */
+window.atualizarPlacarGeralPorSets = () => {
+    let setsDVC = 0;
+    let setsAdv = 0;
+    let temSetsPreenchidos = false;
+
+    // Percorre os 5 sets possíveis
+    for (let i = 1; i <= 5; i++) {
+        const dvcVal = document.getElementById(`set-${i}-dvc`)?.value.trim();
+        const advVal = document.getElementById(`set-${i}-adversario`)?.value.trim();
+
+        // Se ambos os campos do set estiverem preenchidos
+        if (dvcVal !== "" && advVal !== "") {
+            const ptsDvc = parseInt(dvcVal, 10);
+            const ptsAdv = parseInt(advVal, 10);
+
+            if (!isNaN(ptsDvc) && !isNaN(ptsAdv)) {
+                temSetsPreenchidos = true;
+                // O time com mais pontos vence o set
+                if (ptsDvc > ptsAdv) {
+                    setsDVC++;
+                } else if (ptsAdv > ptsDvc) {
+                    setsAdv++;
+                }
+            }
+        }
+    }
+
+    // Atualiza os inputs principais de placar geral apenas se algum set foi preenchido
+    if (temSetsPreenchidos) {
+        const placarDvcInput = document.getElementById("placar-dvc");
+        const placarAdvInput = document.getElementById("placar-adversario");
+        if (placarDvcInput) placarDvcInput.value = setsDVC;
+        if (placarAdvInput) placarAdvInput.value = setsAdv;
+    }
+};
+
+/**
+ * Abre o modal interativo de encerramento da partida e preenchimento de placar.
+ * Carrega dinamicamente o nome do rival e exibe os campos para até 5 sets.
+ * 
+ * @param {string} evId - ID do evento (jogo/amistoso) no Firestore
+ */
+window.abrirModalConclusaoJogo = async (evId) => {
+    // Apenas comissão técnica ou administradores podem encerrar
+    if (!usuarioEhEquipeTecnica()) {
+        return alert("Apenas ADM, Treinador ou Auxiliar podem concluir eventos.");
+    }
+
+    // Busca dados do evento no cache local
+    let ev = window.eventosAgendaPorIdDVC?.[evId];
+    if (!ev) {
+        try {
+            const snap = await getDoc(doc(db, "events", evId));
+            if (snap.exists()) {
+                ev = { id: evId, ...snap.data() };
+            }
+        } catch (err) {
+            console.error("Erro ao carregar evento:", err);
+        }
+    }
+
+    if (!ev) {
+        return alert("Evento não encontrado.");
+    }
+
+    // Limpa modal anterior se houver
+    const existing = document.getElementById("m-conclusao-jogo");
+    if (existing) existing.remove();
+
+    const adversarioNome = ev.adversario || "Adversário";
+    const adversarioLabel = String(adversarioNome).toUpperCase();
+
+    // Template HTML do modal (Tailwind CSS DVC Standard)
+    const modalHtml = `
+        <div id="m-conclusao-jogo" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up border dark:border-gray-800 transition-colors duration-200">
+                <!-- Botão de Fechar -->
+                <button 
+                    onclick="document.getElementById('m-conclusao-jogo').remove()" 
+                    class="absolute top-4 right-4 text-red-600 font-black text-xl hover:text-red-800 transition-colors cursor-pointer">
+                    &times;
+                </button>
+
+                <h2 class="font-black text-xs uppercase mb-1 text-[#990000]">
+                    Concluir Jogo e Informar Placar
+                </h2>
+
+                <p class="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase mb-4">
+                    Informe o resultado final do jogo para atualizar o histórico.
+                </p>
+
+                <div class="space-y-4">
+                    <!-- Placar Geral (Sets Vencidos) -->
+                    <div class="grid grid-cols-2 gap-3 text-center">
+                        <div>
+                            <label class="block text-[8px] font-black uppercase text-gray-500 dark:text-gray-400 mb-1">
+                                Placar DVC
+                            </label>
+                            <input 
+                                type="number" 
+                                id="placar-dvc" 
+                                min="0" 
+                                class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-850 text-center text-lg font-black bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none" 
+                                placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-[8px] font-black uppercase text-gray-500 dark:text-gray-400 mb-1 truncate">
+                                ${escaparHtml(adversarioLabel)}
+                            </label>
+                            <input 
+                                type="number" 
+                                id="placar-adversario" 
+                                min="0" 
+                                class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-850 text-center text-lg font-black bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none" 
+                                placeholder="0">
+                        </div>
+                    </div>
+
+                    <!-- Detalhamento de Pontos por Set -->
+                    <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-2xl p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
+                                Pontos por Set (Opcional)
+                            </p>
+                            <span class="text-[7px] text-[#990000] font-black uppercase">Auto-calcula placar</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center mb-1 text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
+                            <div>Set</div>
+                            <div>DVC</div>
+                            <div class="truncate">${escaparHtml(adversarioLabel)}</div>
+                        </div>
+                        <div class="space-y-2">
+                            ${[1, 2, 3, 4, 5].map(i => `
+                                <div class="grid grid-cols-3 gap-2 items-center text-center">
+                                    <span class="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase">Set ${i}</span>
+                                    <input 
+                                        type="number" 
+                                        id="set-${i}-dvc" 
+                                        min="0" 
+                                        oninput="window.atualizarPlacarGeralPorSets()"
+                                        class="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-800 text-center text-xs font-bold bg-white dark:bg-gray-900 dark:text-gray-100 outline-none" 
+                                        placeholder="0">
+                                    <input 
+                                        type="number" 
+                                        id="set-${i}-adversario" 
+                                        min="0" 
+                                        oninput="window.atualizarPlacarGeralPorSets()"
+                                        class="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-800 text-center text-xs font-bold bg-white dark:bg-gray-900 dark:text-gray-100 outline-none" 
+                                        placeholder="0">
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Observações de Jogo -->
+                    <div>
+                        <label class="block text-[8px] font-black uppercase text-gray-500 dark:text-gray-400 mb-1">
+                            Observações / Detalhes do Jogo (Opcional)
+                        </label>
+                        <textarea 
+                            id="obs-conclusao-jogo" 
+                            placeholder="Descreva detalhes da partida, destakes, etc..." 
+                            class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-800 text-[10px] h-20 outline-none bg-gray-50 dark:bg-gray-950 dark:text-gray-100 resize-none font-semibold"></textarea>
+                    </div>
+
+                    <!-- Ações do Modal -->
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button 
+                            type="button" 
+                            onclick="document.getElementById('m-conclusao-jogo').remove()" 
+                            class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 w-full py-3 rounded-xl font-black text-[10px] uppercase transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+                            Cancelar
+                        </button>
+                        <button 
+                            type="button" 
+                            id="btn-salvar-placar" 
+                            onclick="window.salvarResultadoJogoDVC('${evId}')" 
+                            class="bg-green-600 text-white w-full py-3 rounded-xl font-black text-[10px] uppercase shadow-sm transition-colors hover:bg-green-700">
+                            Salvar Resultado
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+};
+
+/**
+ * Salva a conclusão do jogo e a pontuação dos sets no Firestore.
+ * Executa limpeza de cache de eventos e atualiza a agenda imediatamente.
+ * 
+ * @param {string} evId - ID do jogo/amistoso no Firestore
+ */
+window.salvarResultadoJogoDVC = async (evId) => {
+    if (!usuarioEhEquipeTecnica()) {
+        return alert("Apenas ADM, Treinador ou Auxiliar podem concluir eventos.");
+    }
+
+    const placarDvcInput = document.getElementById("placar-dvc");
+    const placarAdversarioInput = document.getElementById("placar-adversario");
+    const obsInput = document.getElementById("obs-conclusao-jogo");
+    const btnSalvar = document.getElementById("btn-salvar-placar");
+
+    if (!placarDvcInput || !placarAdversarioInput) return;
+
+    const placarDVCVal = placarDvcInput.value.trim();
+    const placarAdversarioVal = placarAdversarioInput.value.trim();
+
+    if (placarDVCVal === "" || placarAdversarioVal === "") {
+        return alert("Por favor, preencha os placares do DVC e do adversário.");
+    }
+
+    const placarDVC = parseInt(placarDVCVal, 10);
+    const placarAdversario = parseInt(placarAdversarioVal, 10);
+
+    if (Number.isNaN(placarDVC) || placarDVC < 0 || Number.isNaN(placarAdversario) || placarAdversario < 0) {
+        return alert("Os placares devem ser números inteiros maiores ou iguais a zero.");
+    }
+
+    // Captura os pontos de cada set preenchido
+    const sets = [];
+    for (let i = 1; i <= 5; i++) {
+        const dvcVal = document.getElementById(`set-${i}-dvc`)?.value.trim();
+        const advVal = document.getElementById(`set-${i}-adversario`)?.value.trim();
+
+        if (dvcVal !== "" && advVal !== "") {
+            const ptsDvc = parseInt(dvcVal, 10);
+            const ptsAdv = parseInt(advVal, 10);
+            if (!Number.isNaN(ptsDvc) && !Number.isNaN(ptsAdv)) {
+                sets.push({
+                    set: i,
+                    dvc: ptsDvc,
+                    adversario: ptsAdv
+                });
+            }
+        }
+    }
+
+    const observacoes = obsInput ? obsInput.value.trim() : "";
+
+    // Ativa estado de carregamento do botão (evita clique duplo)
+    if (btnSalvar) {
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = "Salvando...";
+    }
+
+    try {
+        const agora = new Date().toISOString();
+        const responsavel = window.currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica";
+
+        // Persistência das informações no documento do evento
+        await updateDoc(doc(db, "events", evId), {
+            status: "concluido",
+            resultado: {
+                placarDVC: placarDVC,
+                placarAdversario: placarAdversario,
+                sets: sets,
+                observacoes: observacoes
+            },
+            finalizadoEm: agora,
+            finalizadoPor: responsavel
+        });
+
+        // Limpa cache de eventos e fecha o modal
+        limparCacheDados("eventos");
+        
+        const modal = document.getElementById("m-conclusao-jogo");
+        if (modal) modal.remove();
+
+        alert("Jogo concluído com sucesso!");
+        
+        // Renderiza a agenda atualizada
+        window.renderCalendar();
+
+        // Opcionalmente direciona para avaliação técnica dos atletas
+        if (confirm("Deseja avaliar os atletas do jogo agora?")) {
+            await window.abrirAvaliacaoAtletasDoJogo(evId);
+        }
+    } catch (error) {
+        console.error("Erro ao salvar conclusão de jogo:", error);
+        alert("Não foi possível salvar a conclusão do jogo: " + (error?.message || String(error)));
+        if (btnSalvar) {
+            btnSalvar.disabled = false;
+            btnSalvar.innerText = "Salvar Resultado";
+        }
+    }
+};
+
+/**
+ * Invoca o fluxo de avaliações técnicas da partida para os atletas participantes
+ * 
+ * @param {string} evId - ID do evento no Firestore
+ */
+window.abrirAvaliacaoAtletasDoJogo = async (evId) => {
+    if (typeof window.abrirAvaliacaoEvento === "function") {
+        await window.abrirAvaliacaoEvento(evId);
+    } else {
+        alert("Módulo de avaliações não carregado.");
+    }
+};
+
 const renderCalendar = window.renderCalendar;
 const concluirTreino = window.concluirTreino;
 const toggleCamposJogo = window.toggleCamposJogo;
 const setAgendaFiltro = window.setAgendaFiltro;
 const toggleHistoricoAgendaDVC = window.toggleHistoricoAgendaDVC;
+const carregarMaisHistoricoAgendaDVC = window.carregarMaisHistoricoAgendaDVC;
 const fecharFormularioAgenda = window.fecharFormularioAgenda;
 const abrirNovoEventoAgenda = window.abrirNovoEventoAgenda;
 const carregarResponsaveisTecnicos = window.carregarResponsaveisTecnicos;
@@ -1737,6 +2397,10 @@ const limparChamadaTemp = window.limparChamadaTemp;
 const addEvent = window.addEvent;
 const prepararEdicao = window.prepararEdicao;
 const apagarEvento = window.apagarEvento;
+const abrirModalConclusaoJogo = window.abrirModalConclusaoJogo;
+const salvarResultadoJogoDVC = window.salvarResultadoJogoDVC;
+const abrirAvaliacaoAtletasDoJogo = window.abrirAvaliacaoAtletasDoJogo;
+const atualizarPlacarGeralPorSets = window.atualizarPlacarGeralPorSets;
 
 export {
     renderCalendar,
@@ -1744,6 +2408,7 @@ export {
     toggleCamposJogo,
     setAgendaFiltro,
     toggleHistoricoAgendaDVC,
+    carregarMaisHistoricoAgendaDVC,
     fecharFormularioAgenda,
     abrirNovoEventoAgenda,
     carregarResponsaveisTecnicos,
@@ -1757,5 +2422,9 @@ export {
     limparChamadaTemp,
     addEvent,
     prepararEdicao,
-    apagarEvento
+    apagarEvento,
+    abrirModalConclusaoJogo,
+    salvarResultadoJogoDVC,
+    abrirAvaliacaoAtletasDoJogo,
+    atualizarPlacarGeralPorSets
 };
