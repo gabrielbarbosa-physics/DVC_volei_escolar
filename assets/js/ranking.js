@@ -110,6 +110,27 @@ async function carregarEventosCacheMockDVC(force = false) {
             funcao: "todas",
             busca: ""
         };
+        window.filtrosRankingAbertoDVC = window.filtrosRankingAbertoDVC || false;
+        window.limiteListaRankingDVC = window.limiteListaRankingDVC || 10;
+        window.aguardandoAvaliacaoAbertoDVC = window.aguardandoAvaliacaoAbertoDVC || false;
+        window.limiteAguardandoAvaliacaoDVC = window.limiteAguardandoAvaliacaoDVC || 10;
+        
+        window.toggleFiltrosRankingDVC = () => {
+            window.filtrosRankingAbertoDVC = !window.filtrosRankingAbertoDVC;
+            window.renderRanking();
+        };
+        window.carregarMaisAtletasRankingDVC = () => {
+            window.limiteListaRankingDVC = (window.limiteListaRankingDVC || 10) + 10;
+            window.renderRanking();
+        };
+        window.toggleAguardandoAvaliacaoDVC = () => {
+            window.aguardandoAvaliacaoAbertoDVC = !window.aguardandoAvaliacaoAbertoDVC;
+            window.renderRanking();
+        };
+        window.carregarMaisAguardandoAvaliacaoDVC = () => {
+            window.limiteAguardandoAvaliacaoDVC = (window.limiteAguardandoAvaliacaoDVC || 10) + 10;
+            window.renderRanking();
+        };
 
         const TIPOS_RANKING_DVC = [
             { id: "tecnico", label: "Técnico", icon: "fa-chart-line" },
@@ -285,6 +306,9 @@ window.alterarFiltroRankingDVC = (chave, valor) => {
     };
 
     window.filtrosRankingDVC[chave] = valor;
+    window.limiteListaRankingDVC = 10;
+    window.limiteAguardandoAvaliacaoDVC = 10;
+    window.aguardandoAvaliacaoAbertoDVC = false;
     window.renderRanking();
 };
 
@@ -326,10 +350,10 @@ function botaoFiltroRankingDVC(chave, valor, label, contador = null) {
     const filtros = window.filtrosRankingDVC || {};
     const ativo = String(filtros[chave] || "") === String(valor);
     const classe = ativo
-        ? "bg-[#990000] text-white border-[#990000] shadow-md shadow-red-900/10"
-        : "bg-white text-gray-500 border-gray-200";
+        ? "bg-[#990000] text-white border-[#990000] shadow-md shadow-red-900/10 dark:shadow-red-900/30"
+        : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750";
     const contadorHtml = contador !== null && contador !== undefined
-        ? `<span class="${ativo ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'} ml-1 px-1.5 py-0.5 rounded-full">${contador}</span>`
+        ? `<span class="${ativo ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-gray-955 text-gray-500 dark:text-gray-400'} ml-1 px-1.5 py-0.5 rounded-full">${contador}</span>`
         : "";
 
     return `
@@ -342,7 +366,7 @@ function botaoFiltroRankingDVC(chave, valor, label, contador = null) {
 function renderTagsRankingDVC(atleta = {}, modoEscuro = false) {
     const classeBase = modoEscuro
         ? "bg-white/10 text-white/85 border-white/15"
-        : "bg-gray-50 text-gray-500 border-gray-100";
+        : "bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-450 border-gray-100 dark:border-gray-800";
 
     return `
         <div class="flex flex-wrap gap-1.5 mt-2">
@@ -389,20 +413,20 @@ function renderCardTopLokiDVC(atleta, posicao, destaque = false) {
     }
 
     return `
-        <div class="relative overflow-hidden bg-white border border-red-100 rounded-3xl p-4 shadow-sm">
+        <div class="relative overflow-hidden bg-white dark:bg-gray-900 border border-red-100 dark:border-red-950/40 rounded-3xl p-4 shadow-sm text-gray-900 dark:text-gray-100">
             <img src="${logoClaro}" class="absolute -right-7 -bottom-8 w-28 h-28 opacity-10 object-contain">
             <div class="relative z-10">
                 <div class="flex items-center justify-between gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center p-1.5 shrink-0">
+                    <div class="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 flex items-center justify-center p-1.5 shrink-0">
                         <img src="${logoClaro}" class="w-full h-full object-contain">
                     </div>
                     <span class="bg-[#990000] text-white px-2 py-1 rounded-full text-[9px] font-black">#${posicao}</span>
                 </div>
-                <p class="text-[8px] font-black uppercase text-[#990000] mt-3">Loki Destaque #${posicao}</p>
-                <h3 class="text-xs font-black uppercase text-gray-900 truncate mt-1">${escaparHtml(atleta.nome || "Sem nome")}</h3>
+                <p class="text-[8px] font-black uppercase text-[#990000] dark:text-red-400 mt-3">Loki Destaque #${posicao}</p>
+                <h3 class="text-xs font-black uppercase text-gray-900 dark:text-gray-100 truncate mt-1">${escaparHtml(atleta.nome || "Sem nome")}</h3>
                 <div class="mt-3 flex items-end justify-between gap-2">
-                    <p class="text-2xl font-black text-[#990000] leading-none">${score}</p>
-                    <p class="text-[8px] font-black uppercase text-gray-400">${unidade}</p>
+                    <p class="text-2xl font-black text-[#990000] dark:text-red-400 leading-none">${score}</p>
+                    <p class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">${unidade}</p>
                 </div>
                 ${renderTagsRankingDVC(atleta)}
             </div>
@@ -412,30 +436,40 @@ function renderCardTopLokiDVC(atleta, posicao, destaque = false) {
 
 function renderCardRankingAtletaDVC(atleta, posicao) {
     const tipo = window.filtrosRankingDVC?.tipo || "tecnico";
-    const logoClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki1.webp";
-    const score = formatarPontuacaoRankingDVC(atleta.pontuacaoRanking, tipo, atleta.valorOcultoParaMim);
-    const unidade = getUnidadeRankingDVC(tipo);
+    let score;
+    let unidade = getUnidadeRankingDVC(tipo);
+    
+    if (tipo === "inteligencia" && window.subabaMestresDaTatica === "semana") {
+        score = Number(atleta.ultimaPontuacaoQuizInteligencia || 0);
+        unidade = "pts";
+    } else {
+        score = formatarPontuacaoRankingDVC(atleta.pontuacaoRanking, tipo, atleta.valorOcultoParaMim);
+    }
+    
     const podeAbrirPerfil = usuarioPodeAbrirPerfilRankingDVC(atleta);
+    const avatarUrl = atleta.photoURL || atleta.fotoUrl || atleta.foto || 'assets/img/logo.webp';
+    const corScore = tipo === "inteligencia" ? "text-indigo-900 dark:text-indigo-400" : "text-[#990000] dark:text-red-400";
 
     return `
-        <div class="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm flex items-center justify-between gap-3">
+        <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 shadow-sm flex items-center justify-between gap-3 animate-fadeIn text-gray-900 dark:text-gray-100">
             <div class="flex items-center gap-3 min-w-0">
-                <div class="${posicao <= 3 ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'} w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 relative overflow-hidden">
-                    ${posicao <= 3 ? `<img src="${logoClaro}" class="w-7 h-7 object-contain">` : `<span class="text-[10px] font-black text-gray-500">#${posicao}</span>`}
+                <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 flex items-center justify-center shrink-0 overflow-hidden">
+                    <img src="${avatarUrl}" class="w-full h-full object-cover" onerror="this.src='assets/img/logo.webp'">
                 </div>
-                <div class="min-w-0">
-                    <p class="text-xs font-black uppercase text-gray-900 truncate">${escaparHtml(atleta.nome || "Sem nome")}</p>
-                    ${renderTagsRankingDVC(atleta)}
+                <div class="min-w-0 text-left">
+                    <p class="text-xs font-black uppercase text-gray-900 dark:text-gray-100 truncate">
+                        <span class="text-gray-400 dark:text-gray-550 font-bold mr-1">#${posicao}</span> ${escaparHtml(atleta.nome || "Sem nome")}
+                    </p>
                     ${podeAbrirPerfil ? `
-                        <button onclick="abrirPerfilAtletaRankingDVC('${safeEditParam(atleta.email || atleta.id || "")}', '${safeEditParam(atleta.nome || "")}')" class="mt-2 text-[8px] font-black uppercase text-[#990000]">
-                            Ver perfil
+                        <button onclick="abrirPerfilAtletaRankingDVC('${safeEditParam(atleta.email || atleta.id || "")}', '${safeEditParam(atleta.nome || "")}')" class="text-[9px] font-black uppercase text-[#990000] dark:text-red-400 hover:underline transition mt-0.5 block">
+                            VER PERFIL
                         </button>
                     ` : ""}
                 </div>
             </div>
             <div class="text-right shrink-0">
-                <p class="text-lg font-black ${atleta.valorOcultoParaMim ? 'text-gray-400 italic' : 'text-[#990000]'} leading-none">${score}</p>
-                <p class="text-[8px] font-black uppercase text-gray-400 mt-1">${unidade}</p>
+                <p class="text-sm font-black ${atleta.valorOcultoParaMim ? 'text-gray-400 dark:text-gray-500 italic' : corScore} leading-none">${score}</p>
+                <p class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-555 mt-1">${unidade}</p>
             </div>
         </div>
     `;
@@ -443,14 +477,14 @@ function renderCardRankingAtletaDVC(atleta, posicao) {
 
 function renderCardAguardandoAvaliacaoDVC(user = {}) {
     return `
-        <div class="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm flex items-center justify-between gap-3">
+        <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 shadow-sm flex items-center justify-between gap-3 text-gray-900 dark:text-gray-100">
             <div class="min-w-0">
-                <p class="text-xs font-black uppercase text-gray-800 truncate">${escaparHtml(user.nome || user.email || "Atleta")}</p>
+                <p class="text-xs font-black uppercase text-gray-800 dark:text-gray-200 truncate">${escaparHtml(user.nome || user.email || "Atleta")}</p>
                 ${renderTagsRankingDVC(user)}
-                <p class="text-[8px] font-black uppercase text-yellow-700 mt-2">Aguardando avaliação técnica</p>
+                <p class="text-[8px] font-black uppercase text-yellow-700 dark:text-yellow-450 mt-2">Aguardando avaliação técnica</p>
             </div>
-            <div class="w-10 h-10 rounded-2xl bg-yellow-50 border border-yellow-100 flex items-center justify-center shrink-0">
-                <i class="fa-solid fa-hourglass-half text-yellow-700 text-sm"></i>
+            <div class="w-10 h-10 rounded-2xl bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-100 dark:border-yellow-900/50 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-hourglass-half text-yellow-700 dark:text-yellow-400 text-sm"></i>
             </div>
         </div>
     `;
@@ -563,9 +597,9 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
                 </div>
             </div>
 
-            <div class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm">
-                <p class="text-[9px] font-black uppercase text-[#990000] mb-3">Carregando ranking</p>
-                <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm">
+                <p class="text-[9px] font-black uppercase text-[#990000] dark:text-red-400 mb-3">Carregando ranking</p>
+                <div class="h-2 bg-gray-100 dark:bg-gray-955 rounded-full overflow-hidden">
                     <div class="h-full bg-[#990000] w-1/2 animate-pulse"></div>
                 </div>
             </div>
@@ -635,43 +669,43 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
             const topDesafios = [...atletas].sort((a,b) => (b.totalDesafiosQuizConcluidos || 0) - (a.totalDesafiosQuizConcluidos || 0)).slice(0, 5).filter(a => a.totalDesafiosQuizConcluidos > 0);
 
             return `
-                <section class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm space-y-4">
+                <section class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm space-y-4 text-gray-900 dark:text-gray-100">
                     <div>
-                        <p class="text-[9px] font-black uppercase text-[#990000]">Conquistas Gerais</p>
-                        <h3 class="text-sm font-black uppercase text-gray-900">Mural de Inteligência</h3>
+                        <p class="text-[9px] font-black uppercase text-[#990000] dark:text-red-400">Conquistas Gerais</p>
+                        <h3 class="text-sm font-black uppercase text-gray-900 dark:text-gray-200">Mural de Inteligência</h3>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-red-50 border border-red-100 rounded-2xl p-4 text-center">
-                            <i class="fa-solid fa-fire text-red-500 text-xl mb-2"></i>
-                            <p class="text-2xl font-black text-red-700 leading-none">${onFireUsers}</p>
-                            <p class="text-[8px] font-black uppercase text-red-600 mt-1">On Fire</p>
+                        <div class="bg-red-50 dark:bg-red-955/20 border border-red-100 dark:border-red-900/40 rounded-2xl p-4 text-center">
+                            <i class="fa-solid fa-fire text-red-500 dark:text-red-455 text-xl mb-2"></i>
+                            <p class="text-2xl font-black text-red-700 dark:text-red-400 leading-none">${onFireUsers}</p>
+                            <p class="text-[8px] font-black uppercase text-red-600 dark:text-red-450 mt-1">On Fire</p>
                         </div>
-                        <div class="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 text-center">
-                            <i class="fa-solid fa-star text-yellow-500 text-xl mb-2"></i>
-                            <p class="text-2xl font-black text-yellow-700 leading-none">${mestreUsers}</p>
-                            <p class="text-[8px] font-black uppercase text-yellow-600 mt-1">Mestres</p>
+                        <div class="bg-yellow-50 dark:bg-yellow-955/20 border border-yellow-100 dark:border-yellow-900/40 rounded-2xl p-4 text-center">
+                            <i class="fa-solid fa-star text-yellow-500 dark:text-yellow-455 text-xl mb-2"></i>
+                            <p class="text-2xl font-black text-yellow-700 dark:text-yellow-400 leading-none">${mestreUsers}</p>
+                            <p class="text-[8px] font-black uppercase text-yellow-600 dark:text-yellow-450 mt-1">Mestres</p>
                         </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-gray-100">
-                        <p class="text-[9px] font-black uppercase text-gray-400 mb-3"><i class="fa-solid fa-bolt mr-1"></i>Maiores Sequências</p>
+                    <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                        <p class="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 mb-3"><i class="fa-solid fa-bolt mr-1"></i>Maiores Sequências</p>
                         <div class="space-y-2">
                             ${topStreaks.length ? topStreaks.map(a => `
-                                <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 flex justify-between items-center">
-                                    <span class="text-xs font-black uppercase text-gray-700 truncate">${escaparHtml(a.nome || "Sem nome")}</span>
-                                    <span class="text-sm font-black text-indigo-700">${a.melhorStreakQuiz} <i class="fa-solid fa-fire text-[8px]"></i></span>
+                                <div class="bg-gray-50 dark:bg-gray-955 border border-gray-100 dark:border-gray-850 rounded-xl p-3 flex justify-between items-center text-gray-700 dark:text-gray-300">
+                                    <span class="text-xs font-black uppercase text-gray-700 dark:text-gray-300 truncate">${escaparHtml(a.nome || "Sem nome")}</span>
+                                    <span class="text-sm font-black text-indigo-700 dark:text-indigo-400">${a.melhorStreakQuiz} <i class="fa-solid fa-fire text-[8px]"></i></span>
                                 </div>
-                            `).join("") : '<p class="text-[10px] font-black uppercase text-gray-400 text-center py-2">Sem registros ainda.</p>'}
+                            `).join("") : '<p class="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500 text-center py-2">Sem registros ainda.</p>'}
                         </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-gray-100">
-                        <p class="text-[9px] font-black uppercase text-gray-400 mb-3"><i class="fa-solid fa-check-double mr-1"></i>Mais Desafios Concluídos</p>
+                    <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                        <p class="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 mb-3"><i class="fa-solid fa-check-double mr-1"></i>Mais Desafios Concluídos</p>
                         <div class="space-y-2">
                             ${topDesafios.length ? topDesafios.map(a => `
-                                <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 flex justify-between items-center">
-                                    <span class="text-xs font-black uppercase text-gray-700 truncate">${escaparHtml(a.nome || "Sem nome")}</span>
-                                    <span class="text-sm font-black text-indigo-700">${a.totalDesafiosQuizConcluidos} <i class="fa-solid fa-check text-[8px]"></i></span>
+                                <div class="bg-gray-50 dark:bg-gray-955 border border-gray-100 dark:border-gray-850 rounded-xl p-3 flex justify-between items-center text-gray-700 dark:text-gray-300">
+                                    <span class="text-xs font-black uppercase text-gray-700 dark:text-gray-300 truncate">${escaparHtml(a.nome || "Sem nome")}</span>
+                                    <span class="text-sm font-black text-indigo-700 dark:text-indigo-400">${a.totalDesafiosQuizConcluidos} <i class="fa-solid fa-check text-[8px]"></i></span>
                                 </div>
-                            `).join("") : '<p class="text-[10px] font-black uppercase text-gray-400 text-center py-2">Sem registros ainda.</p>'}
+                            `).join("") : '<p class="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500 text-center py-2">Sem registros ainda.</p>'}
                         </div>
                     </div>
                 </section>
@@ -679,47 +713,39 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
         };
 
         const renderConteudoListaMestresDVC = (ranking, tipo, contador) => {
+            const rankingExcluidoTop3 = ranking.slice(3);
+            const limite = window.limiteListaRankingDVC || 10;
+            const rankingPaginado = rankingExcluidoTop3.slice(0, limite);
+            
+            const exibirBotao = limite < rankingExcluidoTop3.length;
+            const botaoHtml = exibirBotao ? `
+                <div class="mt-4 flex justify-center">
+                    <button onclick="window.carregarMaisAtletasRankingDVC()" class="w-full py-3 bg-gray-50 hover:bg-gray-100 dark:bg-gray-950 dark:hover:bg-gray-900 text-[#990000] dark:text-red-400 border border-gray-200 dark:border-gray-800 rounded-2xl text-xs font-black uppercase tracking-wider transition active:scale-[0.98]">
+                        Carregar mais atletas (+10)
+                    </button>
+                </div>
+            ` : "";
+
             return `
-                <section class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm">
+                <section class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm animate-fadeIn text-gray-900 dark:text-gray-100">
                     <div class="flex items-center justify-between gap-3 mb-3">
                         <div>
-                            <p class="text-[9px] font-black uppercase text-[#990000]">Lista completa</p>
-                            <h3 class="text-sm font-black uppercase text-gray-900">${contador} atletas no ranking</h3>
+                            <p class="text-[9px] font-black uppercase text-[#990000] dark:text-red-400">Lista completa</p>
+                            <h3 class="text-sm font-black uppercase text-gray-900 dark:text-gray-200">${contador} atletas no ranking</h3>
                         </div>
-                        <span class="text-[8px] font-black uppercase text-gray-400">${getUnidadeRankingDVC(tipo)}</span>
+                        <span class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">${getUnidadeRankingDVC(tipo)}</span>
                     </div>
                     <div class="space-y-2">
-                        ${ranking.length ? ranking.map((atleta, index) => {
-                            if (tipo === "inteligencia") {
-                                const score = window.subabaMestresDaTatica === "semana" ? Number(atleta.ultimaPontuacaoQuizInteligencia || 0) : formatarPontuacaoRankingDVC(atleta.pontuacaoRanking, tipo, atleta.valorOcultoParaMim);
-                                const ultimaBadge = atleta.ultimaBadgeQuizRecebida ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[8px] font-black uppercase ml-2">${escaparHtml(atleta.ultimaBadgeQuizRecebida)}</span>` : "";
-                                const destaqueSemana = window.subabaMestresDaTatica === "semana" && atleta.ultimaSemanaQuizInteligencia ? `<span class="block text-[8px] font-bold text-gray-400 mt-1 uppercase">Semana: ${atleta.ultimaSemanaQuizInteligencia}</span>` : "";
-                                return `
-                                    <div class="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm flex items-center justify-between gap-3">
-                                        <div class="flex items-center gap-3 min-w-0">
-                                            <div class="${index < 3 ? 'bg-indigo-50 border-indigo-100' : 'bg-gray-50 border-gray-100'} w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0">
-                                                <span class="text-[10px] font-black text-gray-500">#${index + 1}</span>
-                                            </div>
-                                            <div class="min-w-0">
-                                                <p class="text-xs font-black uppercase text-gray-900 truncate flex items-center">${escaparHtml(atleta.nome || "Sem nome")} ${ultimaBadge}</p>
-                                                ${renderTagsRankingDVC(atleta)}
-                                                ${destaqueSemana}
-                                            </div>
-                                        </div>
-                                        <div class="text-right shrink-0">
-                                            <p class="text-lg font-black text-indigo-900 leading-none">${score}</p>
-                                            <p class="text-[8px] font-black uppercase text-gray-400 mt-1">pts</p>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                            return renderCardRankingAtletaDVC(atleta, index + 1);
+                        ${rankingPaginado.length ? rankingPaginado.map((atleta, index) => {
+                            const posicaoReal = index + 4;
+                            return renderCardRankingAtletaDVC(atleta, posicaoReal);
                         }).join("") : `
-                            <div class="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-5 text-center">
-                                <p class="text-[10px] font-black uppercase text-gray-400">${window.subabaMestresDaTatica === 'semana' ? "Ainda ninguém completou o desafio desta semana." : getMensagemSemDadosRankingDVC(tipo)}</p>
+                            <div class="bg-gray-50 dark:bg-gray-955 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-5 text-center animate-fadeIn">
+                                <p class="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500">${window.subabaMestresDaTatica === 'semana' ? "Ainda ninguém completou o desafio desta semana." : getMensagemSemDadosRankingDVC(tipo)}</p>
                             </div>
                         `}
                     </div>
+                    ${botaoHtml}
                 </section>
             `;
         };
@@ -747,61 +773,68 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
                     </div>
                 </div>
 
-                <div class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm space-y-4">
+                <!-- Barra de Busca e Botão de Filtros lado a lado -->
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="relative flex-grow">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input id="ranking-busca" value="${escaparHtml(filtros.busca || "")}" oninput="buscarRankingDVC(this.value)" placeholder="Buscar atleta..." class="w-full pl-9 pr-3 py-3 rounded-2xl border border-gray-200 dark:border-gray-850 bg-gray-50 dark:bg-gray-950 text-xs font-bold text-gray-905 dark:text-gray-150 outline-none focus:border-[#990000] dark:focus:border-red-600 transition-colors">
+                    </div>
+                    <button onclick="window.toggleFiltrosRankingDVC()" class="shrink-0 flex items-center gap-1.5 px-4 py-3 border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-2xl text-xs font-black uppercase text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition">
+                        <i class="fa-solid fa-filter text-gray-500"></i>
+                        Filtros
+                    </button>
+                </div>
+
+                <!-- Seção de filtros colapsável (Accordion) -->
+                <div id="ranking-filtros-accordion" class="${window.filtrosRankingAbertoDVC ? '' : 'hidden'} bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm mb-3 space-y-4 fade-in text-gray-900 dark:text-gray-100">
                     <div>
-                        <p class="text-[9px] font-black uppercase text-[#990000] mb-2">Tipo de ranking</p>
-                        <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll">${botoesTipo}</div>
+                        <p class="text-[9px] font-black uppercase text-[#990000] dark:text-red-400 mb-2">Tipo de ranking</p>
+                        <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll" style="scrollbar-width: none;">${botoesTipo}</div>
                     </div>
                     
                     ${tipoAtual === "inteligencia" ? `
-                        <div class="pt-3 border-t border-gray-100">
-                            <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll">
-                                <button onclick="window.alterarSubabaMestresDaTatica('geral')" class="${window.subabaMestresDaTatica === 'geral' ? 'bg-[#990000] text-white border-[#990000]' : 'bg-gray-50 text-gray-500 border-gray-200'} border px-4 py-2.5 rounded-full text-[9px] font-black uppercase whitespace-nowrap transition flex-1">Geral</button>
-                                <button onclick="window.alterarSubabaMestresDaTatica('semana')" class="${window.subabaMestresDaTatica === 'semana' ? 'bg-[#990000] text-white border-[#990000]' : 'bg-gray-50 text-gray-500 border-gray-200'} border px-4 py-2.5 rounded-full text-[9px] font-black uppercase whitespace-nowrap transition flex-1">Semana Atual</button>
-                                <button onclick="window.alterarSubabaMestresDaTatica('conquistas')" class="${window.subabaMestresDaTatica === 'conquistas' ? 'bg-[#990000] text-white border-[#990000]' : 'bg-gray-50 text-gray-500 border-gray-200'} border px-4 py-2.5 rounded-full text-[9px] font-black uppercase whitespace-nowrap transition flex-1">Conquistas</button>
+                        <div class="pt-3 border-t border-gray-100 dark:border-gray-800">
+                            <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll" style="scrollbar-width: none;">
+                                <button onclick="window.alterarSubabaMestresDaTatica('geral')" class="${window.subabaMestresDaTatica === 'geral' ? 'bg-[#990000] text-white border-[#990000]' : 'bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-900'} border px-4 py-2.5 rounded-full text-[9px] font-black uppercase whitespace-nowrap transition flex-1">Geral</button>
+                                <button onclick="window.alterarSubabaMestresDaTatica('semana')" class="${window.subabaMestresDaTatica === 'semana' ? 'bg-[#990000] text-white border-[#990000]' : 'bg-gray-50 dark:bg-gray-955 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-900'} border px-4 py-2.5 rounded-full text-[9px] font-black uppercase whitespace-nowrap transition flex-1">Semana Atual</button>
+                                <button onclick="window.alterarSubabaMestresDaTatica('conquistas')" class="${window.subabaMestresDaTatica === 'conquistas' ? 'bg-[#990000] text-white border-[#990000]' : 'bg-gray-50 dark:bg-gray-955 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-900'} border px-4 py-2.5 rounded-full text-[9px] font-black uppercase whitespace-nowrap transition flex-1">Conquistas</button>
                             </div>
                         </div>
                     ` : ""}
 
-                    <div>
-                        <p class="text-[9px] font-black uppercase text-gray-500 mb-2">Gênero</p>
-                        <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll">${botoesGenero}</div>
-                    </div>
+                    <div class="grid grid-cols-1 gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                        <div>
+                            <p class="text-[9px] font-black uppercase text-gray-500 dark:text-gray-450 mb-2">Gênero</p>
+                            <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll" style="scrollbar-width: none;">${botoesGenero}</div>
+                        </div>
 
-                    <div>
-                        <p class="text-[9px] font-black uppercase text-gray-500 mb-2">Categoria</p>
-                        <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll">${botoesCategoria}</div>
-                    </div>
+                        <div>
+                            <p class="text-[9px] font-black uppercase text-gray-500 dark:text-gray-455 mb-2">Categoria</p>
+                            <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll" style="scrollbar-width: none;">${botoesCategoria}</div>
+                        </div>
 
-                    <div>
-                        <p class="text-[9px] font-black uppercase text-gray-500 mb-2">Função</p>
-                        <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll">${botoesFuncao}</div>
-                    </div>
-
-                    <div class="relative">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input id="ranking-busca" value="${escaparHtml(filtros.busca || "")}" oninput="buscarRankingDVC(this.value)" placeholder="Buscar atleta..." class="w-full pl-9 pr-3 py-3 rounded-2xl border border-gray-200 bg-gray-50 text-xs font-bold outline-none focus:border-[#990000]">
+                        <div>
+                            <p class="text-[9px] font-black uppercase text-gray-500 dark:text-gray-455 mb-2">Função</p>
+                            <div class="flex gap-2 overflow-x-auto pb-1 custom-scroll" style="scrollbar-width: none;">${botoesFuncao}</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-                        <p class="text-[8px] font-black uppercase text-gray-400">Atletas encontrados</p>
-                        <p class="text-2xl font-black text-[#990000] leading-none mt-2">${contadorEncontrados}</p>
-                    </div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-                        <p class="text-[8px] font-black uppercase text-gray-400">Aguardando avaliação</p>
-                        <p class="text-2xl font-black text-yellow-700 leading-none mt-2">${aguardandoAvaliacao.length}</p>
-                    </div>
+                <!-- Mini-Cards de Métricas em linha única compacta -->
+                <div class="flex flex-row ${usuarioPodeAprovarAvaliacoes() ? 'justify-between' : 'justify-center'} items-center bg-gray-50 dark:bg-gray-955 p-2 rounded-xl text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-3 border border-gray-200/50 dark:border-gray-800">
+                    <span class="uppercase">Atletas Encontrados: <strong class="text-[#990000] dark:text-red-400 ml-1">${contadorEncontrados}</strong></span>
+                    ${usuarioPodeAprovarAvaliacoes() ? `
+                        <span class="uppercase">Aguardando Avaliação: <strong class="text-yellow-700 dark:text-yellow-450 ml-1">${aguardandoAvaliacao.length}</strong></span>
+                    ` : ""}
                 </div>
 
                 <section class="space-y-3">
                     <div class="flex items-center justify-between gap-3">
                         <div>
-                            <p class="text-[9px] font-black uppercase text-[#990000]">Top 3 Loki</p>
-                            <h3 class="text-sm font-black uppercase text-gray-900">Destaques do filtro</h3>
+                            <p class="text-[9px] font-black uppercase text-[#990000] dark:text-red-400">Top 3 Loki</p>
+                            <h3 class="text-sm font-black uppercase text-gray-900 dark:text-gray-200">Destaques do filtro</h3>
                         </div>
-                        <span class="bg-red-50 border border-red-100 text-[#990000] px-3 py-1 rounded-full text-[8px] font-black uppercase">${tipoLabel}</span>
+                        <span class="bg-red-50 dark:bg-red-955/20 border border-red-100 dark:border-red-900/50 text-[#990000] dark:text-red-400 px-3 py-1 rounded-full text-[8px] font-black uppercase">${tipoLabel}</span>
                     </div>
 
                     ${top3.length ? `
@@ -815,8 +848,8 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
                             ` : ""}
                         </div>
                     ` : `
-                        <div class="bg-white border border-dashed border-gray-200 rounded-2xl p-5 text-center">
-                            <p class="text-[10px] font-black uppercase text-gray-400">${getMensagemSemDadosRankingDVC(tipoAtual)}</p>
+                        <div class="bg-white dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-5 text-center">
+                            <p class="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500">${getMensagemSemDadosRankingDVC(tipoAtual)}</p>
                         </div>
                     `}
                 </section>
@@ -826,12 +859,12 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
                     : renderConteudoListaMestresDVC(rankingPrincipal, tipoAtual, contadorEncontrados)}
 
                 ${semDados.length ? `
-                    <section class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm">
-                        <p class="text-[9px] font-black uppercase text-gray-500 mb-3">${getMensagemSemDadosRankingDVC(tipoAtual)}</p>
+                    <section class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm text-gray-900 dark:text-gray-100">
+                        <p class="text-[9px] font-black uppercase text-gray-500 dark:text-gray-450 mb-3">${getMensagemSemDadosRankingDVC(tipoAtual)}</p>
                         <div class="space-y-2">
                             ${semDados.slice(0, 30).map(atleta => `
-                                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3">
-                                    <p class="text-xs font-black uppercase text-gray-700 truncate">${escaparHtml(atleta.nome || atleta.email || "Atleta")}</p>
+                                <div class="bg-gray-50 dark:bg-gray-955 border border-gray-100 dark:border-gray-850 rounded-2xl p-3">
+                                    <p class="text-xs font-black uppercase text-gray-700 dark:text-gray-300 truncate">${escaparHtml(atleta.nome || atleta.email || "Atleta")}</p>
                                     ${renderTagsRankingDVC(atleta)}
                                 </div>
                             `).join("")}
@@ -839,17 +872,36 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
                     </section>
                 ` : ""}
 
-                ${aguardandoAvaliacao.length ? `
-                    <section class="bg-white border border-yellow-100 rounded-3xl p-4 shadow-sm">
-                        <div class="flex items-center justify-between gap-3 mb-3">
+                ${aguardandoAvaliacao.length && usuarioPodeAprovarAvaliacoes() ? `
+                    <section class="bg-white dark:bg-gray-900 border border-yellow-100 dark:border-yellow-950/40 rounded-3xl p-4 shadow-sm text-gray-900 dark:text-gray-100">
+                        <!-- Cabeçalho clicável (Accordion Trigger) -->
+                        <div onclick="window.toggleAguardandoAvaliacaoDVC()" class="flex items-center justify-between gap-3 cursor-pointer select-none">
                             <div>
-                                <p class="text-[9px] font-black uppercase text-yellow-700">Aguardando avaliação</p>
-                                <h3 class="text-sm font-black uppercase text-gray-900">${aguardandoAvaliacao.length} atletas fora do ranking principal</h3>
+                                <p class="text-[9px] font-black uppercase text-yellow-700 dark:text-yellow-450">Aguardando avaliação</p>
+                                <h3 class="text-sm font-black uppercase text-gray-900 dark:text-gray-200">${aguardandoAvaliacao.length} atletas fora do ranking principal</h3>
                             </div>
-                            <i class="fa-solid fa-hourglass-half text-yellow-700"></i>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <i class="fa-solid fa-hourglass-half text-yellow-700 dark:text-yellow-455"></i>
+                                <i class="fa-solid ${window.aguardandoAvaliacaoAbertoDVC ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400 dark:text-gray-500 text-xs transition-transform duration-200"></i>
+                            </div>
                         </div>
-                        <div class="space-y-2">
-                            ${aguardandoAvaliacao.map(atleta => renderCardAguardandoAvaliacaoDVC(atleta)).join("")}
+                        
+                        <!-- Conteúdo colapsável -->
+                        <div class="${window.aguardandoAvaliacaoAbertoDVC ? 'mt-4' : 'hidden'} space-y-2 fade-in">
+                            ${(() => {
+                                const limiteAguardando = window.limiteAguardandoAvaliacaoDVC || 10;
+                                const paginados = aguardandoAvaliacao.slice(0, limiteAguardando);
+                                const cards = paginados.map(atleta => renderCardAguardandoAvaliacaoDVC(atleta)).join("");
+                                const exibirBotao = limiteAguardando < aguardandoAvaliacao.length;
+                                const botao = exibirBotao ? `
+                                    <div class="mt-4 flex justify-center">
+                                        <button onclick="event.stopPropagation(); window.carregarMaisAguardandoAvaliacaoDVC();" class="w-full py-2.5 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-955 dark:hover:bg-yellow-900 text-yellow-800 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-900/50 rounded-2xl text-[10px] font-black uppercase tracking-wider transition active:scale-[0.98]">
+                                            Carregar mais (+10)
+                                        </button>
+                                    </div>
+                                ` : "";
+                                return cards + botao;
+                            })()}
                         </div>
                     </section>
                 ` : ""}
@@ -868,397 +920,11 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
                 <p class="text-xs font-black text-red-700 uppercase">Nao foi possivel carregar o ranking agora.</p>
             </div>
         `;
-        }
     }
-
-window.renderRanking = async (tipoRanking = null) => {
-    return renderRankingDVCNovo(tipoRanking);
 };
 
-// === 2. ABERTURA DA TELA DO RANKING (que tinha sumido) ===
-window.renderRankingDVCNovo = async (tipoRanking = null) => {
-// =========================================================
-
-    const c = document.getElementById('main-content');
-
-    const tituloRanking = tipoRanking === "inteligencia" 
-    ? "Mestres da Tática" 
-    : (tipoRanking === "tecnico" ? "Ranking Técnico" : "Ranking de Presença");
-
-    const projetoNomeRanking = PROJETO_ATUAL_DVC?.nome || "DVC";
-    const projetoLogoRanking = PROJETO_ATUAL_DVC?.logoFundoEscuro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
-    const projetoLogoRankingClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || "assets/img/loki1.webp";
-
-c.innerHTML = `
-    <div class="bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] text-white p-5 rounded-3xl mb-5 shadow-xl relative overflow-hidden">
-        <div class="absolute -right-10 -bottom-12 opacity-10">
-            <img src="${projetoLogoRanking}" class="w-48 h-48 object-contain">
-        </div>
-
-        <div class="relative z-10">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center p-2">
-                    <img src="${projetoLogoRanking}" class="w-full h-full object-contain">
-                </div>
-
-                <div>
-                    <p class="text-[8px] font-black uppercase text-white/60">
-                        Ranking oficial
-                    </p>
-
-                    <h3 class="text-xl font-black uppercase tracking-wide leading-none">
-                        ${projetoNomeRanking}
-                    </h3>
-
-                    <p class="text-[9px] font-bold text-white/60 mt-1 uppercase">
-                        ${tituloRanking}
-                    </p>
-                </div>
-            </div>
-
-            <div class="bg-white/10 border border-white/10 rounded-2xl p-3">
-                <label class="text-[8px] font-black text-white/60 uppercase mb-2 block">
-                    Escolher tipo de ranking
-                </label>
-
-                <select 
-                    onchange="renderRanking(this.value)" 
-                    class="w-full p-3 border border-white/20 rounded-xl text-xs font-black bg-white text-gray-800 outline-none">
-                    <option value="presenca" ${tipoRanking === "presenca" ? "selected" : ""}>
-                        Ranking de Presença
-                    </option>
-                    <option value="inteligencia" ${tipoRanking === "inteligencia" ? "selected" : ""}>
-                        Mestres da Tática
-                    </option>
-                    <option value="tecnico" ${tipoRanking === "tecnico" ? "selected" : ""}>
-                        Ranking Técnico
-                    </option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-        <div class="flex items-center justify-center gap-2 mb-6">
-            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span class="text-[10px] font-bold">Masculino</span>
-
-            <div class="w-3 h-3 bg-pink-500 rounded-full ml-4"></div>
-            <span class="text-[10px] font-bold">Feminino</span>
-        </div>
-<div id="ranking-list" class="space-y-4">
-            <p class="text-center text-xs text-gray-400 font-bold col-span-2">
-                Carregando ranking...
-            </p>
-        </div>
-    `;
-
-    try {
-        // 1. Busca usuários
-        const usersSnap = await carregarUsuariosCacheMockDVC();
-
-        // 2. Se o ranking for de presença, calcula as presenças
-        let contagemPresencas = {};
-
-        if (tipoRanking === "presenca") {
-            try {
-                const eventsSnap = await carregarEventosCacheMockDVC();
-
-                eventsSnap.docs.forEach(ev => {
-                    const presencas = window.DVC_CACHE?.presencasPorEvento?.[ev.id]?.dados || [];
-                    presencas.forEach(p => {
-                        contagemPresencas[p.id] = (contagemPresencas[p.id] || 0) + 1;
-                    });
-                });
-
-            } catch (erroPresencasRanking) {
-                console.warn("Não foi possível carregar todas as presenças do ranking:", erroPresencasRanking);
-            }
-        }
-
-        // 3. Separa masculino e feminino
-        let masc = [];
-        let fem = [];
-        let geralTecnico = [];
-        const emailUsuarioAtual = auth.currentUser.email;
-        const ehTreinador = usuarioPodeAprovarAvaliacoes();
-        const calcularScoreTecnico = (habilidades) => {
-            return calcularScoreGeralDVC(habilidades || {});
-        };
-        usersSnap.forEach(docUsuario => {
-            let user = docUsuario.data();
-
-            // Garante que tenha email mesmo se algum cadastro antigo não tiver o campo email salvo
-            user.email = user.email || docUsuario.id;
-
-            if (tipoRanking === "inteligencia") {
-    user.qtd = Number(user.inteligenciaJogo || 0);
-    user.valorOcultoParaMim = false;
-
-} else if (tipoRanking === "tecnico") {
-    user.aguardandoAvaliacao = !usuarioTemAvaliacaoTecnicaRealDVC(user);
-    user.qtd = user.aguardandoAvaliacao ? 0 : calcularScoreTecnico(user.habilidades);
-
-    const scorePublico = user.scoreTecnicoPublico !== false;
-    const ehMeuProprioScore = user.email === emailUsuarioAtual;
-
-    user.valorOcultoParaMim = !user.aguardandoAvaliacao && !ehTreinador && !ehMeuProprioScore && !scorePublico;
-
-    geralTecnico.push(user);
-
-} else {
-    user.qtd = contagemPresencas[user.email] || 0;
-    user.valorOcultoParaMim = false;
-}
-            if (user.sexo === 'M') {
-                masc.push(user);
-            } else {
-                fem.push(user);
-            }
-        });
-
-        // 4. Ordena do maior para o menor
-       const ordenarRanking = (a, b) => {
-    if (tipoRanking === "tecnico" && !ehTreinador) {
-        if (a.aguardandoAvaliacao && !b.aguardandoAvaliacao) return 1;
-        if (!a.aguardandoAvaliacao && b.aguardandoAvaliacao) return -1;
-        if (a.valorOcultoParaMim && !b.valorOcultoParaMim) return 1;
-        if (!a.valorOcultoParaMim && b.valorOcultoParaMim) return -1;
-
-        if (a.valorOcultoParaMim && b.valorOcultoParaMim) {
-            return (a.nome || "").localeCompare(b.nome || "");
-        }
-    }
-
-    if (tipoRanking === "tecnico") {
-        if (a.aguardandoAvaliacao && !b.aguardandoAvaliacao) return 1;
-        if (!a.aguardandoAvaliacao && b.aguardandoAvaliacao) return -1;
-    }
-
-    return b.qtd - a.qtd;
-};
-
-masc.sort(ordenarRanking);
-fem.sort(ordenarRanking);
-geralTecnico.sort(ordenarRanking);
-        // 5. Define o texto da pontuação
-        const textoPontuacao = tipoRanking === "inteligencia" 
-    ? "pts" 
-    : (tipoRanking === "tecnico" ? "score" : "presenças");
-
-        // 6. Renderiza o ranking
-        const listDiv = document.getElementById('ranking-list');
-        listDiv.innerHTML = "";
-        if (tipoRanking === "tecnico") {
-    const top20Tecnico = geralTecnico.slice(0, 20);
-
-    let tabelaTecnicaHtml = `
-    <div class="bg-white p-4 rounded-2xl border shadow-sm mb-4 overflow-hidden">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-                <div class="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center p-1">
-                    <img src="${projetoLogoRankingClaro}" class="w-full h-full object-contain">
-                </div>
-
-                <div>
-                    <p class="text-[8px] font-black text-gray-400 uppercase">
-                        Score Geral DVC
-                    </p>
-                    <h4 class="font-black text-xs uppercase text-[#990000]">
-                        Top 20 Técnico
-                    </h4>
-                </div>
-            </div>
-
-            <span class="bg-red-50 border border-red-100 text-[#990000] text-[8px] font-black px-2 py-1 rounded-full uppercase">
-                LOKI
-            </span>
-        </div>
-
-        <div class="space-y-2">
-`;
-
-if (top20Tecnico.length === 0) {
-    tabelaTecnicaHtml += `
-        <div class="bg-gray-50 border border-dashed rounded-xl p-4 text-center">
-            <p class="text-[10px] text-gray-400 font-bold uppercase">
-                Nenhum atleta encontrado.
-            </p>
-        </div>
-    `;
-}
-
-top20Tecnico.forEach((u, i) => {
-    const aguardandoAvaliacao = tipoRanking === "tecnico" && u.aguardandoAvaliacao;
-    const valorOculto = tipoRanking === "tecnico" && u.valorOcultoParaMim;
-
-    const destaque = i < 3 && !valorOculto && !aguardandoAvaliacao;
-    const nome = u.nome || "Sem nome";
-    const sexo = u.sexo || "-";
-    const score = aguardandoAvaliacao ? "Aguardando" : (valorOculto ? "Oculto" : `${u.qtd}`);
-    const badgeHtml = valorOculto
-        ? `
-            <div class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center shrink-0">
-                <i class="fa-solid fa-lock text-gray-400 text-sm"></i>
-            </div>
-        `
-        : destaque
-            ? `
-                <div class="relative w-10 h-10 rounded-xl bg-white border border-red-100 flex items-center justify-center shrink-0 overflow-hidden">
-                    <img src="${projetoLogoRankingClaro}" class="w-7 h-7 object-contain">
-                    <span class="absolute -top-1 -right-1 bg-[#990000] text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
-                        ${i + 1}
-                    </span>
-                </div>
-            `
-            : `
-                <div class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center shrink-0">
-                    <span class="text-[10px] font-black text-gray-500">
-                        ${i + 1}º
-                    </span>
-                </div>
-            `;
-
-        tabelaTecnicaHtml += `
-            <div class="${destaque ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'} border rounded-xl p-3 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 min-w-0">
-                    ${badgeHtml}
-                    <div class="min-w-0">
-                        <p class="${destaque ? 'text-gray-900 font-black' : 'text-gray-700 font-bold'} text-xs uppercase truncate">
-                            ${nome}
-                        </p>
-                        <p class="text-[8px] font-black uppercase ${sexo === 'M' ? 'text-blue-600' : sexo === 'F' ? 'text-pink-600' : 'text-gray-400'}">
-                            ${sexo === 'M' ? 'Masculino' : sexo === 'F' ? 'Feminino' : 'Sexo não informado'}
-                        </p>
-                    </div>
-                </div>
-                <div class="text-right shrink-0">
-                    <p class="text-sm font-black ${valorOculto || aguardandoAvaliacao ? 'text-gray-400 italic' : destaque ? 'text-[#990000]' : 'text-gray-700'}">
-                        ${score}
-                    </p>
-                    <p class="text-[8px] text-gray-400 font-black uppercase">
-                        Score
-                    </p>
-                </div>
-            </div>
-        `;
-    });
-
-    tabelaTecnicaHtml += `
-            </div>
-        </div>
-    `;
-
-    listDiv.innerHTML += tabelaTecnicaHtml;
-};
-        [
-            { titulo: "Masculino", lista: masc.slice(0, 20), cor: "border-blue-500" },
-{ titulo: "Feminino", lista: fem.slice(0, 20), cor: "border-pink-500" }
-        ].forEach(grupo => {
-            const corGrupo = grupo.titulo === "Masculino" ? "blue" : "pink";
-const iconeGrupo = grupo.titulo === "Masculino" ? "fa-mars" : "fa-venus";
-
-let html = `
-    <div class="bg-white p-4 rounded-2xl border shadow-sm overflow-hidden relative">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-                <div class="w-9 h-9 rounded-xl ${corGrupo === "blue" ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-pink-50 text-pink-700 border-pink-100"} border flex items-center justify-center">
-                    <i class="fa-solid ${iconeGrupo} text-sm"></i>
-                </div>
-
-                <div>
-                    <p class="text-[8px] font-black uppercase text-gray-400">
-                        Ranking
-                    </p>
-                    <h4 class="font-black text-xs uppercase ${corGrupo === "blue" ? "text-blue-700" : "text-pink-700"}">
-                        ${grupo.titulo}
-                    </h4>
-                </div>
-            </div>
-
-            <span class="bg-gray-50 border text-gray-500 text-[8px] font-black px-2 py-1 rounded-full uppercase">
-                Top ${grupo.lista.length}
-            </span>
-        </div>
-`;
-
-            if (grupo.lista.length === 0) {
-                html += `
-                    <p class="text-[10px] text-gray-400 font-semibold italic">
-                        Nenhum atleta encontrado.
-                    </p>
-                `;
-            }
-
-            grupo.lista.forEach((u, i) => {
-                const aguardandoAvaliacaoGrupo = tipoRanking === "tecnico" && u.aguardandoAvaliacao;
-                const valorOcultoGrupo = tipoRanking === "tecnico" && u.valorOcultoParaMim;
-                const destaque = i < 3 && !aguardandoAvaliacaoGrupo && !valorOcultoGrupo;
-                const valorRankingGrupo = aguardandoAvaliacaoGrupo ? "Aguardando" : (valorOcultoGrupo ? "Oculto" : u.qtd);
-
-const badgeHtml = destaque
-    ? `
-        <div class="relative w-10 h-10 rounded-xl bg-white border border-red-100 flex items-center justify-center shrink-0 overflow-hidden">
-            <img src="${projetoLogoRankingClaro}" class="w-7 h-7 object-contain">
-            <span class="absolute -top-1 -right-1 bg-[#990000] text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
-                ${i + 1}
-            </span>
-        </div>
-    `
-    : `
-        <div class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center shrink-0">
-            <span class="text-[10px] font-black text-gray-500">
-                ${i + 1}º
-            </span>
-        </div>
-    `;
-
-                html += `
-                    <div class="${destaque ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'} border rounded-xl p-3 mb-2 flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3 min-w-0">
-                            ${badgeHtml}
-                            <div class="min-w-0">
-                                <p class="${destaque ? 'text-gray-900 font-black' : 'text-gray-700 font-bold'} text-xs uppercase truncate">
-                                    ${u.nome || 'Sem nome'}
-                                </p>
-                                <p class="text-[8px] text-gray-400 font-black uppercase">
-                                    ${grupo.titulo}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-right shrink-0">
-                            <p class="text-sm font-black ${aguardandoAvaliacaoGrupo || valorOcultoGrupo ? 'text-gray-400 italic' : destaque ? 'text-[#990000]' : 'text-gray-700'}">
-                                ${valorRankingGrupo}
-                            </p>
-                            <p class="text-[8px] text-gray-400 font-black uppercase">
-                                ${textoPontuacao}
-                            </p>
-                        </div>
-                    </div>
-                `;
-            });
-
-
-            html += `</div>`;
-            listDiv.innerHTML += html;
-        });
-
-    } catch (e) {
-        console.error("Erro ao carregar ranking:", e);
-
-        const listDiv = document.getElementById('ranking-list');
-        if (listDiv) {
-            listDiv.innerHTML = `
-                <div class="col-span-2 bg-red-50 border border-red-200 p-4 rounded-xl text-center">
-                    <p class="text-xs font-bold text-red-700">
-                        Não foi possível carregar o ranking agora.
-                    </p>
-                </div>
-            `;
-        }
-    }
-    };
-
-const renderRanking = window.renderRanking;
+window.renderRanking = renderRankingDVCNovo;
+window.renderRankingDVCNovo = renderRankingDVCNovo;
 
 export {
     TIPOS_RANKING_DVC,
@@ -1272,5 +938,5 @@ export {
     prepararAtletasRankingDVC,
     aplicarDadosPresencaRankingDVC,
     renderRankingDVCNovo,
-    renderRanking
+    renderRankingDVCNovo as renderRanking
 };

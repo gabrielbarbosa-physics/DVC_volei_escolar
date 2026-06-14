@@ -168,7 +168,7 @@ function obterStatusVisualFinanceiroDVC(item = {}) {
             chave: "validado",
             texto: "Validado",
             peso: 50,
-            classe: "bg-green-50 text-green-800 border-green-200"
+            classe: "bg-green-50 dark:bg-green-955/20 text-green-700 dark:text-green-405 border border-green-200 dark:border-green-900/40 text-[9px] font-bold px-2.5 py-1 rounded-full"
         };
     }
 
@@ -177,7 +177,7 @@ function obterStatusVisualFinanceiroDVC(item = {}) {
             chave: "justificado",
             texto: "Justificado",
             peso: 40,
-            classe: "bg-blue-50 text-blue-800 border-blue-200"
+            classe: "bg-blue-50 dark:bg-blue-955/20 text-blue-700 dark:text-blue-405 border border-blue-200 dark:border-blue-900/40 text-[9px] font-bold px-2.5 py-1 rounded-full"
         };
     }
 
@@ -186,7 +186,7 @@ function obterStatusVisualFinanceiroDVC(item = {}) {
             chave: "analise",
             texto: "Em an&aacute;lise",
             peso: 30,
-            classe: "bg-yellow-50 text-yellow-800 border-yellow-200"
+            classe: "bg-yellow-50 dark:bg-yellow-955/20 text-yellow-700 dark:text-yellow-405 border border-yellow-200 dark:border-yellow-900/40 text-[9px] font-bold px-2.5 py-1 rounded-full"
         };
     }
 
@@ -195,7 +195,7 @@ function obterStatusVisualFinanceiroDVC(item = {}) {
             chave: "recusado",
             texto: "Recusado",
             peso: 10,
-            classe: "bg-red-50 text-red-800 border-red-200"
+            classe: "bg-red-50 dark:bg-red-955/20 text-red-700 dark:text-red-405 border border-red-200 dark:border-red-900/40 text-[9px] font-bold px-2.5 py-1 rounded-full"
         };
     }
 
@@ -204,7 +204,7 @@ function obterStatusVisualFinanceiroDVC(item = {}) {
             chave: "pendente",
             texto: "Pendente",
             peso: 20,
-            classe: "bg-red-50 text-red-800 border-red-200"
+            classe: "bg-red-50 dark:bg-red-955/20 text-red-700 dark:text-red-405 border border-red-200 dark:border-red-900/40 text-[9px] font-bold px-2.5 py-1 rounded-full"
         };
     }
 
@@ -212,7 +212,7 @@ function obterStatusVisualFinanceiroDVC(item = {}) {
         chave: "sem_registro",
         texto: "Sem registro",
         peso: 0,
-        classe: "bg-gray-50 text-gray-600 border-gray-200"
+        classe: "bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 text-[9px] font-bold px-2.5 py-1 rounded-full"
     };
 }
 
@@ -251,24 +251,22 @@ function obterAcaoRecomendadaFinanceiroDVC(statusTexto = "") {
 }
 
 function obterClasseBadgeHeroFinanceiroDVC(chave = "") {
-    if (chave === "validado") return "border-green-200 bg-green-50 text-green-800";
-    if (chave === "justificado") return "border-blue-200 bg-blue-50 text-blue-800";
-    if (chave === "analise") return "border-yellow-200 bg-yellow-50 text-yellow-800";
-    if (chave === "pendente" || chave === "recusado") return "border-red-200 bg-red-50 text-red-800";
+    if (chave === "validado") return "border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-955/20 text-green-700 dark:text-green-400 font-bold px-2.5 py-1 text-[9px] rounded-full border";
+    if (chave === "justificado") return "border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-955/20 text-blue-700 dark:text-blue-400 font-bold px-2.5 py-1 text-[9px] rounded-full border";
+    if (chave === "analise") return "border-yellow-200 dark:border-yellow-900/50 bg-yellow-50 dark:bg-yellow-955/20 text-yellow-700 dark:text-yellow-405 font-bold px-2.5 py-1 text-[9px] rounded-full border";
+    if (chave === "pendente" || chave === "recusado") return "border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-955/20 text-red-700 dark:text-red-405 font-bold px-2.5 py-1 text-[9px] rounded-full border";
 
-    return "border-white/20 bg-white text-gray-950";
+    return "border-white/20 bg-white/10 text-white font-bold px-2.5 py-1 text-[9px] rounded-full border";
 }
 
 function montarCabecalhoCardClaroFinanceiroDVC(chamada = "", titulo = "") {
     return `
-        <div class="mb-4 h-1 w-12 rounded-full bg-gradient-to-r from-gray-950 via-gray-900 to-[#990000]"></div>
-
         <div>
-            <p class="text-[9px] font-black uppercase tracking-wider text-gray-400">
+            <p class="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
                 ${chamada}
             </p>
 
-            <h2 class="mt-1 text-sm font-black uppercase text-gray-950">
+            <h2 class="mt-1 text-sm font-black uppercase text-gray-955 dark:text-gray-100">
                 ${titulo}
             </h2>
         </div>
@@ -284,10 +282,8 @@ function montarHeroContribuicaoFinanceiroDVC(envios = [], competenciaAtual = "",
     const labelValor = opcoes.labelValor || "CONTRIBUI&Ccedil;&Atilde;O SUGERIDA";
     const badgeClasse = obterClasseBadgeHeroFinanceiroDVC(situacao.chave);
 
-    // DVC UX FINANCEIRO - ETAPA 1: usa o hero como identidade principal da aba.
-    // DVC UX FINANCEIRO - ETAPA 1: incorpora a situacao mensal ao banner institucional.
     return `
-        <section id="finance-hero-contribuicao" class="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] p-5 text-white shadow-xl">
+        <section id="finance-hero-contribuicao" class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-950 via-[#4b0d0d] to-[#990000] p-6 text-white shadow-xl">
             <img
                 src="${logoContribuicaoDVC}"
                 alt=""
@@ -308,12 +304,12 @@ function montarHeroContribuicaoFinanceiroDVC(envios = [], competenciaAtual = "",
                         >
                     </div>
 
-                    <div class="min-w-0">
+                    <div class="min-w-0 text-left">
                         <p class="text-[9px] font-black uppercase tracking-wider text-white/60">
                             CORRESPONSABILIDADE
                         </p>
 
-                        <h1 class="mt-1 text-xl font-black uppercase leading-tight text-white">
+                        <h1 class="mt-1 text-xl font-black uppercase tracking-tight text-white leading-none">
                             CONTRIBUI&Ccedil;&Atilde;O DVC
                         </h1>
 
@@ -333,7 +329,7 @@ function montarHeroContribuicaoFinanceiroDVC(envios = [], competenciaAtual = "",
             </div>
 
             <div class="relative z-10 mt-4 flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-sm">
-                <div class="min-w-0">
+                <div class="min-w-0 text-left">
                     <p class="text-[9px] font-black uppercase tracking-wider text-white/60">
                         SITUA&Ccedil;&Atilde;O DO M&Ecirc;S
                     </p>
@@ -343,13 +339,13 @@ function montarHeroContribuicaoFinanceiroDVC(envios = [], competenciaAtual = "",
                     </p>
                 </div>
 
-                <span class="${badgeClasse} shrink-0 rounded-full border px-3 py-1 text-[9px] font-black uppercase">
+                <span class="${badgeClasse} shrink-0 uppercase">
                     ${situacao.texto}
                 </span>
             </div>
 
             <div class="relative z-10 mt-3 grid grid-cols-2 gap-3">
-                <div class="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-sm">
+                <div class="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-sm text-left">
                     <p class="text-[9px] font-black uppercase tracking-wider text-white/60">
                         COMPET&Ecirc;NCIA
                     </p>
@@ -375,18 +371,18 @@ function montarHeroContribuicaoFinanceiroDVC(envios = [], competenciaAtual = "",
                 data-dvc-label-fechado="ENTENDA COMO FUNCIONA"
                 data-dvc-label-aberto="FECHAR INFORMA&Ccedil;&Otilde;ES"
             >
-                <summary class="list-none cursor-pointer">
-                    <span class="block w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase text-white backdrop-blur-sm transition active:scale-[0.98]">
+                <summary class="list-none cursor-pointer flex justify-center">
+                    <span class="bg-white/10 hover:bg-white/20 text-white rounded-full text-[10px] py-1.5 px-4 font-bold transition active:scale-[0.98] inline-block">
                         <span data-dvc-details-label>ENTENDA COMO FUNCIONA</span>
                     </span>
                 </summary>
 
                 <div class="mt-4 space-y-3 border-t border-white/10 pt-4">
-                    <p class="text-[10px] font-semibold leading-relaxed text-white/75">
+                    <p class="text-[10px] font-semibold leading-relaxed text-white/75 text-left">
                         A contribui&ccedil;&atilde;o &eacute; uma forma de corresponsabilidade para manter o DVC organizado, acess&iacute;vel e constante.
                     </p>
 
-                    <div class="rounded-xl border border-white/10 bg-white/10 p-3">
+                    <div class="rounded-xl border border-white/10 bg-white/10 p-3 text-left">
                         <p class="text-[9px] font-black uppercase text-white">
                             AVISO IMPORTANTE
                         </p>
@@ -422,8 +418,8 @@ function montarCardSituacaoMesFinanceiroDVC(envios = [], competenciaAtual = "") 
 function montarEnviosAgrupadosFinanceiroDVC(envios = []) {
     if (envios.length === 0) {
         return `
-            <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-center">
-                <p class="text-[10px] font-bold uppercase text-gray-400">
+            <div class="rounded-xl border border-dashed border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 p-4 text-center">
+                <p class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">
                     Nenhum envio registrado ainda.
                 </p>
             </div>
@@ -437,12 +433,11 @@ function montarEnviosAgrupadosFinanceiroDVC(envios = []) {
         return acc;
     }, {});
 
-    // DVC UX FINANCEIRO - ETAPA 2: compacta o historico sem alterar documentos.
     return Object.entries(grupos)
         .sort(([mesA], [mesB]) => valorMesAnoSeguroFinanceiroDVC(mesB) - valorMesAnoSeguroFinanceiroDVC(mesA))
         .map(([mes, itens], index) => {
             const mesSeguro = escaparHtmlFinanceiroDVC(corrigirTextoFinanceiroDVC(mes)).toUpperCase();
-            const totalTexto = itens.length === 1 ? "1 registro" : `${itens.length} registros`;
+            const totalTextoBadge = itens.length === 1 ? "1 envio" : `${itens.length} envios`;
             const linhas = itens
                 .sort((a, b) => new Date(b.enviadoEm || 0) - new Date(a.enviadoEm || 0))
                 .map(item => {
@@ -453,36 +448,35 @@ function montarEnviosAgrupadosFinanceiroDVC(envios = []) {
                         : "Sem data";
 
                     return `
-                        <div class="flex items-start justify-between gap-3 border-t border-gray-100 bg-white px-4 py-3">
-                            <div class="min-w-0">
-                                <p class="text-[10px] font-black uppercase text-gray-800">
+                        <div class="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-2.5 text-gray-900 dark:text-gray-100">
+                            <div class="min-w-0 text-left">
+                                <p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 leading-none">
                                     ${tipo}
                                 </p>
 
-                                <p class="mt-1 text-[9px] font-semibold uppercase text-gray-400">
+                                <p class="mt-1 text-[8px] font-bold uppercase text-gray-400 dark:text-gray-550 leading-none">
                                     ${escaparHtmlFinanceiroDVC(dataEnvio)}
                                 </p>
                             </div>
 
-                            <span class="${status.classe} shrink-0 rounded-full border px-2 py-1 text-[8px] font-black uppercase">
+                            <span class="${status.classe} shrink-0">
                                 ${status.texto}
                             </span>
                         </div>
                     `;
                 }).join("");
 
-            const totalTextoBadge = itens.length === 1 ? "1 envio" : `${itens.length} envios`;
-
             return `
-                <details class="group overflow-hidden rounded-2xl border border-gray-200 bg-gray-50" ${index === 0 ? "open" : ""}>
-                    <summary class="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-[10px] font-black uppercase text-gray-800">
+                <details class="group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+                    <summary class="relative flex cursor-pointer items-center justify-between gap-3 text-[10px] font-black uppercase text-gray-800 dark:text-gray-200" style="padding: 16px 16px 12px 16px;">
+                        <div class="absolute top-0 left-0 right-0 h-[4px] z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000]" style="height: 4px;"></div>
                         <span>${mesSeguro}</span>
-                        <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[9px] font-black uppercase text-gray-500">
+                        <span class="shrink-0 rounded-full bg-white dark:bg-gray-900 px-2.5 py-1 text-[9px] font-black uppercase text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800">
                             ${totalTextoBadge}
                         </span>
                     </summary>
 
-                    <div class="border-t border-gray-100 bg-white">
+                    <div class="border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
                         <div class="h-1 w-12 bg-red-700"></div>
                         ${linhas}
                     </div>
@@ -495,12 +489,12 @@ function montarAvisoCarenciaCadastroFinanceiroDVC(dadosCarenciaCadastro = {}) {
     if (!dadosCarenciaCadastro.ativa) return "";
 
     return `
-        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <p class="text-[9px] font-black uppercase text-amber-700">
+        <div class="rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-955/20 p-4">
+            <p class="text-[9px] font-black uppercase text-amber-700 dark:text-amber-400">
                 Car&ecirc;ncia de cadastro ativa
             </p>
 
-            <p class="mt-2 text-[10px] font-semibold leading-relaxed text-amber-900">
+            <p class="mt-2 text-[10px] font-semibold leading-relaxed text-amber-900 dark:text-amber-300">
                 Como seu cadastro foi feito no fim do m&ecirc;s, voc&ecirc; pode participar normalmente at&eacute; ${escaparHtmlFinanceiroDVC(dadosCarenciaCadastro.label)}. O envio da contribui&ccedil;&atilde;o abre no pr&oacute;ximo m&ecirc;s e segue o prazo mensal.
             </p>
         </div>
@@ -508,128 +502,127 @@ function montarAvisoCarenciaCadastroFinanceiroDVC(dadosCarenciaCadastro = {}) {
 }
 
 function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaCadastroHtml = "") {
-    // DVC UX FINANCEIRO - ETAPA 2: transforma o PIX em painel auxiliar compacto.
-    // DVC UX FINANCEIRO - ETAPA 2: mantem o envio como principal acao da tela.
     return `
-        <div class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div class="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 pb-5 pt-7 shadow-sm text-gray-900 dark:text-gray-100" style="padding: 28px 20px 20px 20px;">
+            <div class="absolute top-0 left-0 right-0 h-[4px] z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000]" style="height: 4px;"></div>
             ${montarCabecalhoCardClaroFinanceiroDVC("PAGAMENTO E COMPROVA&Ccedil;&Atilde;O", "CONTRIBUI&Ccedil;&Atilde;O DO M&Ecirc;S")}
 
             ${avisoCarenciaCadastroHtml ? `<div class="mt-4">${avisoCarenciaCadastroHtml}</div>` : ""}
 
             <div class="mt-4 space-y-5">
                 <section>
-                    <div class="rounded-2xl border border-red-100 bg-gradient-to-br from-gray-50 to-red-200 p-4">
-                        <div>
-                            <p class="text-[9px] font-black uppercase tracking-wider text-red-700">
-                                ETAPA 01
-                            </p>
-
-                            <h3 class="mt-1 text-[13px] font-black text-gray-950">
-                                Copiar chave PIX
-                            </h3>
-                        </div>
-
-                        <div class="mt-4 grid grid-cols-1 gap-3">
-                            <div class="rounded-xl border border-red-100 bg-white p-3 shadow-sm">
-                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400">
-                                    CHAVE PIX &mdash; E-MAIL
+                    <div class="relative overflow-hidden bg-white dark:bg-gray-950 rounded-2xl px-5 pb-5 pt-7 border border-gray-100 dark:border-gray-850 shadow-sm text-left space-y-4" style="padding: 28px 20px 20px 20px;">
+                        <div class="absolute top-0 left-0 right-0 h-[4px] z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000]" style="height: 4px;"></div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[9px] font-black uppercase tracking-wider text-[#990000] dark:text-red-400">
+                                    ETAPA 01
                                 </p>
 
-                                <div class="mt-2 flex flex-col items-start gap-3">
-                                    <p class="min-w-0 break-all text-[12px] font-black leading-snug text-gray-950">
-                                        ${CHAVE_PIX_DVC}
-                                    </p>
-
-                                    <button
-                                        type="button"
-                                        onclick="copiarChavePixDVC()"
-                                        class="shrink-0 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase text-red-800 shadow-sm transition active:scale-95"
-                                    >
-                                        COPIAR CHAVE
-                                    </button>
-                                </div>
+                                <h3 class="mt-1 text-[13px] font-black text-gray-955 dark:text-gray-100">
+                                    Copiar chave PIX
+                                </h3>
                             </div>
-
-                            <div class="rounded-xl border border-red-100 bg-white p-3 shadow-sm">
-                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400">
+                            <div class="text-right">
+                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
                                     VALOR SUGERIDO
                                 </p>
-
-                                <p class="mt-1 text-lg font-black text-gray-950">
+                                <p class="text-base font-black text-gray-955 dark:text-gray-100 mt-0.5">
                                     ${VALOR_SUGERIDO_CONTRIBUICAO_DVC}
                                 </p>
                             </div>
                         </div>
+
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
+                                    CHAVE PIX &mdash; E-MAIL
+                                </p>
+
+                                <span class="bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-mono text-center p-4 rounded-xl border border-gray-200 dark:border-gray-800 block break-all text-[11px] font-bold">
+                                    ${CHAVE_PIX_DVC}
+                                </span>
+                            </div>
+
+                            <button
+                                type="button"
+                                onclick="copiarChavePixDVC()"
+                                class="w-full bg-[#990000] hover:bg-red-800 text-white font-black uppercase text-[10px] py-3 rounded-2xl shadow-md transition-all active:scale-95"
+                            >
+                                COPIAR CHAVE
+                            </button>
+                        </div>
                     </div>
                 </section>
 
-                <div class="border-t border-gray-100"></div>
-
                 <section>
-                    <div>
-                        <p class="text-[9px] font-black uppercase tracking-wider text-red-700">
-                            ETAPA 02
-                        </p>
+                    <div class="relative overflow-hidden bg-white dark:bg-gray-955 rounded-2xl px-5 pb-5 pt-7 border border-gray-100 dark:border-gray-850 shadow-sm text-left space-y-4" style="padding: 28px 20px 20px 20px;">
+                        <div class="absolute top-0 left-0 right-0 h-[4px] z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000]" style="height: 4px;"></div>
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-wider text-[#990000] dark:text-red-400">
+                                ETAPA 02
+                            </p>
 
-                        <h3 class="mt-1 text-[13px] font-black text-gray-950">
-                            Enviar comprovante
-                        </h3>
+                            <h3 class="mt-1 text-[13px] font-black text-gray-955 dark:text-gray-100">
+                                Enviar comprovante
+                            </h3>
 
-                        <p class="mt-1 text-[11px] font-medium leading-relaxed text-gray-500">
-                            Selecione a compet&ecirc;ncia e envie uma imagem do comprovante.
-                        </p>
-                    </div>
+                            <p class="mt-1 text-[11px] font-medium leading-relaxed text-gray-500 dark:text-gray-405">
+                                Selecione a compet&ecirc;ncia e envie uma imagem do comprovante.
+                            </p>
+                        </div>
 
-                    <select id="f-mes" class="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-[12px] font-bold text-gray-900 outline-none ring-1 ring-red-100 transition focus:border-[#990000]">
-                        ${optionsHtml}
-                    </select>
+                        <select id="f-mes" class="h-12 w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-4 text-[12px] font-bold text-gray-900 dark:text-gray-100 outline-none ring-1 ring-red-100/30 transition focus:border-[#990000] dark:focus:border-red-650">
+                            ${optionsHtml}
+                        </select>
 
-                    <!-- DVC UX FINANCEIRO - ETAPA 2: integra o input original ao novo componente de upload. -->
-                    <div class="mt-3 rounded-2xl border border-dashed border-red-200 bg-gradient-to-br from-gray-50 to-red-200 p-5 text-center">
-                        <p class="text-[10px] font-black uppercase text-red-800">
-                            ANEXAR COMPROVANTE
-                        </p>
+                        <div class="space-y-3">
+                            <label for="f-file" class="bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-850/50 transition-all block">
+                                <i class="fa-solid fa-cloud-arrow-up text-gray-400 dark:text-gray-500 text-2xl mb-2"></i>
+                                <p class="text-[10px] font-black uppercase text-gray-700 dark:text-gray-300">
+                                    ANEXAR COMPROVANTE
+                                </p>
 
-                        <p class="mt-1 text-[11px] font-semibold leading-relaxed text-gray-500">
-                            Selecione uma imagem do pagamento.
-                        </p>
+                                <p class="mt-1 text-[11px] font-semibold leading-relaxed text-gray-500 dark:text-gray-405">
+                                    Selecione uma imagem do pagamento.
+                                </p>
 
-                        <label
-                            for="f-file"
-                            class="mt-3 inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-[10px] font-black uppercase text-gray-700 shadow-sm transition active:scale-95"
+                                <span class="mt-3 inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-850 bg-white dark:bg-gray-950 px-5 py-2.5 text-[10px] font-black uppercase text-gray-700 dark:text-gray-300 shadow-sm transition active:scale-95">
+                                    SELECIONAR IMAGEM
+                                </span>
+                            </label>
+
+                            <input
+                                type="file"
+                                id="f-file"
+                                accept="image/*"
+                                class="sr-only"
+                            >
+
+                            <p id="f-file-nome" class="break-all text-[10px] font-semibold text-gray-500 dark:text-gray-450 text-center">
+                                Nenhum arquivo selecionado
+                            </p>
+
+                            <p class="text-[9px] font-semibold text-gray-400 dark:text-gray-500 text-center">
+                                M&aacute;ximo 800 KB. Prefira tirar um print do comprovante.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            id="btn-enviar-comprovante"
+                            onclick="enviarComprovante()"
+                            class="w-full bg-[#990000] hover:bg-red-800 text-white font-black uppercase text-[11px] py-3.5 rounded-2xl shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            SELECIONAR IMAGEM
-                        </label>
-
-                        <input
-                            type="file"
-                            id="f-file"
-                            accept="image/*"
-                            class="sr-only"
-                        >
-
-                        <p id="f-file-nome" class="mt-3 break-all text-[10px] font-semibold text-gray-500">
-                            Nenhum arquivo selecionado
-                        </p>
-
-                        <p class="mt-2 text-[9px] font-semibold text-gray-400">
-                            M&aacute;ximo 800 KB. Prefira tirar um print do comprovante.
-                        </p>
-                    </div>
-
-                    <button
-                        type="button"
-                        id="btn-enviar-comprovante"
-                        onclick="enviarComprovante()"
-                        class="mt-3 h-12 w-full rounded-xl bg-red-700 px-4 py-3 text-[11px] font-black uppercase text-white shadow-lg shadow-red-900/10 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        ENVIAR COMPROVANTE
-                    </button>
-                    
-                    <div class="mt-4 rounded-xl border border-amber-200 bg-gradient-to-r from-gray-50 to-red-200 px-4 py-3">
-                        <p class="text-[11px] font-semibold leading-relaxed text-amber-900">
-                            Ap&oacute;s o envio, o comprovante ser&aacute; analisado pela equipe respons&aacute;vel.
-                        </p>
+                            ENVIAR COMPROVANTE
+                        </button>
+                        
+                        <div class="rounded-xl border border-[#990000] bg-gray-950 px-4 py-3">
+                            <p class="text-[11px] font-semibold leading-relaxed text-white">
+                                <span class="text-red-500 font-black uppercase text-[9px] block mb-1">Informa&ccedil;&atilde;o</span>
+                                Ap&oacute;s o envio, o comprovante ser&aacute; analisado pela equipe respons&aacute;vel.
+                            </p>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -641,29 +634,30 @@ function montarCardJustificativaFinanceiroDVC() {
     // DVC UX FINANCEIRO - ETAPA 2: apresenta a justificativa como recurso de apoio.
     return `
         <details
-            class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+            class="group overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm text-gray-900 dark:text-gray-100"
             data-dvc-label-fechado="ABRIR FORMUL&Aacute;RIO"
             data-dvc-label-aberto="FECHAR FORMUL&Aacute;RIO"
         >
-            <summary class="list-none cursor-pointer">
+            <summary class="relative list-none cursor-pointer text-left font-bold" style="padding: 28px 20px 20px 20px;">
+                <div class="absolute top-0 left-0 right-0 h-[4px] z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000]" style="height: 4px;"></div>
                 ${montarCabecalhoCardClaroFinanceiroDVC("APOIO AO PARTICIPANTE", "PRECISA DE APOIO NESTE M&Ecirc;S?")}
 
-                <p class="mt-3 text-[11px] font-semibold leading-relaxed text-gray-500">
+                <p class="mt-3 text-[11px] font-semibold leading-relaxed text-gray-500 dark:text-gray-400">
                     Envie uma justificativa para an&aacute;lise da equipe respons&aacute;vel.
                 </p>
 
-                <span class="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-[10px] font-black uppercase text-red-800 transition active:scale-95">
+                <span class="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-red-200 dark:border-red-950 bg-white dark:bg-gray-950 px-4 py-3 text-[10px] font-black uppercase text-red-800 dark:text-red-400 transition active:scale-95 shadow-sm">
                     <span data-dvc-details-label>ABRIR FORMUL&Aacute;RIO</span>
                 </span>
             </summary>
 
-            <div class="mt-4 border-t border-gray-100 pt-4">
-                <textarea id="f-just-texto" placeholder="Descreva aqui o motivo..." class="h-24 w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 outline-none ring-1 ring-red-100 transition focus:border-[#990000]"></textarea>
+            <div class="border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 pb-5 pt-4">
+                <textarea id="f-just-texto" placeholder="Descreva aqui o motivo..." class="h-24 w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 p-3 text-xs text-gray-850 dark:text-gray-200 outline-none ring-1 ring-red-100/30 transition focus:border-[#990000] dark:focus:border-red-600"></textarea>
 
                 <button
                     type="button"
                     onclick="enviarJustificativa()"
-                    class="mt-3 w-full rounded-xl bg-gray-800 px-4 py-3 text-[10px] font-black uppercase text-white shadow-sm transition active:scale-95"
+                    class="mt-3 w-full rounded-xl bg-gray-800 dark:bg-gray-950 border border-gray-700/50 dark:border-gray-800 px-4 py-3 text-[10px] font-black uppercase text-white shadow-sm transition active:scale-95 hover:bg-gray-900 transition-colors"
                 >
                     ENVIAR JUSTIFICATIVA
                 </button>
@@ -781,10 +775,11 @@ async function renderFinanceiro() {
                     labelValor: "CONTRIBUI&Ccedil;&Atilde;O MENSAL"
                 })}
 
-                <div class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 pb-5 pt-7 shadow-sm text-gray-900 dark:text-gray-100" style="padding: 28px 20px 20px 20px;">
+                    <div class="absolute top-0 left-0 right-0 h-[4px] z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000]" style="height: 4px;"></div>
                     ${montarCabecalhoCardClaroFinanceiroDVC("PAGAMENTO E COMPROVA&Ccedil;&Atilde;O", "CONTRIBUI&Ccedil;&Atilde;O DO M&Ecirc;S")}
 
-                    <p class="mt-3 text-[10px] font-semibold leading-relaxed text-gray-500">
+                    <p class="mt-3 text-[10px] font-semibold leading-relaxed text-gray-500 dark:text-gray-400">
                         Obrigado por contribuir na organiza&ccedil;&atilde;o dos treinos, chamadas e avalia&ccedil;&otilde;es t&eacute;cnicas do clube.
                     </p>
                 </div>
@@ -804,12 +799,13 @@ async function renderFinanceiro() {
 
             ${montarCardContribuicaoMesFinanceiroDVC(optionsHtml, avisoCarenciaCadastroHtml)}
 
-            <div class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 pb-5 pt-7 shadow-sm text-gray-900 dark:text-gray-100" style="padding: 28px 20px 20px 20px;">
+                <div class="absolute top-0 left-0 right-0 h-[4px] z-10 bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000]" style="height: 4px;"></div>
                 ${montarCabecalhoCardClaroFinanceiroDVC("HIST&Oacute;RICO FINANCEIRO", "SEUS ENVIOS")}
 
                 <div id="finance-status-list" class="mt-4 space-y-2">
-                    <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-center">
-                        <p class="text-[10px] font-bold uppercase text-gray-400">
+                    <div class="rounded-xl border border-dashed border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-955 p-4 text-center">
+                        <p class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">
                             Carregando envios...
                         </p>
                     </div>
@@ -1893,6 +1889,8 @@ async function enviarCarenciaEspecial(mes, textoJustificativaOriginal) {
         await salvarContribuicaoGlobal(auth.currentUser.email, docId, dadosCarencia);
         await updateDoc(doc(db, "users", auth.currentUser.email), {
             justificativasEnviadas: arrayUnion(mes),
+            financeiro: "Em carência",
+            carenciaStatus: "Em análise",
             carenciaEspecialSolicitada: true,
             ultimaCarenciaEspecial: new Date().toISOString()
         });
@@ -1938,9 +1936,9 @@ async function aceitarCarenciaEspecial(email, docId, btn) {
         const mesFinanceiroCarencia = window.converterMesParaChave(mesReferenciaCarencia);
 
         await updateDoc(doc(db, "users", email), {
-            status: "Ativo",
             financeiro: "Justificado",
-            mesFinanceiro: mesFinanceiroCarencia
+            carenciaStatus: "Aceita",
+            carenciaEspecialSolicitada: false
         });
 
         window.limparCacheDados("financeiro"); window.limparCacheContribuicoesAtleta();
@@ -1981,7 +1979,9 @@ async function recusarCarenciaEspecial(email, docId, btn) {
         });
 
         await updateDoc(doc(db, "users", email), {
-            financeiro: "Inadimplente"
+            financeiro: "Inadimplente",
+            carenciaStatus: "Recusada",
+            carenciaEspecialSolicitada: false
         });
 
         window.limparCacheDados("financeiro"); window.limparCacheContribuicoesAtleta();

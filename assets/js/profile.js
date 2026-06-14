@@ -20,9 +20,10 @@ import {
     updateDoc, 
     collection, 
     getDocs, 
-    addDoc 
+    addDoc,
+    writeBatch
 } from "./firebase.js";
-import { formatarDataSeguraDVC, obterTimestampDataSeguraDVC } from "./utils.js";
+import { formatarDataSeguraDVC, obterTimestampDataSeguraDVC, escaparHtml } from "./utils.js";
 
 // Safe getters for window-scoped variables
 const get_modoTestePerfilEmail = () => window.modoTestePerfilEmail;
@@ -173,16 +174,16 @@ async function obterMediaPorCategoria(categoria) {
 // Helper: classeBotaoSubAbaPerfil
 function classeBotaoSubAbaPerfil(aba) {
     return window.subAbaPerfilAtiva === aba
-        ? "bg-white text-[#990000] shadow-sm ring-1 ring-red-100"
-        : "text-gray-400 hover:text-gray-700";
+        ? "bg-white dark:bg-gray-800 text-[#990000] dark:text-red-400 shadow-sm ring-1 ring-red-100 dark:ring-gray-700"
+        : "text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
 }
 
 // 2. mudarSubAbaPerfil
 async function mudarSubAbaPerfil(aba) {
     const inicio = perfInicioPerfilDVC();
-    window.subAbaPerfilAtiva = ["habilidades", "financeiro", "presenca"].includes(aba) ? aba : "habilidades";
+    window.subAbaPerfilAtiva = ["habilidades", "conta", "presenca"].includes(aba) ? aba : "habilidades";
 
-    ["habilidades", "financeiro", "presenca"].forEach(nomeAba => {
+    ["habilidades", "conta", "presenca"].forEach(nomeAba => {
         const secao = document.getElementById(`sub-secao-${nomeAba}`);
         const botao = document.getElementById(`btn-subaba-perfil-${nomeAba}`);
 
@@ -233,17 +234,17 @@ async function abrirMicroModalFinanceiroPerfilDVC(email) {
 
     const modalHtml = corrigirHtmlVisualPerfilDVC(`
         <div id="m-financeiro-micro-dvc" class="fixed inset-0 bg-black/70 z-[110] p-4 flex items-center justify-center fade-in">
-            <div class="bg-white w-full max-w-xs rounded-2xl p-5 relative shadow-2xl">
+            <div class="bg-white dark:bg-gray-900 border dark:border-gray-800 w-full max-w-xs rounded-2xl p-5 relative shadow-2xl">
                 <button 
                     onclick="document.getElementById('m-financeiro-micro-dvc').remove()" 
                     class="absolute top-4 right-4 text-gray-400 hover:text-red-600 font-black text-lg">
                     &times;
                 </button>
-                <h3 class="font-bold text-xs uppercase mb-3 text-[#990000] flex items-center gap-1.5">
+                <h3 class="font-bold text-xs uppercase mb-3 text-[#990000] dark:text-red-400 flex items-center gap-1.5">
                     <i class="fa-solid fa-file-invoice-dollar"></i> Resumo Financeiro
                 </h3>
                 <div id="micro-financeiro-conteudo" class="space-y-2 max-h-[300px] overflow-y-auto custom-scroll pr-1">
-                    <p class="text-[9px] font-bold text-gray-400 uppercase text-center py-4">Carregando...</p>
+                    <p class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase text-center py-4">Carregando...</p>
                 </div>
             </div>
         </div>
@@ -258,8 +259,8 @@ async function abrirMicroModalFinanceiroPerfilDVC(email) {
 
         if (!registros.length) {
             container.innerHTML = corrigirHtmlVisualPerfilDVC(`
-                <div class="bg-gray-50 border border-dashed rounded-xl p-3 text-center">
-                    <p class="text-[9px] text-gray-400 font-bold uppercase">Nenhum envio registrado.</p>
+                <div class="bg-gray-50 dark:bg-gray-950 border border-dashed dark:border-gray-800 rounded-xl p-3 text-center">
+                    <p class="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase">Nenhum envio registrado.</p>
                 </div>`);
             return;
         }
@@ -268,10 +269,10 @@ async function abrirMicroModalFinanceiroPerfilDVC(email) {
             const status = item.status || "Pendente";
             const tipo = item.tipo || "Comprovante";
             const cor = status === "Validado" || item.resultadoFinanceiro === "Pago"
-                ? "bg-green-50 border-green-200 text-green-700"
+                ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/40 text-green-700 dark:text-green-400"
                 : status === "Justificado" || item.resultadoFinanceiro === "Justificado"
-                    ? "bg-blue-50 border-blue-200 text-blue-700"
-                    : "bg-yellow-50 border-yellow-200 text-yellow-700";
+                    ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/40 text-blue-700 dark:text-blue-400"
+                    : "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900/40 text-yellow-700 dark:text-yellow-400";
 
             return `
                 <div class="${cor} border rounded-lg p-2.5 flex justify-between items-center text-[10px] text-left">
@@ -279,7 +280,7 @@ async function abrirMicroModalFinanceiroPerfilDVC(email) {
                         <p class="font-black uppercase">${item.mes || "Sem mÃªs"}</p>
                         <p class="text-[8px] font-semibold opacity-70 mt-0.5">${tipo}</p>
                     </div>
-                    <span class="bg-white/90 border text-[8px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 inline-flex items-center gap-1">
+                    <span class="bg-white/90 dark:bg-gray-800/90 border dark:border-gray-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 inline-flex items-center gap-1 dark:text-gray-200">
                         ${renderIconeLocalDVC(getIconeFinanceiroPerfilDVC(status), status, "w-3 h-3")}
                         ${status}
                     </span>
@@ -448,25 +449,25 @@ async function renderProfile() {
         // Financial status
         const financeiroPerfilStatus = window.obterStatusFinanceiroEfetivo(userData);
         const financeiroPerfilCor = financeiroPerfilStatus === "Em dia"
-            ? "bg-green-100 text-green-700 border-green-200"
+            ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50"
             : financeiroPerfilStatus === "Justificado"
-                ? "bg-blue-100 text-blue-700 border-blue-200"
+                ? "bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50"
                 : financeiroPerfilStatus === STATUS_FINANCEIRO_CARENCIA
-                    ? "bg-amber-100 text-amber-700 border-amber-200"
-                    : "bg-red-100 text-red-700 border-red-200";
+                    ? "bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50"
+                    : "bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50";
 
         let financeiroPerfilHtml = "";
 
         try {
             financeiroPerfilHtml = `
-                <div class="bg-white p-4 rounded-xl border mb-4 shadow-sm text-left">
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border dark:border-gray-800 mb-4 shadow-sm text-left">
                     <div class="flex justify-between items-start gap-3 mb-3">
                         <div>
-                            <p class="text-[10px] font-black text-[#990000] uppercase">
-                                <i class="fa-solid fa-file-invoice-dollar mr-1"></i> SituaÃ§Ã£o Financeira
+                            <p class="text-[10px] font-black text-[#990000] dark:text-red-400 uppercase">
+                                <i class="fa-solid fa-file-invoice-dollar mr-1"></i> Situação Financeira
                             </p>
-                            <p class="text-[9px] font-bold text-gray-400 uppercase mt-1">
-                                ContribuiÃ§Ãµes e justificativas
+                            <p class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase mt-1">
+                                Contribuições e justificativas
                             </p>
                         </div>
                         <span class="${financeiroPerfilCor} border text-[8px] font-black px-2 py-1 rounded-full uppercase shrink-0">
@@ -474,23 +475,23 @@ async function renderProfile() {
                         </span>
                     </div>
 
-                    <div class="bg-gray-50 border rounded-xl p-3 mb-3">
-                        <p class="text-[8px] font-black text-gray-400 uppercase">
-                            Ãšltima regularizaÃ§Ã£o
+                    <div class="bg-gray-50 dark:bg-gray-950 border dark:border-gray-800 rounded-xl p-3 mb-3">
+                        <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
+                            Última regularização
                         </p>
-                        <p class="text-xs font-black text-gray-800 uppercase mt-1">
+                        <p class="text-xs font-black text-gray-800 dark:text-gray-200 uppercase mt-1">
                             ${userData.mesFinanceiro || "Sem registro"}
                         </p>
                     </div>
 
-                    <details class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden mt-4">
+                    <details class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden mt-4">
                         <summary class="cursor-pointer list-none p-3.5 flex items-center justify-between gap-3 select-none">
-                            <span class="text-[10px] font-black uppercase text-gray-700">HistÃ³rico de ContribuiÃ§Ãµes</span>
-                            <i class="fa-solid fa-chevron-down text-gray-300 text-xs shrink-0"></i>
+                            <span class="text-[10px] font-black uppercase text-gray-700 dark:text-gray-300">Histórico de Contribuições</span>
+                            <i class="fa-solid fa-chevron-down text-gray-300 dark:text-gray-500 text-xs shrink-0"></i>
                         </summary>
                         <div id="dvc-historico-financeiro-container-${emailPerfil.replace(/[@.]/g, '')}" class="px-4 pb-4 mt-2">
-                            <button onclick="carregarEExibirRegistrosFinanceirosDVC('${emailPerfil}', this)" class="w-full bg-blue-50 text-blue-700 border border-blue-200 rounded-xl p-3 text-xs font-black uppercase shadow-sm transition active:bg-blue-100">
-                                <i class="fa-solid fa-download mr-1"></i> Carregar HistÃ³rico Detalhado
+                            <button onclick="carregarEExibirRegistrosFinanceirosDVC('${emailPerfil}', this)" class="w-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/40 rounded-xl p-3 text-xs font-black uppercase shadow-sm transition active:bg-blue-100">
+                                <i class="fa-solid fa-download mr-1"></i> Carregar Histórico Detalhado
                             </button>
                         </div>
                     </details>
@@ -518,29 +519,29 @@ async function renderProfile() {
             ? await window.renderAvaliacaoMensalEquipeDVC("perfil", avaliacaoEquipePendentePerfil)
             : "";
         const avaliacaoMensalEquipeCardPerfilHtml = window.usuarioEhADM() ? avaliacaoMensalEquipePerfilHtml : (avaliacaoEquipePendentePerfil ? (avaliacaoMensalEquipePerfilHtml || `
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-left flex flex-col justify-between">
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border dark:border-gray-800 shadow-sm text-left flex flex-col justify-between">
                 <div>
-                    <p class="text-[10px] font-black text-gray-700 uppercase mb-2">
-                        <i class="fa-solid fa-comments mr-1"></i> AvaliaÃ§Ã£o da equipe tÃ©cnica
+                    <p class="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase mb-2">
+                        <i class="fa-solid fa-comments mr-1"></i> Avaliação da equipe técnica
                     </p>
-                    <p class="text-[10px] text-gray-500 font-semibold leading-relaxed mb-3">
-                        Avalie treinador/equipe tÃ©cnica para ajudar a melhorar os treinos e o projeto.
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed mb-3">
+                        Avalie treinador/equipe técnica para ajudar a melhorar os treinos and o projeto.
                     </p>
                 </div>
                 <button onclick="abrirModalAvaliacaoEquipeTecnica()" class="w-full bg-[#990000] text-white py-3 rounded-lg font-black text-[10px] uppercase shadow-md mt-auto">
-                    Avaliar treinador/equipe tÃ©cnica
+                    Avaliar treinador/equipe técnica
                 </button>
             </div>
         `) : "");
 
         const avaliacaoColegasPerfilHtml = avaliacaoColegaPendentePerfil ? `
-            <div class="bg-white p-4 rounded-xl border shadow-sm text-left flex flex-col justify-between">
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border dark:border-gray-800 shadow-sm text-left flex flex-col justify-between">
                 <div>
-                    <p class="text-[10px] font-black text-gray-700 uppercase mb-2">
-                        <i class="fa-solid fa-users-viewfinder mr-1"></i> AvaliaÃ§Ã£o entre colegas
+                    <p class="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase mb-2">
+                        <i class="fa-solid fa-users-viewfinder mr-1"></i> Avaliação entre colegas
                     </p>
-                    <p class="text-[10px] text-gray-500 font-semibold leading-relaxed mb-3">
-                        Avalie colegas em resiliÃªncia, comunicaÃ§Ã£o em quadra e trabalho em equipe.
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed mb-3">
+                        Avalie colegas em resiliência, comunicação em quadra e trabalho em equipe.
                     </p>
                 </div>
                 <button onclick="abrirAvaliacaoColegas()" class="w-full bg-indigo-700 text-white py-3 rounded-lg font-black text-[10px] uppercase shadow-md mt-auto">
@@ -567,12 +568,12 @@ async function renderProfile() {
             `;
         } else {
             conteudoAvaliacoes = `
-                <div class="bg-green-50 border border-green-100 rounded-2xl p-4 text-center">
-                    <p class="text-[10px] text-green-700 font-black uppercase flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-circle-check text-xs"></i> AvaliaÃ§Ãµes concluÃ­das
+                <div class="bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30 rounded-2xl p-4 text-center">
+                    <p class="text-[10px] text-green-700 dark:text-green-400 font-black uppercase flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-circle-check text-xs"></i> Avaliações concluídas
                     </p>
-                    <p class="text-[9px] text-gray-500 font-semibold mt-1">
-                        AvaliaÃ§Ãµes mensais concluÃ­das. Obrigado por contribuir com o desenvolvimento do projeto.
+                    <p class="text-[9px] text-gray-500 dark:text-gray-400 font-semibold mt-1">
+                        Avaliações mensais concluídas. Obrigado por contribuir com o desenvolvimento do projeto.
                     </p>
                 </div>
             `;
@@ -592,29 +593,95 @@ async function renderProfile() {
         // Privacy controls
         const scoreTecnicoPublico = userData.scoreTecnicoPublico !== false;
         const scorePrivacidadeHtml = corrigirHtmlVisualPerfilDVC(`
-            <div class="bg-white p-4 rounded-xl border mb-4 shadow-sm text-left">
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border dark:border-gray-800 mb-4 shadow-sm text-left">
                 <div class="flex items-center justify-between mb-2">
-                    <p class="text-[10px] font-black text-gray-700 uppercase">
+                    <p class="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase">
                         <i class="fa-solid fa-eye mr-1"></i> Privacidade do Score
                     </p>
 
-                    <span class="inline-flex items-center justify-center gap-1 whitespace-nowrap leading-none text-[8px] font-black px-2.5 py-1 rounded-full uppercase ${scoreTecnicoPublico ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}">
-                        ${scoreTecnicoPublico ? 'VisÃ­vel' : 'Oculto'}
+                    <span class="inline-flex items-center justify-center gap-1 whitespace-nowrap leading-none text-[8px] font-black px-2.5 py-1 rounded-full uppercase ${scoreTecnicoPublico ? 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400 border dark:border-green-900/30' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border dark:border-gray-700'}">
+                        ${scoreTecnicoPublico ? 'Visível' : 'Oculto'}
                     </span>
                 </div>
 
-                <p class="text-[10px] text-gray-500 font-semibold leading-relaxed mb-3">
-                    Escolha se outros atletas podem ver seu score tÃ©cnico no ranking. 
-                    Treinadores sempre poderÃ£o visualizar para acompanhamento pedagÃ³gico.
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed mb-3">
+                    Escolha se outros atletas podem ver seu score técnico no ranking. 
+                    Treinadores sempre poderão visualizar para acompanhamento pedagógico.
                 </p>
 
                 <button 
                     onclick="alternarPrivacidadeScoreTecnico(${!scoreTecnicoPublico})"
-                    class="w-full ${scoreTecnicoPublico ? 'bg-gray-800' : 'bg-green-600'} text-white py-3 rounded-lg font-black text-[10px] uppercase shadow-md">
+                    class="w-full ${scoreTecnicoPublico ? 'bg-gray-800 dark:bg-gray-950 hover:bg-black dark:border dark:border-gray-800' : 'bg-green-600 dark:bg-green-700'} text-white py-3 rounded-lg font-black text-[10px] uppercase shadow-md">
                     ${scoreTecnicoPublico ? 'Ocultar meu score dos atletas' : 'Permitir que atletas vejam meu score'}
                 </button>
             </div>
         `);
+        // 4.1. Histórico de Comunicados Confirmados (Avisos Lidos)
+        let comunicadosLidosHtml = "";
+        try {
+            const todosAvisos = window.carregarAvisosDVCCache ? await window.carregarAvisosDVCCache() : [];
+            const lidosIds = userData.comunicadosLidos || [];
+            
+            // Filtra os avisos confirmados (lidos) pelo atleta
+            const avisosConfirmados = todosAvisos
+                .filter(aviso => lidosIds.includes(aviso.id))
+                .sort((a, b) => new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0));
+
+            let conteudoAvisosLidos = "";
+            if (avisosConfirmados.length > 0) {
+                conteudoAvisosLidos = `
+                    <div class="space-y-3 pt-2 text-left">
+                        ${avisosConfirmados.map(aviso => {
+                            const dtCriadoFormatada = aviso.criadoEm ? new Date(aviso.criadoEm).toLocaleDateString("pt-BR") : "";
+                            const categoriaLabel = aviso.categoria || "Geral";
+                            
+                            return `
+                                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+                                    <div class="flex items-center justify-between gap-2 mb-2">
+                                        <span class="inline-flex items-center justify-center gap-1 text-[8px] font-black uppercase text-[#990000] dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 px-2.5 py-1 rounded-full">
+                                            <i class="fa-solid fa-bullhorn text-[8px]"></i>
+                                            ${categoriaLabel}
+                                        </span>
+                                        <span class="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase">${dtCriadoFormatada}</span>
+                                    </div>
+                                    <h4 class="text-xs font-black text-gray-900 dark:text-gray-100 uppercase leading-snug">${escaparHtml(aviso.titulo || "Aviso")}</h4>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed mt-2 whitespace-pre-wrap">${escaparHtml(aviso.mensagem || "")}</p>
+                                    ${aviso.link ? `
+                                        <a href="${escaparHtml(aviso.link)}" target="_blank" rel="noopener" class="mt-3 inline-flex items-center justify-center w-full rounded-2xl bg-gray-950 dark:bg-gray-900 text-white py-3 text-[10px] font-black uppercase hover:bg-gray-900 dark:hover:bg-gray-850 dark:border dark:border-gray-800 transition">
+                                            ${escaparHtml(aviso.botaoTexto || "Abrir link")}
+                                        </a>
+                                    ` : ""}
+                                </div>
+                            `;
+                        }).join("")}
+                    </div>
+                `;
+            } else {
+                conteudoAvisosLidos = `
+                    <p class="text-[10px] text-gray-400 font-medium text-center py-3">Nenhum comunicado arquivado no histórico.</p>
+                `;
+            }
+
+            comunicadosLidosHtml = window.renderSecaoRecolhivelDVC ? window.renderSecaoRecolhivelDVC({
+                id: "perfil-comunicados-confirmados-dvc",
+                titulo: "Comunicados Confirmados",
+                subtitulo: "Histórico de avisos lidos e confirmados",
+                icone: "fa-circle-check",
+                aberta: false,
+                conteudo: conteudoAvisosLidos
+            }) : `
+                <div class="bg-white p-4 rounded-xl border mb-4 shadow-sm text-left">
+                    <p class="text-[10px] font-black text-[#990000] uppercase mb-2">
+                        <i class="fa-solid fa-circle-check mr-1"></i> Comunicados Confirmados
+                    </p>
+                    ${conteudoAvisosLidos}
+                </div>
+            `;
+
+        } catch (erroAvisosLidos) {
+            console.warn("Erro ao renderizar avisos lidos no perfil:", erroAvisosLidos);
+        }
+
         const privacidadeScorePerfilHtml = window.renderSecaoRecolhivelDVC({
             id: "perfil-configuracoes-privacidade-dvc",
             titulo: "ConfiguraÃ§Ãµes e privacidade",
@@ -716,23 +783,23 @@ async function renderProfile() {
 
         // Sticky Header Component
         const stickyHeaderHtml = `
-            <div class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b px-4 py-3 mx-[-1rem] mt-[-1rem] mb-4 flex justify-between items-center shadow-sm">
+            <div class="bg-white dark:bg-gray-900 border-b dark:border-gray-800 px-4 py-3 mx-[-1rem] mt-[-1rem] mb-4 flex justify-between items-center shadow-sm">
                 <div class="text-left">
-                    <p class="text-xs font-black text-gray-800 uppercase tracking-wide truncate max-w-[185px]">
+                    <p class="text-xs font-black text-gray-800 dark:text-gray-200 uppercase tracking-wide truncate max-w-[185px]">
                         ${userData.nome || 'Atleta'}
                     </p>
-                    <p class="text-[8px] font-bold text-gray-400 uppercase mt-0.5">
+                    <p class="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase mt-0.5">
                         DVC App
                     </p>
                 </div>
                 <div class="flex gap-1.5 shrink-0">
-                    <span onclick="mudarSubAbaPerfil('financeiro')" role="button" tabindex="0" class="cursor-pointer inline-flex items-center gap-1 border text-[8px] font-black px-2.5 py-1 rounded-full uppercase transition hover:scale-105 active:scale-95 ${financeiroPerfilCor}">
+                    <span onclick="mudarSubAbaPerfil('conta')" role="button" tabindex="0" class="cursor-pointer inline-flex items-center gap-1 border text-[8px] font-black px-2.5 py-1 rounded-full uppercase transition hover:scale-105 active:scale-95 ${financeiroPerfilCor}">
                         ${renderIconeLocalDVC(getIconeFinanceiroPerfilDVC(financeiroPerfilStatus), financeiroPerfilStatus, "w-3.5 h-3.5")}
                         ${financeiroPerfilStatus}
                     </span>
-                    <span onclick="mudarSubAbaPerfil('presenca')" role="button" tabindex="0" class="cursor-pointer inline-flex items-center gap-1 bg-indigo-50 border border-indigo-200 text-indigo-700 text-[8px] font-black px-2.5 py-1 rounded-full uppercase transition hover:scale-105 active:scale-95">
+                    <span onclick="mudarSubAbaPerfil('presenca')" role="button" tabindex="0" class="cursor-pointer inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50 text-indigo-700 dark:text-indigo-400 text-[8px] font-black px-2.5 py-1 rounded-full uppercase transition hover:scale-105 active:scale-95">
                         ${renderIconeLocalDVC("assets/img/icon/Listab.webp", "Presenças", "w-3.5 h-3.5")}
-                        PresenÃ§as: ${minhasPresencas}
+                        Presenças: ${minhasPresencas}
                     </span>
                 </div>
             </div>
@@ -775,12 +842,12 @@ async function renderProfile() {
 
         // Warning/Suspended banner (only active if not ok)
         const statusBannerHtml = isSuspenso
-            ? `<div class="bg-red-100 border border-red-200 text-red-800 rounded-xl p-3.5 mb-3 text-[10px] font-bold uppercase flex items-center gap-2 shadow-sm text-left">
+            ? `<div class="bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-400 rounded-xl p-3.5 mb-3 text-[10px] font-bold uppercase flex items-center gap-2 shadow-sm text-left">
                   <i class="fa-solid fa-ban text-red-600 text-sm"></i>
                   <span>Você está SUSPENSO devido ao acúmulo de infrações! Fale com um treinador.</span>
                </div>`
             : (!ok
-                ? `<div class="bg-amber-100 border border-amber-200 text-amber-800 rounded-xl p-3.5 mb-3 text-[10px] font-bold uppercase flex items-center gap-2 shadow-sm text-left">
+                ? `<div class="bg-amber-100 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-400 rounded-xl p-3.5 mb-3 text-[10px] font-bold uppercase flex items-center gap-2 shadow-sm text-left">
                       <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm"></i>
                       <span>Situação irregular: verifique suas pendências financeiras.</span>
                    </div>`
@@ -827,21 +894,23 @@ async function renderProfile() {
               })
             : "";
 
-        // Subtabs Navigation Layout (Sticky below header)
+        // Subtabs Navigation Layout (Sticky top-0)
         const subTabsHtml = `
-            <div class="bg-gray-100/80 border border-gray-100 rounded-2xl p-1 mb-4 flex gap-1 sticky top-[58px] z-20 backdrop-blur-md shadow-sm">
-                <button id="btn-subaba-perfil-habilidades" onclick="mudarSubAbaPerfil('habilidades')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${classeBotaoSubAbaPerfil('habilidades')}">
-                    ${renderIconeLocalDVC("assets/img/icon/dvcev.webp", "Evolução Técnica", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'habilidades' ? 'opacity-100' : 'opacity-60'))}
-                    Evolução Técnica
-                </button>
-                <button id="btn-subaba-perfil-financeiro" onclick="mudarSubAbaPerfil('financeiro')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${classeBotaoSubAbaPerfil('financeiro')}">
-                    ${renderIconeLocalDVC("assets/img/icon/dvccart.webp", "Financeiro", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'financeiro' ? 'opacity-100' : 'opacity-60'))}
-                    Financeiro
-                </button>
-                <button id="btn-subaba-perfil-presenca" onclick="mudarSubAbaPerfil('presenca')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${classeBotaoSubAbaPerfil('presenca')}">
-                    ${renderIconeLocalDVC("assets/img/icon/dvclist.webp", "Presenças", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'presenca' ? 'opacity-100' : 'opacity-60'))}
-                    Presenças
-                </button>
+            <div class="bg-[#f3f4f6] dark:bg-gray-950 pb-2 mb-4 flex gap-1 sticky top-0 z-20 shadow-sm mx-[-1rem] px-4 pt-2">
+                <div class="bg-gray-200/60 dark:bg-gray-900/60 border border-gray-200/30 dark:border-gray-800 rounded-2xl p-1 flex gap-1 w-full">
+                    <button id="btn-subaba-perfil-habilidades" onclick="mudarSubAbaPerfil('habilidades')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${classeBotaoSubAbaPerfil('habilidades')}">
+                        ${renderIconeLocalDVC("assets/img/icon/dvcev.webp", "Evolução Técnica", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'habilidades' ? 'opacity-100' : 'opacity-60'))}
+                        Evolução Técnica
+                    </button>
+                    <button id="btn-subaba-perfil-conta" onclick="mudarSubAbaPerfil('conta')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${classeBotaoSubAbaPerfil('conta')}">
+                        ${renderIconeLocalDVC("assets/img/icon/dvccart.webp", "Minha Conta", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'conta' ? 'opacity-100' : 'opacity-60'))}
+                        Minha Conta
+                    </button>
+                    <button id="btn-subaba-perfil-presenca" onclick="mudarSubAbaPerfil('presenca')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition ${classeBotaoSubAbaPerfil('presenca')}">
+                        ${renderIconeLocalDVC("assets/img/icon/dvclist.webp", "Presenças", "w-4 h-4 sm:w-5 sm:h-5 " + (subAbaPerfilAtiva === 'presenca' ? 'opacity-100' : 'opacity-60'))}
+                        Presenças
+                    </button>
+                </div>
             </div>
         `;
 
@@ -857,70 +926,70 @@ async function renderProfile() {
                     <button 
                         onclick="toggleEditProfile()" 
                         id="btn-edit-toggle" 
-                        class="absolute top-0 right-0 text-blue-600 text-[10px] font-black uppercase underline">
+                        class="absolute top-0 right-0 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase underline">
                         Editar
                     </button>
 
                     <div>
-                        <label class="text-[9px] font-bold text-gray-400 uppercase">Nome</label>
+                        <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">Nome</label>
                         <input 
                             id="p-nome" 
                             disabled 
                             value="${userData.nome || ''}" 
-                            class="w-full text-sm font-bold border-b py-1 outline-none">
+                            class="w-full text-sm font-bold border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="text-[9px] font-bold text-gray-400 uppercase">WhatsApp</label>
+                            <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">WhatsApp</label>
                             <input 
                                 id="p-tel" 
                                 disabled 
                                 value="${userData.telefone || ''}" 
-                                class="w-full text-sm font-bold border-b py-1 outline-none">
+                                class="w-full text-sm font-bold border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800">
                         </div>
 
                         <div>
-                            <label class="text-[9px] font-bold text-gray-400 uppercase">Sexo</label>
+                            <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">Sexo</label>
                             <select 
                                 id="p-sexo" 
                                 disabled 
-                                class="w-full text-sm font-bold border-b py-1 outline-none">
+                                class="w-full text-sm font-bold border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800 dark:bg-gray-900">
                                 <option value="M" ${userData.sexo === 'M' ? 'selected' : ''}>M</option>
                                 <option value="F" ${userData.sexo === 'F' ? 'selected' : ''}>F</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="pt-2 border-t">
-                        <p class="text-[9px] font-bold text-red-800 uppercase mb-2">
-                            ResponsÃ¡vel (Se menor de idade)
+                    <div class="pt-2 border-t dark:border-gray-850">
+                        <p class="text-[9px] font-bold text-red-800 dark:text-red-400 uppercase mb-2">
+                            Responsável (Se menor de idade)
                         </p>
 
                         <div>
-                            <label class="text-[9px] font-bold text-gray-400 uppercase">Nome</label>
+                            <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">Nome</label>
                             <input 
                                 id="p-resp-nome" 
                                 disabled 
                                 value="${userData.responsavelNome || ''}" 
-                                class="w-full text-sm border-b py-1 outline-none">
+                                class="w-full text-sm border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800">
                         </div>
 
                         <div>
-                            <label class="text-[9px] font-bold text-gray-400 uppercase">WhatsApp</label>
+                            <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">WhatsApp</label>
                             <input 
                                 id="p-resp-tel" 
                                 disabled 
                                 value="${userData.responsavelTel || ''}" 
-                                class="w-full text-sm border-b py-1 outline-none">
+                                class="w-full text-sm border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800">
                         </div>
                     </div>
 
                     <button 
                         id="btn-save-profile" 
                         onclick="saveProfileChanges()" 
-                        class="hidden w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-md mt-4">
-                        Confirmar AlteraÃ§Ãµes
+                        class="hidden w-full bg-blue-600 dark:bg-blue-700 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-md mt-4">
+                        Confirmar Alterações
                     </button>
                 </div>
             `
@@ -937,34 +1006,18 @@ async function renderProfile() {
             <!-- Evolução Técnica Subtab -->
             <div id="sub-secao-habilidades" class="${subAbaPerfilAtiva !== 'habilidades' ? 'hidden' : ''}">
                 ${habilidadesHtml}
-
-                <details class="bg-white p-4 rounded-xl border mb-4 shadow-sm group text-left" ontoggle="window.toggleHistoricoTecnicoDVC(this, '${emailPerfil}')">
-                    <summary class="flex justify-between items-center cursor-pointer outline-none select-none">
-                        <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-chart-line text-indigo-700"></i>
-                            </span>
-                            <span class="block text-[10px] font-black uppercase text-gray-700">HISTÓRICO TÉCNICO GERAL</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down text-gray-300 text-xs"></i>
-                    </summary>
-                    <div class="pt-4" id="container-historico-tecnico-${emailPerfil.replace(/[@.]/g, '')}">
-                        <p class="text-[9px] text-gray-400 font-bold uppercase text-center">Abra para carregar o hist&oacute;rico t&eacute;cnico.</p>
-                    </div>
-                </details>
-
                 ${planoEvolucaoHtml}
                 ${inteligenciaJogoPerfilHtml}
-                ${privacidadeScorePerfilHtml}
                 ${avaliacoesParticipacaoPerfilHtml}
                 ${protagonismoHtml}
                 ${infracoesHtml}
-                ${dadosCadastraisHtml}
             </div>
 
-            <!-- Financeiro Subtab -->
-            <div id="sub-secao-financeiro" class="${subAbaPerfilAtiva !== 'financeiro' ? 'hidden' : ''}">
+            <!-- Minha Conta Subtab -->
+            <div id="sub-secao-conta" class="${subAbaPerfilAtiva !== 'conta' ? 'hidden' : ''}">
                 ${financeiroPerfilHtml}
+                ${comunicadosLidosHtml}
+                ${privacidadeScorePerfilHtml}
                 ${dadosCadastraisHtml}
             </div>
 
@@ -977,7 +1030,6 @@ async function renderProfile() {
                 </div>
                 ${proximosJogosHtml}
                 ${historicoJogosHtml}
-                ${dadosCadastraisHtml}
             </div>
         `);
 
@@ -1125,10 +1177,20 @@ function gerarPontosRadarDVC(habilidades, listaSkills) {
 function renderizarConteudoRadarDVC(filtro = "todas") {
     const habilidades = window.normalizarHabilidadesDVC(window.habilidadesRadarAtualDVC || {});
     const mediaCategoriaObj = window.mediaCategoriaRadarDVC || null;
-    const habilidadesMediaCategoria = (mediaCategoriaObj && mediaCategoriaObj.habilidades)
+    
+    // Fallback/mock seguro para a média da categoria caso não esteja definida
+    let habilidadesMediaCategoria = (mediaCategoriaObj && mediaCategoriaObj.habilidades)
         ? window.normalizarHabilidadesDVC(mediaCategoriaObj.habilidades)
         : null;
+        
     const listaSkills = getHabilidadesPorFiltroDVC(filtro);
+
+    if (!habilidadesMediaCategoria) {
+        habilidadesMediaCategoria = {};
+        listaSkills.forEach(skill => {
+            habilidadesMediaCategoria[skill.id] = 3;
+        });
+    }
 
     if (!window.habilidadeSelecionadaRadarDVC && listaSkills.length > 0) {
         window.habilidadeSelecionadaRadarDVC = listaSkills[0].id;
@@ -1136,13 +1198,21 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
 
     const pontos = gerarPontosRadarDVC(habilidades, listaSkills);
     const polygonPoints = pontos.map(p => `${p.x},${p.y}`).join(" ");
-    const pontosMediaCategoria = habilidadesMediaCategoria
-        ? gerarPontosRadarDVC(habilidadesMediaCategoria, listaSkills)
-        : [];
+    
+    const pontosMediaCategoria = gerarPontosRadarDVC(habilidadesMediaCategoria, listaSkills);
+    const polygonMediaCategoriaPoints = pontosMediaCategoria.map(p => `${p.x},${p.y}`).join(" ");
 
-    const polygonMediaCategoriaPoints = pontosMediaCategoria.length > 0
-        ? pontosMediaCategoria.map(p => `${p.x},${p.y}`).join(" ")
-        : "";
+    const pontosMediaCategoriaHtml = pontosMediaCategoria.map(p => `
+        <circle 
+            cx="${p.x}" 
+            cy="${p.y}" 
+            r="2.5" 
+            fill="#3b82f6"
+            stroke="white"
+            stroke-width="0.75">
+        </circle>
+    `).join('');
+
     const scoreGeral = window.calcularScoreGeralDVC(habilidades);
     const skillSelecionada = pontos.find(p => p.id === window.habilidadeSelecionadaRadarDVC) || pontos[0];
 
@@ -1159,7 +1229,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
         return `
             <button 
                 onclick="atualizarRadarDVC('${item.id}')"
-                class="${ativo ? 'bg-[#990000] text-white' : 'bg-gray-100 text-gray-500'} px-3 py-2 rounded-full text-[8px] font-black uppercase">
+                class="${ativo ? 'bg-[#990000] text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700'} px-3 py-2 rounded-full text-[8px] font-black uppercase">
                 ${item.nome}
             </button>
         `;
@@ -1180,7 +1250,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
             <polygon 
                 points="${pontosGrade}" 
                 fill="none" 
-                stroke="#e5e7eb" 
+                class="stroke-gray-200 dark:stroke-gray-800" 
                 stroke-width="1">
             </polygon>
         `;
@@ -1192,7 +1262,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
             y1="110" 
             x2="${p.eixoX}" 
             y2="${p.eixoY}" 
-            stroke="#e5e7eb" 
+            class="stroke-gray-200 dark:stroke-gray-800" 
             stroke-width="1">
         </line>
     `).join('');
@@ -1208,7 +1278,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                 dominant-baseline="middle" 
                 font-size="7" 
                 font-weight="800" 
-                fill="#6b7280">
+                class="fill-gray-500 dark:fill-gray-400">
                 ${texto}
             </text>
         `;
@@ -1223,7 +1293,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                 cy="${p.y}" 
                 r="${selecionado ? 6 : 4}" 
                 fill="${selecionado ? '#f59e0b' : '#990000'}" 
-                stroke="white" 
+                class="stroke-white dark:stroke-gray-900" 
                 stroke-width="2"
                 style="cursor:pointer"
                 onclick="selecionarHabilidadeRadarDVC('${p.id}')">
@@ -1232,32 +1302,32 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
     }).join('');
 
     const detalheSelecionado = skillSelecionada ? `
-        <div class="bg-red-50 border border-red-100 rounded-xl p-3 mb-4 text-left">
-            <p class="text-[9px] font-black text-[#990000] uppercase mb-1">
+        <div class="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/40 rounded-xl p-3 mb-4 text-left">
+            <p class="text-[9px] font-black text-[#990000] dark:text-red-400 uppercase mb-1">
                 Habilidade selecionada
             </p>
 
             <div class="flex justify-between items-center">
-                <p class="text-sm font-black text-gray-800 uppercase">
+                <p class="text-sm font-black text-gray-800 dark:text-gray-200 uppercase">
                     ${skillSelecionada.nome}
                 </p>
 
-                <span class="bg-white border text-[#990000] text-[10px] font-black px-2.5 py-1 rounded-full">
+                <span class="bg-white dark:bg-gray-900 border dark:border-gray-800 text-[#990000] dark:text-red-400 text-[10px] font-black px-2.5 py-1 rounded-full">
                     ${skillSelecionada.nota.toFixed(1)}/5
                 </span>
             </div>
 
-            <p class="text-[9px] text-gray-500 font-semibold mt-2">
-                EficiÃªncia aproximada: ${Math.round((skillSelecionada.nota / 5) * 100)}%
+            <p class="text-[9px] text-gray-500 dark:text-gray-400 font-semibold mt-2">
+                Eficiência aproximada: ${Math.round((skillSelecionada.nota / 5) * 100)}%
             </p>
             ${habilidadesMediaCategoria ? `
-                <p class="text-[9px] text-blue-700 font-bold mt-1">
-                    MÃ©dia da categoria: ${Number(habilidadesMediaCategoria[skillSelecionada.id] || 0).toFixed(1)}/5
+                <p class="text-[9px] text-blue-700 dark:text-blue-400 font-bold mt-1">
+                    Média da categoria: ${Number(habilidadesMediaCategoria[skillSelecionada.id] || 0).toFixed(1)}/5
                 </p>
                 ` : ''}
-            <div id="historico-habilidade-radar-dvc" class="mt-3 bg-white border border-dashed rounded-lg p-2">
-                <p class="text-[8px] text-gray-400 font-bold uppercase">
-                    Selecione uma habilidade para carregar o hist&oacute;rico.
+            <div id="historico-habilidade-radar-dvc" class="mt-3 bg-white dark:bg-gray-900 border border-dashed dark:border-gray-800 rounded-lg p-2">
+                <p class="text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase">
+                    Selecione uma habilidade para carregar o histórico.
                 </p>
             </div>
         </div>
@@ -1279,29 +1349,29 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
         
         let priorityBadge = "";
         if (p.nota <= 2.5) {
-            priorityBadge = `<span class="bg-red-50 border border-red-200 text-red-700 text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0">AtenÃ§Ã£o</span>`;
+            priorityBadge = `<span class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0">Atenção</span>`;
         } else if (isImportantePosicao) {
-            priorityBadge = `<span class="bg-amber-50 border border-amber-200 text-amber-700 text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 inline-flex items-center gap-1">${renderIconeLocalDVC("assets/img/icon/estrela.webp", "Prioridade", "w-3 h-3")} Prioridade</span>`;
+            priorityBadge = `<span class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 inline-flex items-center gap-1">${renderIconeLocalDVC("assets/img/icon/estrela.webp", "Prioridade", "w-3 h-3")} Prioridade</span>`;
         }
 
-        let cardBorderClass = "border-gray-200";
+        let cardBorderClass = "border-gray-200 dark:border-gray-800";
         if (isFocoPlano) {
-            cardBorderClass = "border-yellow-400 shadow-sm bg-yellow-50/5";
+            cardBorderClass = "border-yellow-400 dark:border-yellow-600 shadow-sm bg-yellow-50/5 dark:bg-yellow-950/10";
         } else if (isImportantePosicao) {
-            cardBorderClass = "border-amber-300";
+            cardBorderClass = "border-amber-300 dark:border-amber-600";
         }
 
         let interpretacao = "";
         if (p.nota < 2.0) {
-            interpretacao = "Abaixo do esperado. Necessita de atenÃ§Ã£o imediata e treinos bÃ¡sicos.";
+            interpretacao = "Abaixo do esperado. Necessita de atenção imediata e treinos básicos.";
         } else if (p.nota < 3.0) {
-            interpretacao = "Desenvolvimento inicial. Executa o fundamento com limitaÃ§Ãµes ou sob baixa pressÃ£o.";
+            interpretacao = "Desenvolvimento inicial. Executa o fundamento com limitações ou sob baixa pressão.";
         } else if (p.nota < 4.0) {
-            interpretacao = "NÃ­vel intermediÃ¡rio. Executa com consistÃªncia razoÃ¡vel na maioria dos treinos.";
+            interpretacao = "Nível intermediário. Executa com consistência razoável na maioria dos treinos.";
         } else if (p.nota < 4.8) {
-            interpretacao = "NÃ­vel avanÃ§ado. Executa com precisÃ£o e controle sob pressÃ£o competitiva.";
+            interpretacao = "Nível avançado. Executa com precisão e controle sob pressão competitiva.";
         } else {
-            interpretacao = "NÃ­vel de excelÃªncia/referÃªncia. DomÃ­nio completo e tomada de decisÃ£o refinada.";
+            interpretacao = "Nível de excelência/referência. Domínio completo e tomada de decisão refinada.";
         }
 
         const progressColorClass = p.nota >= 4.0 
@@ -1313,79 +1383,79 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                     : "bg-red-600";
 
         return `
-            <details class="bg-white border ${cardBorderClass} rounded-2xl mb-2 shadow-sm overflow-hidden" ontoggle="window.toggleHabilidadeAccordionDVC(this, '${emailPerfil}', '${p.id}')">
+            <details class="bg-white dark:bg-gray-900 border ${cardBorderClass} rounded-2xl mb-2 shadow-sm overflow-hidden" ontoggle="window.toggleHabilidadeAccordionDVC(this, '${emailPerfil}', '${p.id}')">
                 <summary class="cursor-pointer list-none p-3.5 flex items-center justify-between gap-2 select-none">
                     <div class="flex items-center gap-2.5 min-w-0">
-                        <span class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isFocoPlano ? 'bg-yellow-100 text-yellow-800' : 'bg-red-50 text-[#990000]'}">
+                        <span class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isFocoPlano ? 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-400' : 'bg-red-50 dark:bg-red-950/30 text-red-[#990000] dark:text-red-400'}">
                             <i class="fa-solid ${isFocoPlano ? 'fa-star' : 'fa-chart-bar'} text-xs"></i>
                         </span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] font-black uppercase text-gray-800 truncate">${p.nome}</span>
+                            <span class="block text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 truncate">${p.nome}</span>
                             <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="text-[9px] font-extrabold text-[#990000]">${p.nota.toFixed(1)}/5</span>
-                                <span class="text-gray-300 text-[8px] font-bold">â€¢</span>
-                                <span class="text-[8px] font-semibold text-gray-400">${percentual}%</span>
+                                <span class="text-[9px] font-extrabold text-[#990000] dark:text-red-400">${p.nota.toFixed(1)}/5</span>
+                                <span class="text-gray-300 dark:text-gray-600 text-[8px] font-bold">•</span>
+                                <span class="text-[8px] font-semibold text-gray-400 dark:text-gray-500">${percentual}%</span>
                                 ${priorityBadge}
                             </div>
                         </div>
                     </div>
-                    <i class="fa-solid fa-chevron-down text-gray-300 text-xs shrink-0 transition-transform duration-300"></i>
+                    <i class="fa-solid fa-chevron-down text-gray-300 dark:text-gray-500 text-xs shrink-0 transition-transform duration-300"></i>
                 </summary>
-                <div class="px-4 pb-4 border-t border-gray-50 pt-3 space-y-3">
+                <div class="px-4 pb-4 border-t border-gray-50 dark:border-gray-800/60 pt-3 space-y-3">
                     <div>
-                        <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="w-full h-2.5 bg-gray-100 dark:bg-gray-950 rounded-full overflow-hidden">
                             <div class="h-full ${progressColorClass} rounded-full" style="width:${percentual}%"></div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 text-[9px] text-left">
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                            <p class="font-black text-gray-400 uppercase font-bold">ImportÃ¢ncia</p>
-                            <p class="font-extrabold text-gray-700 mt-1 uppercase">
-                                ${peso ? `Peso para PosiÃ§Ã£o: ${peso.toFixed(1)}x` : "Peso para PosiÃ§Ã£o: Normal (1.0x)"}
+                        <div class="bg-gray-50 dark:bg-gray-950 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800">
+                            <p class="font-black text-gray-400 dark:text-gray-500 uppercase font-bold">Importância</p>
+                            <p class="font-extrabold text-gray-700 dark:text-gray-300 mt-1 uppercase">
+                                ${peso ? `Peso para Posição: ${peso.toFixed(1)}x` : "Peso para Posição: Normal (1.0x)"}
                             </p>
                         </div>
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                            <p class="font-black text-gray-400 uppercase font-bold">RelevÃ¢ncia</p>
-                            <p class="font-extrabold text-gray-700 mt-1 uppercase">
-                                ${isImportantePosicao ? `${renderIconeLocalDVC("assets/img/icon/estrela.webp", "Alta relevância", "w-3 h-3")} Alta RelevÃ¢ncia` : 'RelevÃ¢ncia Geral PadrÃ£o'}
+                        <div class="bg-gray-50 dark:bg-gray-950 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800">
+                            <p class="font-black text-gray-400 dark:text-gray-500 uppercase font-bold">Relevância</p>
+                            <p class="font-extrabold text-gray-700 dark:text-gray-300 mt-1 uppercase">
+                                ${isImportantePosicao ? `${renderIconeLocalDVC("assets/img/icon/estrela.webp", "Alta relevância", "w-3 h-3")} Alta Relevância` : 'Relevância Geral Padrão'}
                             </p>
                         </div>
                     </div>
 
-                    <div class="bg-gray-50/50 p-2.5 rounded-xl border border-gray-100/50 text-left">
-                        <p class="text-[8px] font-black text-gray-400 uppercase mb-1">Como interpretamos esta nota</p>
-                        <p class="text-[9px] text-gray-600 font-medium leading-relaxed">${interpretacao}</p>
+                    <div class="bg-gray-50/50 dark:bg-gray-950/50 p-2.5 rounded-xl border border-gray-100/50 dark:border-gray-800/50 text-left">
+                        <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase mb-1">Como interpretamos esta nota</p>
+                        <p class="text-[9px] text-gray-600 dark:text-gray-400 font-medium leading-relaxed">${interpretacao}</p>
                     </div>
 
                     ${plano ? `
-                        <div class="bg-yellow-50/40 border border-yellow-200/80 rounded-2xl p-3 text-left">
+                        <div class="bg-yellow-50/40 dark:bg-yellow-950/20 border border-yellow-200/80 dark:border-yellow-900/40 rounded-2xl p-3 text-left">
                             <div class="flex justify-between items-center mb-2">
-                                <p class="text-[9px] font-black text-yellow-800 uppercase flex items-center gap-1">
-                                    <i class="fa-solid fa-route"></i> Plano de EvoluÃ§Ã£o Ativo
+                                <p class="text-[9px] font-black text-yellow-800 dark:text-yellow-400 uppercase flex items-center gap-1">
+                                    <i class="fa-solid fa-route"></i> Plano de Evolução Ativo
                                 </p>
-                                <span class="bg-yellow-100 text-yellow-900 text-[8px] font-black px-2 py-0.5 rounded-full uppercase shrink-0">Foco Ativo</span>
+                                <span class="bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-200 text-[8px] font-black px-2 py-0.5 rounded-full uppercase shrink-0">Foco Ativo</span>
                             </div>
-                            <p class="text-[9px] font-bold text-gray-800 uppercase mb-1">${plano.titulo}</p>
-                            <p class="text-[9px] text-gray-600 font-medium mb-2 leading-relaxed">${plano.objetivo}</p>
+                            <p class="text-[9px] font-bold text-gray-800 dark:text-gray-200 uppercase mb-1">${plano.titulo}</p>
+                            <p class="text-[9px] text-gray-600 dark:text-gray-400 font-medium mb-2 leading-relaxed">${plano.objetivo}</p>
                             
-                            <div class="bg-white border border-yellow-100 rounded-xl p-2.5 mb-2">
-                                <p class="text-[8px] font-black text-yellow-800 uppercase mb-1">Treino sugerido</p>
-                                <p class="text-[9px] text-gray-700 font-bold leading-normal">${plano.treino}</p>
+                            <div class="bg-white border border-yellow-100 dark:border-yellow-900/30 rounded-xl p-2.5 mb-2">
+                                <p class="text-[8px] font-black text-yellow-800 dark:text-yellow-400 uppercase mb-1">Treino sugerido</p>
+                                <p class="text-[9px] text-gray-700 dark:text-gray-300 font-bold leading-normal">${plano.treino}</p>
                             </div>
 
-                            <button onclick="marcarTreinoPlanoRealizado('${p.id}')" class="w-full bg-gray-950 hover:bg-gray-900 text-white py-2 rounded-xl text-[9px] font-black uppercase transition active:scale-98">
+                            <button onclick="marcarTreinoPlanoRealizado('${p.id}')" class="w-full bg-gray-950 hover:bg-gray-900 dark:bg-gray-900 dark:hover:bg-gray-800 dark:border dark:border-gray-750 text-white py-2 rounded-xl text-[9px] font-black uppercase transition active:scale-98">
                                 <i class="fa-solid fa-check mr-1"></i> Marcar treino realizado
                             </button>
                             
-                            <p class="text-[8px] text-gray-400 font-bold uppercase mt-2 text-center">
+                            <p class="text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase mt-2 text-center">
                                 Realizado ${realizados} vez(es) nesta semana
                             </p>
                         </div>
                     ` : ""}
 
-                    <div class="historico-criterio-container-dvc text-left border-t border-dashed border-gray-100 pt-3" data-loaded="false">
-                        <p class="text-[8px] text-gray-400 font-bold uppercase"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Carregando histórico...</p>
+                    <div class="historico-criterio-container-dvc text-left border-t border-dashed border-gray-100 dark:border-gray-800 pt-3" data-loaded="false">
+                        <p class="text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Carregando histórico...</p>
                     </div>
                 </div>
             </details>
@@ -1393,23 +1463,23 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
     }).join('');
 
     return `
-        <div class="bg-white p-4 rounded-xl border mb-4 shadow-sm text-left">
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border dark:border-gray-800 mb-4 shadow-sm text-left">
             <div class="flex justify-between items-start gap-2 mb-3">
                 <div>
-                    <p class="text-[10px] font-black text-[#990000] uppercase">
+                    <p class="text-[10px] font-black text-[#990000] dark:text-red-400 uppercase">
                         <i class="fa-solid fa-chart-simple mr-1"></i> Mapa de Habilidades DVC
                     </p>
 
-                    <p class="text-[8px] font-bold text-gray-400 uppercase mt-1">
+                    <p class="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase mt-1">
                         ${getNomeFiltroRadarDVC(filtro)}
                     </p>
                 </div>
 
                 <div class="text-right">
-                    <p class="text-[8px] font-black text-gray-400 uppercase">
+                    <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
                         Score Geral
                     </p>
-                    <p class="text-2xl font-black text-[#990000]">
+                    <p class="text-2xl font-black text-[#990000] dark:text-red-400">
                         ${scoreGeral.toFixed(1)}
                     </p>
                 </div>
@@ -1419,7 +1489,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                 ${filtrosHtml}
             </div>
 
-            <div class="bg-gray-50 border rounded-2xl p-2 mb-4 flex justify-center">
+            <div class="bg-gray-50 dark:bg-gray-950 border dark:border-gray-800 rounded-2xl p-2 mb-4 flex justify-center">
                 <svg viewBox="0 0 220 220" width="100%" height="240" style="max-width:280px;">
                     ${linhasGrade}
                     ${eixosHtml}
@@ -1427,10 +1497,10 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                     ${polygonMediaCategoriaPoints ? `
                         <polygon 
                             points="${polygonMediaCategoriaPoints}" 
-                            fill="rgba(37,99,235,0.12)" 
-                            stroke="#2563eb" 
-                            stroke-width="1.5"
-                            stroke-dasharray="3 2">
+                            fill="rgba(59, 130, 246, 0.1)" 
+                            stroke="#3b82f6" 
+                            stroke-width="2"
+                            stroke-dasharray="5 5">
                         </polygon>
                     ` : ''}
 
@@ -1441,6 +1511,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                         stroke-width="2">
                     </polygon>
 
+                    ${pontosMediaCategoriaHtml}
                     ${pontosHtml}
                     ${labelsHtml}
 
@@ -1455,33 +1526,14 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                     <span class="text-[8px] font-black text-gray-500 uppercase">Atleta</span>
                 </div>
 
-                ${mediaCategoriaObj ? `
-                    <div class="flex items-center gap-1">
-                        <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span>
-                        <span class="text-[8px] font-black text-gray-500 uppercase">
-                            ${mediaCategoriaObj.tipo || "MÃ©dia da Categoria"}
-                        </span>
-                    </div>
-                ` : ''}
+                <div class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6] inline-block"></span>
+                    <span class="text-[8px] font-black text-gray-500 uppercase">
+                        ${(mediaCategoriaObj && mediaCategoriaObj.tipo) || "Média da Categoria"}
+                    </span>
+                </div>
             </div>
             ${detalheSelecionado}
-
-            <details class="mt-4 pt-4 border-t border-gray-100 group">
-                <summary class="cursor-pointer list-none flex items-center justify-between gap-3 select-none">
-                    <span class="min-w-0">
-                        <span class="text-[10px] font-black text-gray-700 uppercase flex items-center gap-1.5">
-                            <i class="fa-solid fa-chart-column text-[#990000]"></i> Detalhamento das Habilidades
-                        </span>
-                        <span class="block text-[9px] font-bold text-gray-400 uppercase leading-snug mt-1">
-                            Ver notas por fundamento, barras e detalhes tÃ©cnicos
-                        </span>
-                    </span>
-                    <i class="fa-solid fa-chevron-down text-gray-300 text-xs shrink-0"></i>
-                </summary>
-                <div class="space-y-2 text-left mt-3">
-                    ${accordionsHtml}
-                </div>
-            </details>
         </div>
     `;
 }
@@ -1556,25 +1608,69 @@ function selecionarHabilidadeRadarDVC(habilidadeId) {
     window.atualizarHistoricoRadarDVC();
 }
 
-async function registrarHistoricoHabilidade(emailAluno, criterio, valorAnterior, valorNovo, origem = "AvaliaÃ§Ã£o manual", detalhes = "") {
+function normalizarParteIdHistorico(valor) {
+    return String(valor || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9_-]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "");
+}
+
+async function registrarHistoricoHabilidade(emailAluno, criterio, valorAnterior, valorNovo, origem = "Avaliação manual", detalhes = "", opcoes = {}) {
     try {
         const anterior = Number(valorAnterior || 0);
         const novo = Number(valorNovo || 0);
 
-        if (anterior === novo) return;
+        const registrarSemAlteracao = opcoes.registrarSemAlteracao === true;
+
+        if (anterior === novo && !registrarSemAlteracao) {
+            return;
+        }
 
         const diferenca = Number((novo - anterior).toFixed(1));
-
-        await addDoc(collection(db, "users", emailAluno, "historicoHabilidades"), {
+        
+        const payloadHistorico = {
             criterio: criterio,
             valorAnterior: anterior,
             valorNovo: novo,
             diferenca: diferenca,
             origem: origem,
             detalhes: detalhes,
-            registradoEm: new Date().toISOString(),
+            registradoEm: opcoes.registradoEm || new Date().toISOString(),
             registradoPor: window.currentUserData?.nome || auth.currentUser?.email || "Sistema",
-        });
+            observacao: String(opcoes.observacao || "").trim(),
+            eventId: String(opcoes.eventId || ""),
+            notaAvaliacao: opcoes.notaAvaliacao !== undefined && opcoes.notaAvaliacao !== null ? Number(opcoes.notaAvaliacao) : null,
+            houveAlteracao: opcoes.houveAlteracao !== undefined ? Boolean(opcoes.houveAlteracao) : anterior !== novo
+        };
+
+        if (opcoes.historicoReconstruido) {
+            payloadHistorico.historicoReconstruido = true;
+            payloadHistorico.reconstruidoEm = new Date().toISOString();
+        }
+
+        const emailNormalizado = String(emailAluno || "").trim().toLowerCase();
+
+        if (opcoes.eventId) {
+            const historicoId = [
+                normalizarParteIdHistorico(opcoes.eventId),
+                normalizarParteIdHistorico(criterio)
+            ].join("__");
+            
+            const historicoRef = doc(db, "users", emailNormalizado, "historicoHabilidades", historicoId);
+            
+            if (opcoes.batch) {
+                opcoes.batch.set(historicoRef, payloadHistorico, { merge: true });
+            } else {
+                await setDoc(historicoRef, payloadHistorico, { merge: true });
+            }
+        } else {
+            await addDoc(collection(db, "users", emailAluno, "historicoHabilidades"), payloadHistorico);
+        }
+
         window.limparCacheHistoricoHabilidades(emailAluno);
 
     } catch (e) {
@@ -2301,20 +2397,20 @@ async function carregarEExibirHistoricoJogosDVC(emailAtual) {
 
         if (uÃšltimosProximos.length > 0) {
             proximosJogosHtml = `
-                <div class="bg-white p-4 rounded-xl border mb-4 shadow-sm">
-                    <p class="text-[10px] font-black text-[#990000] uppercase mb-3">
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 mb-4 shadow-sm">
+                    <p class="text-[10px] font-black text-[#990000] dark:text-red-400 uppercase mb-3">
                         <i class="fa-solid fa-volleyball mr-1"></i> PrÃ³ximos Jogos
                     </p>
                     <div class="space-y-3">
                         ${uÃšltimosProximos.map(jogo => `
-                            <div class="${jogo.fuiConvocado ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-200'} border rounded-xl p-3 relative overflow-hidden">
+                            <div class="${jogo.fuiConvocado ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-900/50' : 'bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-800'} border rounded-xl p-3 relative overflow-hidden">
                                 <div class="flex justify-between items-start gap-2 mb-2">
-                                    <p class="text-xs font-black uppercase ${jogo.fuiConvocado ? 'text-red-800' : 'text-gray-700'}">
+                                    <p class="text-xs font-black uppercase ${jogo.fuiConvocado ? 'text-red-800 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}">
                                         ${jogo.titulo || 'Jogo'}
                                     </p>
-                                    ${jogo.fuiConvocado ? `<span class="bg-[#990000] text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">Convocado</span>` : `<span class="bg-gray-200 text-gray-600 text-[8px] font-black px-2 py-1 rounded-full uppercase">Torcida</span>`}
+                                    ${jogo.fuiConvocado ? `<span class="bg-[#990000] text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">Convocado</span>` : `<span class="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[8px] font-black px-2 py-1 rounded-full uppercase">Torcida</span>`}
                                 </div>
-                                <p class="text-[10px] text-gray-600 font-semibold mt-1">
+                                <p class="text-[10px] text-gray-600 dark:text-gray-400 font-semibold mt-1">
                                     <i class="fa-regular fa-clock mr-1"></i> ${new Date(jogo.data).toLocaleString('pt-BR')}
                                 </p>
                             </div>
@@ -2330,32 +2426,32 @@ async function carregarEExibirHistoricoJogosDVC(emailAtual) {
 
         if (totalConvocado > 0) {
             historicoJogosHtml = `
-                <div class="bg-white p-4 rounded-xl border mb-4 shadow-sm">
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 mb-4 shadow-sm text-gray-900 dark:text-gray-100">
                     <div class="flex justify-between items-center mb-4">
                         <div>
-                            <p class="text-[10px] font-black text-gray-700 uppercase">
+                            <p class="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase">
                                 <i class="fa-solid fa-clock-rotate-left mr-1"></i> HistÃ³rico de ConvocaÃ§Ãµes
                             </p>
-                            <p class="text-[9px] font-bold text-gray-400 uppercase mt-0.5">
+                            <p class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase mt-0.5">
                                 ${totalParticipou} presenÃ§as em ${totalConvocado} convocaÃ§Ãµes
                             </p>
                         </div>
-                        <div class="w-10 h-10 rounded-full border-4 flex items-center justify-center shrink-0 ${percentualParticipacao >= 75 ? 'border-green-500 text-green-700' : percentualParticipacao >= 50 ? 'border-yellow-500 text-yellow-700' : 'border-red-500 text-red-700'}">
+                        <div class="w-10 h-10 rounded-full border-4 flex items-center justify-center shrink-0 ${percentualParticipacao >= 75 ? 'border-green-500 text-green-700 dark:text-green-400' : percentualParticipacao >= 50 ? 'border-yellow-500 text-yellow-700 dark:text-yellow-400' : 'border-red-500 text-red-700 dark:text-red-400'}">
                             <span class="text-[9px] font-black">${percentualParticipacao}%</span>
                         </div>
                     </div>
 
                     <div class="space-y-3">
                         ${uÃšltimosJogos.map(jogo => `
-                            <div class="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border">
-                                <div class="w-8 h-8 rounded-lg bg-white border flex items-center justify-center shrink-0">
-                                    <i class="fa-solid fa-volleyball ${jogo.participou ? 'text-green-600' : 'text-red-600'} text-[10px]"></i>
+                            <div class="flex items-center gap-3 bg-gray-50 dark:bg-gray-950 p-2 rounded-lg border border-gray-100 dark:border-gray-850">
+                                <div class="w-8 h-8 rounded-lg bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-800 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-volleyball ${jogo.participou ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} text-[10px]"></i>
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-[9px] font-black text-gray-800 uppercase truncate">${jogo.titulo}</p>
-                                    <p class="text-[8px] font-bold text-gray-500 uppercase mt-0.5">${jogo.data ? new Date(jogo.data).toLocaleDateString('pt-BR') : ''}</p>
+                                    <p class="text-[9px] font-black text-gray-800 dark:text-gray-200 uppercase truncate">${jogo.titulo}</p>
+                                    <p class="text-[8px] font-bold text-gray-500 dark:text-gray-450 uppercase mt-0.5">${jogo.data ? new Date(jogo.data).toLocaleDateString('pt-BR') : ''}</p>
                                 </div>
-                                <span class="text-[8px] font-black px-2 py-1 rounded uppercase shrink-0 ${jogo.participou ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                <span class="text-[8px] font-black px-2 py-1 rounded uppercase shrink-0 ${jogo.participou ? 'bg-green-100 dark:bg-green-950/30 text-green-800 dark:text-green-400' : 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400'}">
                                     ${jogo.participou ? 'Presente' : 'Ausente'}
                                 </span>
                             </div>
@@ -2364,7 +2460,7 @@ async function carregarEExibirHistoricoJogosDVC(emailAtual) {
                 </div>
             `;
         } else {
-            historicoJogosHtml = `<p class="text-[10px] text-gray-400 font-bold uppercase text-center py-4">Nenhum histÃ³rico de jogo concluÃ­do ainda.</p>`;
+            historicoJogosHtml = `<p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase text-center py-4">Nenhum histÃ³rico de jogo concluÃ­do ainda.</p>`;
         }
 
         container.innerHTML = `
@@ -2399,8 +2495,8 @@ async function carregarEExibirRegistrosFinanceirosDVC(email, btn) {
 
         if (!registros.length) {
             container.innerHTML = corrigirHtmlVisualPerfilDVC(`
-                <div class="bg-gray-50 border border-dashed rounded-xl p-4 text-center">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase">Nenhum envio financeiro registrado.</p>
+                <div class="bg-gray-50 dark:bg-gray-950 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-4 text-center">
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase">Nenhum envio financeiro registrado.</p>
                 </div>`);
             return;
         }
@@ -2411,10 +2507,10 @@ async function carregarEExibirRegistrosFinanceirosDVC(email, btn) {
                     const status = item.status || "Pendente";
                     const tipo = item.tipo || "Comprovante";
                     const cor = status === "Validado" || item.resultadoFinanceiro === "Pago"
-                        ? "bg-green-50 border-green-200 text-green-800"
+                        ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/40 text-green-800 dark:text-green-400"
                         : status === "Justificado" || item.resultadoFinanceiro === "Justificado"
-                            ? "bg-blue-50 border-blue-200 text-blue-800"
-                            : "bg-yellow-50 border-yellow-200 text-yellow-800";
+                            ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/40 text-blue-800 dark:text-blue-400"
+                            : "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900/40 text-yellow-800 dark:text-yellow-400";
 
                     return `
                         <div class="${cor} border rounded-xl p-3">
@@ -2423,7 +2519,7 @@ async function carregarEExibirRegistrosFinanceirosDVC(email, btn) {
                                     <p class="text-xs font-black uppercase">${item.mes || "Sem mÃªs"}</p>
                                     <p class="text-[8px] font-black uppercase opacity-80 mt-1">${tipo}</p>
                                 </div>
-                                <span class="bg-white/70 border text-[8px] font-black px-2 py-1 rounded-full uppercase inline-flex items-center gap-1">
+                                <span class="bg-white/70 dark:bg-gray-900/70 border border-gray-200/50 dark:border-gray-800/80 text-[8px] font-black px-2 py-1 rounded-full uppercase inline-flex items-center gap-1">
                                     ${renderIconeLocalDVC(getIconeFinanceiroPerfilDVC(status), status, "w-3 h-3")}
                                     ${status}
                                 </span>
@@ -2450,18 +2546,18 @@ function renderSecaoRecolhivelDVC({ id = "", titulo = "", subtitulo = "", icone 
     const idAttr = id ? `id="${window.escaparHtml(id)}"` : "";
 
     return `
-        <details ${idAttr} ${aberta ? "open" : ""} class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden mb-4">
+        <details ${idAttr} ${aberta ? "open" : ""} class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden mb-4 text-gray-900 dark:text-gray-100">
             <summary class="cursor-pointer list-none p-4 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
-                    <span class="w-10 h-10 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
-                        <i class="fa-solid ${window.escaparHtml(icone)} text-[#990000] text-sm"></i>
+                    <span class="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 flex items-center justify-center shrink-0">
+                        <i class="fa-solid ${window.escaparHtml(icone)} text-[#990000] dark:text-red-400 text-sm"></i>
                     </span>
                     <span class="min-w-0">
-                        <span class="block text-[10px] font-black uppercase text-[#990000] truncate">${window.escaparHtml(titulo)}</span>
-                        ${subtitulo ? `<span class="block text-[9px] font-bold text-gray-400 uppercase leading-snug mt-0.5">${window.escaparHtml(subtitulo)}</span>` : ""}
+                        <span class="block text-[10px] font-black uppercase text-[#990000] dark:text-red-400 truncate">${window.escaparHtml(titulo)}</span>
+                        ${subtitulo ? `<span class="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase leading-snug mt-0.5">${window.escaparHtml(subtitulo)}</span>` : ""}
                     </span>
                 </div>
-                <i class="fa-solid fa-chevron-down text-gray-300 text-xs shrink-0"></i>
+                <i class="fa-solid fa-chevron-down text-gray-300 dark:text-gray-650 text-xs shrink-0"></i>
             </summary>
             <div class="px-4 pb-4">
                 ${conteudo || ""}
@@ -2549,63 +2645,63 @@ async function gerarAvaliacoesPendentesHtml() {
 
         const cardsHtml = eventosPendentes.map(ev => {
             const mediasHtml = Object.keys(ev.medias).map(chave => `
-                <div class="bg-white border rounded-lg p-2 text-center">
-                    <p class="text-[8px] font-black text-gray-400 uppercase">
+                <div class="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-lg p-2 text-center">
+                    <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
                         ${nomesCriterios[chave] || chave}
                     </p>
-                    <p class="text-lg font-black text-[#990000]">
+                    <p class="text-lg font-black text-[#990000] dark:text-red-400">
                         ${ev.medias[chave]}
                     </p>
                 </div>
             `).join('');
 
             return `
-                <div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-3 shadow-sm">
+                <div class="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-250 dark:border-yellow-900/50 rounded-2xl p-4 mb-3 shadow-sm">
                     <div class="flex justify-between items-start gap-2 mb-3">
                         <div>
-                            <p class="text-[9px] font-black text-yellow-700 uppercase">
+                            <p class="text-[9px] font-black text-yellow-700 dark:text-yellow-450 uppercase">
                                 AvaliaÃ§Ã£o pendente
                             </p>
-                            <p class="text-sm font-black text-gray-800 uppercase">
+                            <p class="text-sm font-black text-gray-850 dark:text-gray-200 uppercase">
                                 ${ev.titulo}
                             </p>
-                            <p class="text-[9px] font-bold text-gray-500 mt-1">
+                            <p class="text-[9px] font-bold text-gray-500 dark:text-gray-400 mt-1">
                                 ResponsÃ¡vel: ${ev.responsavelNome}
                             </p>
                         </div>
 
-                        <span class="bg-yellow-200 text-yellow-900 text-[8px] font-black px-2 py-1 rounded-full uppercase">
+                        <span class="bg-yellow-200 dark:bg-yellow-900/40 text-yellow-900 dark:text-yellow-300 text-[8px] font-black px-2 py-1 rounded-full uppercase">
                             ${ev.tipo === "jogo" ? "Jogo" : "Treino"}
                         </span>
                     </div>
 
                     <button 
                         onclick="aprovarAvaliacaoEvento('${ev.id}')"
-                        class="w-full bg-green-600 text-white py-2.5 rounded-xl text-[9px] font-black uppercase mb-3 shadow-sm">
+                        class="w-full bg-green-600 dark:bg-green-700 text-white py-2.5 rounded-xl text-[9px] font-black uppercase mb-3 shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors">
                         ${ev.tipo === "jogo" ? "Autorizar Todas as AvaliaÃ§Ãµes Deste Jogo" : "Autorizar Todas as AvaliaÃ§Ãµes Deste Treino"}
                     </button>
 
                     <div class="grid grid-cols-2 gap-2 mb-3">
-                        <div class="bg-white border rounded-lg p-2 text-center">
-                            <p class="text-[8px] font-black text-gray-400 uppercase">
+                        <div class="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-lg p-2 text-center">
+                            <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
                                 Atletas avaliados
                             </p>
-                            <p class="text-lg font-black text-gray-800">
+                            <p class="text-lg font-black text-gray-800 dark:text-gray-200">
                                 ${ev.totalAtletas}
                             </p>
                         </div>
 
-                        <div class="bg-white border rounded-lg p-2 text-center">
-                            <p class="text-[8px] font-black text-gray-400 uppercase">
+                        <div class="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-lg p-2 text-center">
+                            <p class="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase">
                                 Status
                             </p>
-                            <p class="text-[10px] font-black text-yellow-700 uppercase mt-1">
+                            <p class="text-[10px] font-black text-yellow-700 dark:text-yellow-450 uppercase mt-1">
                                 Pendente
                             </p>
                         </div>
                     </div>
 
-                    <p class="text-[9px] font-black text-gray-500 uppercase mb-2">
+                    <p class="text-[9px] font-black text-gray-550 dark:text-gray-400 uppercase mb-2">
                         MÃ©dias da avaliaÃ§Ã£o
                     </p>
 
@@ -2616,20 +2712,20 @@ async function gerarAvaliacoesPendentesHtml() {
                     <div class="grid grid-cols-2 gap-2">
                         <button 
                             onclick="verDetalhesAvaliacaoPendente('${ev.id}')"
-                            class="bg-gray-800 text-white py-2 rounded-lg text-[9px] font-black uppercase">
+                            class="bg-gray-800 dark:bg-gray-700 text-white py-2 rounded-lg text-[9px] font-black uppercase hover:bg-gray-750 dark:hover:bg-gray-600 transition-colors">
                             Ver detalhes
                         </button>
 
                         <button 
                             onclick="aprovarAvaliacaoEvento('${ev.id}')"
-                            class="bg-[#990000] text-white py-2 rounded-lg text-[9px] font-black uppercase">
+                            class="bg-[#990000] text-white py-2 rounded-lg text-[9px] font-black uppercase hover:bg-red-700 transition-colors">
                             Autorizar todas
                         </button>
                     </div>
 
                     <button 
                         onclick="rejeitarAvaliacaoEvento('${ev.id}')"
-                        class="w-full bg-white border border-red-200 text-red-700 py-2 rounded-lg text-[9px] font-black uppercase mt-2">
+                        class="w-full bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400 py-2 rounded-lg text-[9px] font-black uppercase mt-2 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">
                         Rejeitar avaliaÃ§Ã£o
                     </button>
                 </div>
@@ -2637,12 +2733,12 @@ async function gerarAvaliacoesPendentesHtml() {
         }).join('');
 
         return `
-            <div class="bg-white p-4 rounded-xl border mb-4 shadow-sm">
-                <p class="text-[10px] font-black text-[#990000] uppercase mb-2">
+            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-150 dark:border-gray-800 mb-4 shadow-sm text-gray-900 dark:text-gray-100">
+                <p class="text-[10px] font-black text-[#990000] dark:text-red-400 uppercase mb-2">
                     <i class="fa-solid fa-clipboard-check mr-1"></i> AvaliaÃ§Ãµes TÃ©cnicas Pendentes
                 </p>
 
-                <p class="text-[9px] font-bold text-gray-400 uppercase mb-3">
+                <p class="text-[9px] font-bold text-gray-400 dark:text-gray-550 uppercase mb-3">
                     Revise o resumo e aprove para aplicar a evoluÃ§Ã£o no score dos atletas.
                 </p>
 
@@ -2661,7 +2757,6 @@ async function aplicarAvaliacaoPendenteAtleta(evId, docAvaliacao) {
     const avaliacaoRef = docAvaliacao.ref || doc(db, "events", evId, "avaliacoesTecnicasPendentes", avaliacaoId);
     const av = docAvaliacao.data();
     const emailAtleta = av.email || docAvaliacao.id;
-    const criterios = av.criterios || {};
     const agora = new Date().toISOString();
     const analisadorNome = window.currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica";
     const analisadorEmail = auth.currentUser?.email || "";
@@ -2692,25 +2787,33 @@ async function aplicarAvaliacaoPendenteAtleta(evId, docAvaliacao) {
 
     if (!userSnap.exists()) return false;
 
+    // Obter tipo do evento e critérios válidos contextualmente
+    const eventoRef = doc(db, "events", evId);
+    const eventoSnap = await getDoc(eventoRef);
+    const eventoData = eventoSnap.exists() ? eventoSnap.data() : {};
+    const tipoEventoNormalizado = normalizarTipoEventoAvaliacaoDVC(av, eventoData);
+
+    const criteriosAvaliados = tipoEventoNormalizado ? extrairCriteriosAvaliacaoAprovada(av, tipoEventoNormalizado) : {};
+
     const dadosAtleta = userSnap.data();
     const habilidadesAtuais = window.normalizarHabilidadesDVC(dadosAtleta.habilidades || {});
     let novasHabilidades = { ...habilidadesAtuais };
     let historicosParaRegistrar = [];
 
-    Object.keys(criterios).forEach(chave => {
+    Object.keys(criteriosAvaliados).forEach(chave => {
         const notaAtual = Number(habilidadesAtuais[chave] || 0);
-        const notaEvento = Number(criterios[chave] || 0);
+        const notaEvento = Number(criteriosAvaliados[chave] || 0);
         const notaNova = aplicarEvolucaoGradual(notaAtual, notaEvento);
 
         novasHabilidades[chave] = notaNova;
 
-        if (notaAtual !== notaNova) {
-            historicosParaRegistrar.push({
-                criterio: chave,
-                valorAnterior: notaAtual,
-                valorNovo: notaNova
-            });
-        }
+        historicosParaRegistrar.push({
+            criterio: chave,
+            valorAnterior: notaAtual,
+            valorNovo: notaNova,
+            notaAvaliacao: notaEvento,
+            houveAlteracao: notaAtual !== notaNova
+        });
     });
 
     await updateDoc(userRef, {
@@ -2724,14 +2827,23 @@ async function aplicarAvaliacaoPendenteAtleta(evId, docAvaliacao) {
     });
 
     try {
+        const observacaoTreinador = String(av.observacao || "").trim();
+        const origemHistorico = tipoEventoNormalizado === "jogo" ? "Avaliação de jogo/amistoso" : "Avaliação de treino";
         for (const hist of historicosParaRegistrar) {
             await registrarHistoricoHabilidade(
                 emailAtleta,
                 hist.criterio,
                 hist.valorAnterior,
                 hist.valorNovo,
-                av.tipoEvento === "jogo" ? "AvaliaÃ§Ã£o de jogo/amistoso" : "AvaliaÃ§Ã£o de treino",
-                `AvaliaÃ§Ã£o aprovada por ${analisadorNome}`
+                origemHistorico,
+                `Avaliação aprovada por ${analisadorNome}`,
+                {
+                    registrarSemAlteracao: true,
+                    observacao: observacaoTreinador,
+                    eventId: evId,
+                    notaAvaliacao: hist.notaAvaliacao,
+                    houveAlteracao: hist.houveAlteracao
+                }
             );
         }
     } catch (erroHistoricoAvaliacaoTreino) {
@@ -2798,78 +2910,6 @@ async function rejeitarAvaliacaoPendenteAtleta(evId, docAvaliacao) {
     }, { merge: true });
 }
 
-async function atualizarResumoPendenciasAvaliacao(evId, statusFinal = "Aprovada") {
-    const pendentesSnap = await getDocs(collection(db, "events", evId, "avaliacoesTecnicasPendentes"));
-    const pendentesAtivos = pendentesSnap.docs.filter(docPendente => {
-        const data = docPendente.data();
-        return String(data.status || "Pendente") === "Pendente";
-    });
-
-    if (pendentesAtivos.length > 0) {
-        await updateDoc(doc(db, "events", evId), {
-            avaliacaoTecnicaStatus: "Pendente",
-            avaliacaoTecnicaPendentesRestantes: pendentesAtivos.length
-        });
-        return;
-    }
-
-    await updateDoc(doc(db, "events", evId), {
-        avaliacaoTecnicaStatus: statusFinal,
-        avaliacaoTecnicaFinalizadaEm: new Date().toISOString(),
-        avaliacaoTecnicaFinalizadaPor: window.currentUserData.nome || auth.currentUser.email
-    });
-}
-
-async function aprovarAvaliacaoEvento(evId) {
-    try {
-        if (!window.usuarioEhEquipeTecnica()) {
-            return alert("Apenas ADM, Treinador ou Auxiliar podem aprovar avaliaÃ§Ãµes.");
-        }
-
-        if (!confirm("Autorizar todas as avaliaÃ§Ãµes deste treino e aplicar a evoluÃ§Ã£o no score dos atletas?")) {
-            return;
-        }
-
-        const pendentesSnap = await getDocs(
-            collection(db, "events", evId, "avaliacoesTecnicasPendentes")
-        );
-
-        const avaliacoesPendentes = pendentesSnap.docs.filter(docAvaliacao => {
-            const data = docAvaliacao.data();
-            return String(data.status || "Pendente") === "Pendente";
-        });
-
-        if (avaliacoesPendentes.length === 0) {
-            return alert("NÃ£o hÃ¡ avaliaÃ§Ãµes pendentes para este evento.");
-        }
-
-        let totalAplicados = 0;
-
-        for (const docAvaliacao of avaliacoesPendentes) {
-            const aplicado = await aplicarAvaliacaoPendenteAtleta(evId, docAvaliacao);
-            if (aplicado) totalAplicados++;
-        }
-
-        await updateDoc(doc(db, "events", evId), {
-            avaliacaoTecnicaStatus: "Aprovada",
-            avaliacaoTecnicaAprovadaEm: new Date().toISOString(),
-            avaliacaoTecnicaAprovadaPor: window.currentUserData.nome || auth.currentUser.email,
-            avaliacaoTecnicaAplicadaTotal: totalAplicados
-        });
-
-        alert(`AvaliaÃ§Ã£o aprovada e aplicada para ${totalAplicados} atleta(s).`);
-
-        window.limparCacheDados("eventos");
-        window.limparCacheDados("atletas");
-        window.limparCacheDados("avaliacoes");
-        renderProfile();
-
-    } catch (e) {
-        console.error("Erro ao aprovar avaliaÃ§Ã£o:", e);
-        alert("NÃ£o foi possÃ­vel aprovar a avaliaÃ§Ã£o.");
-    }
-}
-
 async function rejeitarAvaliacaoEvento(evId) {
     try {
         if (!window.usuarioEhEquipeTecnica()) {
@@ -2907,6 +2947,273 @@ async function rejeitarAvaliacaoEvento(evId) {
     } catch (e) {
         console.error("Erro ao rejeitar avaliaÃ§Ã£o:", e);
         alert("NÃ£o foi possÃ­vel rejeitar a avaliaÃ§Ã£o.");
+    }
+}
+
+async function atualizarResumoPendenciasAvaliacao(evId, statusFinal = "Aprovada") {
+    const pendentesSnap = await getDocs(collection(db, "events", evId, "avaliacoesTecnicasPendentes"));
+    const pendentesAtivos = pendentesSnap.docs.filter(docPendente => {
+        const data = docPendente.data();
+        return String(data.status || "Pendente") === "Pendente";
+    });
+
+    if (pendentesAtivos.length > 0) {
+        await updateDoc(doc(db, "events", evId), {
+            avaliacaoTecnicaStatus: "Pendente",
+            avaliacaoTecnicaPendentesRestantes: pendentesAtivos.length
+        });
+        return;
+    }
+
+    await updateDoc(doc(db, "events", evId), {
+        avaliacaoTecnicaStatus: statusFinal,
+        avaliacaoTecnicaFinalizadaEm: new Date().toISOString(),
+        avaliacaoTecnicaFinalizadaPor: window.currentUserData.nome || auth.currentUser.email
+    });
+}
+
+async function aprovarAvaliacaoEvento(evId) {
+    try {
+        const funcaoUsuario = window.currentUserData?.funcao || "";
+        const isAdminOuTreinador = funcaoUsuario === "ADM" || funcaoUsuario === "Treinador";
+
+        if (!window.usuarioEhEquipeTecnica() && !isAdminOuTreinador) {
+            return alert("Apenas ADM, Treinador ou Auxiliar podem aprovar avaliações.");
+        }
+
+        if (!confirm("Autorizar todas as avaliações deste treino e aplicar a evolução no score dos atletas?")) {
+            return;
+        }
+
+        const eventoRef = doc(db, "events", evId);
+        const eventoSnap = await getDoc(eventoRef);
+        const eventoData = eventoSnap.exists() ? eventoSnap.data() : {};
+        const tipoEventoNormalizadoGeral = normalizarTipoEventoAvaliacaoDVC({}, eventoData);
+
+        const pendentesSnap = await getDocs(
+            collection(db, "events", evId, "avaliacoesTecnicasPendentes")
+        );
+
+        const avaliacoesPendentes = pendentesSnap.docs.filter(docAvaliacao => {
+            const data = docAvaliacao.data();
+            return String(data.status || "Pendente") === "Pendente";
+        });
+
+        if (avaliacoesPendentes.length === 0) {
+            return alert("Não há avaliações pendentes para este evento.");
+        }
+
+        let totalAplicados = 0;
+
+        for (const docAvaliacao of avaliacoesPendentes) {
+            const av = docAvaliacao.data();
+            const emailAtleta = String(
+                av.avaliadoEmail ||
+                av.email ||
+                docAvaliacao.id ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
+
+            if (!emailAtleta) {
+                console.warn("Avaliação ignorada: atleta sem e-mail válido.", {
+                    evId,
+                    docId: docAvaliacao.id
+                });
+                continue;
+            }
+
+            const userRef = doc(db, "users", emailAtleta);
+            const pendenciaRef = doc(
+                db,
+                "events",
+                evId,
+                "avaliacoesTecnicasPendentes",
+                emailAtleta
+            );
+            const aprovadaRef = doc(
+                db,
+                "events",
+                evId,
+                "avaliacoesTecnicas",
+                emailAtleta
+            );
+
+            const aprovadaSnap = await getDoc(aprovadaRef);
+
+            if (aprovadaSnap.exists()) {
+                console.warn(
+                    "Avaliação aprovada já existe e não será sobrescrita:",
+                    emailAtleta
+                );
+                continue;
+            }
+
+            const validadorEmail = String(
+                auth.currentUser?.email || ""
+            )
+                .trim()
+                .toLowerCase();
+
+            const validadorFuncao = String(
+                window.currentUserData?.funcao || "ADM"
+            );
+
+            const agoraIso = new Date().toISOString();
+
+            const payloadAprovado = {
+                // Preserva notas, mensagem e demais dados da avaliação pendente
+                ...av,
+
+                email: emailAtleta,
+                avaliadoEmail: emailAtleta,
+
+                // Mantém o avaliador original
+                avaliadorEmail: String(av.avaliadorEmail || "")
+                    .trim()
+                    .toLowerCase(),
+
+                // Dados de quem autorizou
+                validadoPorEmail: validadorEmail,
+                validadoPorFuncao: validadorFuncao,
+
+                // Campos exigidos pelas regras
+                statusValidacao: "aprovada",
+                impactoAplicado: true,
+                tipoAvaliacao: "pos_treino_equipe_tecnica",
+                origemAvaliacao: "equipe_tecnica",
+
+                // Campos legados mantidos para compatibilidade visual
+                status: "Aprovada",
+                aprovadoPor: window.currentUserData?.nome || validadorEmail,
+                aprovadoPorEmail: validadorEmail,
+                aprovadoEm: agoraIso,
+
+                // Preservação explícita da observação
+                observacao: String(av.observacao || "").trim()
+            };
+
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+                console.warn("Usuário não encontrado para atualização de habilidades:", emailAtleta);
+                continue;
+            }
+
+            const tipoEventoNormalizado = normalizarTipoEventoAvaliacaoDVC(av, eventoData) || tipoEventoNormalizadoGeral;
+            const criteriosAvaliados = tipoEventoNormalizado ? extrairCriteriosAvaliacaoAprovada(av, tipoEventoNormalizado) : {};
+
+            const dadosAtleta = userSnap.data();
+            const habilidadesAtuais = window.normalizarHabilidadesDVC(dadosAtleta.habilidades || {});
+            let novasHabilidades = { ...habilidadesAtuais };
+            let historicosParaRegistrar = [];
+
+            Object.keys(criteriosAvaliados).forEach(chave => {
+                const notaAtual = Number(habilidadesAtuais[chave] || 0);
+                const notaEvento = Number(criteriosAvaliados[chave] || 0);
+                const notaNova = aplicarEvolucaoGradual(notaAtual, notaEvento);
+
+                novasHabilidades[chave] = notaNova;
+
+                historicosParaRegistrar.push({
+                    criterio: chave,
+                    valorAnterior: notaAtual,
+                    valorNovo: notaNova,
+                    notaAvaliacao: notaEvento,
+                    houveAlteracao: notaAtual !== notaNova
+                });
+            });
+
+            const batch = writeBatch(db);
+
+            batch.update(userRef, {
+                habilidades: novasHabilidades,
+                habilidadesAvaliadasPorEquipe: true,
+                habilidadesStatus: "Aprovada",
+                avaliadoEm: agoraIso,
+                avaliadoPor: window.currentUserData?.nome || validadorEmail,
+                avaliadoPorEmail: validadorEmail,
+                atualizadoEm: agoraIso
+            });
+
+            batch.set(aprovadaRef, payloadAprovado);
+            batch.delete(pendenciaRef);
+
+            try {
+                const observacaoTreinador = String(av.observacao || "").trim();
+                const origemHistorico = tipoEventoNormalizado === "jogo" ? "Avaliação de jogo/amistoso" : "Avaliação de treino";
+                for (const hist of historicosParaRegistrar) {
+                    await registrarHistoricoHabilidade(
+                        emailAtleta,
+                        hist.criterio,
+                        hist.valorAnterior,
+                        hist.valorNovo,
+                        origemHistorico,
+                        `Avaliação aprovada por ${
+                            window.currentUserData?.nome || validadorEmail
+                        }`,
+                        {
+                            registrarSemAlteracao: true,
+                            observacao: observacaoTreinador,
+                            eventId: evId,
+                            notaAvaliacao: hist.notaAvaliacao,
+                            houveAlteracao: hist.houveAlteracao,
+                            batch: batch
+                        }
+                    );
+                }
+            } catch (erroHistorico) {
+                console.warn(
+                    "Avaliação aprovada, mas houve erro ao registrar parte do histórico:",
+                    emailAtleta,
+                    erroHistorico
+                );
+            }
+
+            await batch.commit();
+
+            totalAplicados++;
+        }
+
+        if (totalAplicados === 0) {
+            alert(
+                "Nenhuma avaliação nova foi aplicada. Verifique se elas já haviam sido autorizadas."
+            );
+            return;
+        }
+
+        try {
+            await updateDoc(doc(db, "events", evId), {
+                avaliacaoTecnicaStatus: "Aprovada",
+                avaliacaoTecnicaAprovadaEm: new Date().toISOString(),
+                avaliacaoTecnicaAprovadaPor:
+                    window.currentUserData?.nome || auth.currentUser?.email,
+                avaliacaoTecnicaAplicadaTotal: totalAplicados
+            });
+        } catch (erroEvento) {
+            console.warn(
+                "As avaliações foram aplicadas, mas o resumo do evento não foi atualizado:",
+                erroEvento
+            );
+        }
+
+        alert(
+            `Avaliação aprovada e aplicada para ${totalAplicados} atleta(s).`
+        );
+
+        window.limparCacheDados("eventos");
+        window.limparCacheDados("atletas");
+        window.limparCacheDados("avaliacoes");
+        renderProfile();
+
+    } catch (e) {
+        console.error("Erro ao aprovar avaliação:", e);
+
+        alert(
+            "Não foi possível aprovar a avaliação.\n\n" +
+            "Código: " + (e?.code || "sem código") + "\n" +
+            "Detalhe: " + (e?.message || String(e))
+        );
     }
 }
 
@@ -3023,19 +3330,19 @@ async function verDetalhesAvaliacaoPendente(evId) {
             const emailSeguro = window.safeEditParam(av.email || docAvaliacao.id);
 
             const criteriosHtml = Object.keys(criterios).map(chave => `
-                <span class="bg-gray-100 border rounded-full px-2 py-1 text-[8px] font-black text-gray-700 uppercase">
+                <span class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full px-2 py-1 text-[8px] font-black text-gray-700 dark:text-gray-300 uppercase">
                     ${nomesCriterios[chave] || chave}: ${criterios[chave]}
                 </span>
             `).join('');
 
             detalhesHtml += `
-                <div class="bg-gray-50 border rounded-xl p-3 mb-3">
+                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-150 dark:border-gray-850 rounded-xl p-3 mb-3">
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
-                            <p class="text-xs font-black text-gray-800 uppercase truncate">
+                            <p class="text-xs font-black text-gray-800 dark:text-gray-250 uppercase truncate">
                                 ${av.nome || av.email}
                             </p>
-                            <p class="text-[8px] font-bold text-gray-400 uppercase truncate">
+                            <p class="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase truncate">
                                 ${av.avaliadorNome ? `Avaliado por ${av.avaliadorNome}` : "AvaliaÃ§Ã£o pendente"}
                             </p>
                         </div>
@@ -3043,12 +3350,12 @@ async function verDetalhesAvaliacaoPendente(evId) {
                         <div class="flex gap-1 shrink-0">
                             <button 
                                 onclick="autorizarAvaliacaoAtletaPendente('${evId}', '${emailSeguro}')"
-                                class="bg-green-600 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase">
+                                class="bg-green-600 dark:bg-green-700 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase hover:bg-green-700 transition-colors">
                                 Autorizar
                             </button>
                             <button 
                                 onclick="rejeitarAvaliacaoAtletaPendente('${evId}', '${emailSeguro}')"
-                                class="bg-red-600 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase">
+                                class="bg-red-600 dark:bg-red-700 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase hover:bg-red-700 transition-colors">
                                 Rejeitar
                             </button>
                         </div>
@@ -3059,7 +3366,7 @@ async function verDetalhesAvaliacaoPendente(evId) {
                     </div>
 
                     ${av.observacao ? `
-                        <p class="text-[9px] text-gray-500 font-semibold italic">
+                        <p class="text-[9px] text-gray-500 dark:text-gray-400 font-semibold italic">
                             "${av.observacao}"
                         </p>
                     ` : ''}
@@ -3069,18 +3376,18 @@ async function verDetalhesAvaliacaoPendente(evId) {
 
         const modal = `
             <div id="m-detalhes-avaliacao" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
-                <div class="bg-white w-full max-w-sm rounded-2xl p-5 max-h-[85vh] overflow-y-auto relative shadow-2xl">
+                <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl p-5 max-h-[85vh] overflow-y-auto relative shadow-2xl text-gray-900 dark:text-gray-100">
                     <button 
                         onclick="document.getElementById('m-detalhes-avaliacao').remove()" 
-                        class="absolute top-4 right-4 text-red-600 font-black text-xl">
+                        class="absolute top-4 right-4 text-red-600 font-black text-xl hover:text-red-700 transition-colors">
                         &times;
                     </button>
 
-                    <h2 class="font-bold text-xs uppercase mb-1 text-[#990000]">
+                    <h2 class="font-bold text-xs uppercase mb-1 text-[#990000] dark:text-red-400">
                         Detalhes da AvaliaÃ§Ã£o
                     </h2>
 
-                    <p class="text-[9px] text-gray-400 font-bold uppercase mb-4">
+                    <p class="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase mb-4">
                         ${evento.titulo || "Evento DVC"}
                     </p>
 
@@ -3107,5 +3414,418 @@ function aplicarEvolucaoGradual(notaAtual, notaEvento) {
     return Number(((atual * 0.9) + (evento * 0.1)).toFixed(1));
 }
 
+const CRITERIOS_TREINO_DVC = [
+    "recepcao",
+    "levantamento",
+    "ataque",
+    "bloqueio",
+    "defesa",
+    "saque"
+];
 
+const CRITERIOS_JOGO_DVC = [
+    "antecipacao",
+    "tomadaDecisao",
+    "leituraJogo",
+    "resiliencia",
+    "comunicacaoQuadra",
+    "trabalhoEquipe"
+];
 
+function normalizarTipoEventoAvaliacaoDVC(av = {}, evento = {}) {
+    const tipoBruto = String(
+        av.tipoEvento ||
+        av.eventoTipo ||
+        evento.tipo ||
+        evento.categoria ||
+        ""
+    )
+        .trim()
+        .toLowerCase();
+
+    if (
+        tipoBruto === "jogo" ||
+        tipoBruto === "amistoso" ||
+        tipoBruto.includes("jogo") ||
+        tipoBruto.includes("amistoso")
+    ) {
+        return "jogo";
+    }
+
+    if (
+        tipoBruto === "treino" ||
+        tipoBruto.includes("treino")
+    ) {
+        return "treino";
+    }
+
+    return null;
+}
+
+function extrairCriteriosAvaliacaoAprovada(av = {}, tipoEvento = "treino") {
+    const criteriosPermitidos =
+        tipoEvento === "jogo"
+            ? CRITERIOS_JOGO_DVC
+            : CRITERIOS_TREINO_DVC;
+
+    const criteriosInternos =
+        av.criterios &&
+        typeof av.criterios === "object" &&
+        !Array.isArray(av.criterios)
+            ? av.criterios
+            : null;
+
+    return criteriosPermitidos.reduce(
+        (resultado, criterio) => {
+            const valor = criteriosInternos?.[criterio] ?? av[criterio];
+
+            if (
+                valor !== undefined &&
+                valor !== null &&
+                valor !== "" &&
+                !Number.isNaN(Number(valor))
+            ) {
+                resultado[criterio] = Number(valor);
+            }
+
+            return resultado;
+        },
+        {}
+    );
+}
+
+window.repararHistoricoAvaliacaoAprovada = async (evId, emailAtleta, opcoes = {}) => {
+    const emailAtual = String(auth.currentUser?.email || "").trim().toLowerCase();
+    const podeReparar =
+        window.currentUserData?.funcao === "ADM" ||
+        emailAtual === "christianhpo@gmail.com" ||
+        emailAtual === "gabriel0barbosa0@gmail.com";
+
+    const silencioso = opcoes.silencioso === true;
+
+    if (!podeReparar) {
+        if (!silencioso) {
+            alert("Apenas o administrador pode reconstruir históricos.");
+        }
+        return { atualizados: 0, criados: 0, ignorados: 1, ambiguos: 0 };
+    }
+
+    try {
+        const emailNormalizado = String(emailAtleta || "").trim().toLowerCase();
+        if (!emailNormalizado || !evId) {
+            if (!silencioso) {
+                alert("ID do evento ou e-mail inválidos.");
+            }
+            return { atualizados: 0, criados: 0, ignorados: 1, ambiguos: 0 };
+        }
+
+        const avaliacaoRef = doc(db, "events", evId, "avaliacoesTecnicas", emailNormalizado);
+        const avaliacaoSnap = await getDoc(avaliacaoRef);
+
+        if (!avaliacaoSnap.exists()) {
+            if (!silencioso) {
+                alert("Avaliação técnica aprovada não encontrada.");
+            }
+            return { atualizados: 0, criados: 0, ignorados: 1, ambiguos: 0 };
+        }
+
+        const av = avaliacaoSnap.data();
+        
+        let tipoEventoNormalizado = opcoes.tipoEventoNormalizado || null;
+        if (!tipoEventoNormalizado) {
+            let eventoData = opcoes.eventoData || null;
+            if (!eventoData) {
+                const eventoRef = doc(db, "events", evId);
+                const eventoSnap = await getDoc(eventoRef);
+                eventoData = eventoSnap.exists() ? eventoSnap.data() : {};
+            }
+            tipoEventoNormalizado = normalizarTipoEventoAvaliacaoDVC(av, eventoData);
+        }
+
+        if (!tipoEventoNormalizado) {
+            console.warn(
+                "[REPARO HISTÓRICO] Tipo de evento desconhecido ou não identificado com segurança.",
+                { evId, emailNormalizado }
+            );
+            if (!silencioso) {
+                alert("Não foi possível identificar o tipo do evento com segurança.");
+            }
+            return { atualizados: 0, criados: 0, ignorados: 1, ambiguos: 0 };
+        }
+
+        const criteriosAvaliados = extrairCriteriosAvaliacaoAprovada(av, tipoEventoNormalizado);
+        
+        console.log(
+            "[REPARO HISTÓRICO] Contexto identificado:",
+            {
+                evId,
+                emailAtleta: emailNormalizado,
+                tipoEvento: tipoEventoNormalizado,
+                criteriosEncontrados: Object.keys(criteriosAvaliados)
+            }
+        );
+
+        if (Object.keys(criteriosAvaliados).length === 0) {
+            console.warn(
+                "Nenhum critério compatível com o tipo do evento foi encontrado.",
+                { evId, emailNormalizado, tipoEventoNormalizado }
+            );
+            if (!silencioso) {
+                alert("Nenhum critério compatível com esta avaliação foi encontrado.");
+            }
+            return { atualizados: 0, criados: 0, ignorados: 1, ambiguos: 0 };
+        }
+
+        const observacaoTreinador = String(av.observacao || "").trim();
+        const dataHistorico = av.aprovadoEm || av.validadoEm || av.criadoEm || new Date().toISOString();
+        const ehJogo = tipoEventoNormalizado === "jogo";
+
+        const historicoRefCol = collection(db, "users", emailNormalizado, "historicoHabilidades");
+        const historicoSnap = await getDocs(historicoRefCol);
+
+        const historicosExistentes = historicoSnap.docs.map(docHistorico => ({
+            id: docHistorico.id,
+            data: docHistorico.data()
+        }));
+
+        const resultado = {
+            atualizados: 0,
+            criados: 0,
+            ignorados: 0,
+            ambiguos: 0
+        };
+
+        const userRef = doc(db, "users", emailNormalizado);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.exists() ? userSnap.data() : {};
+
+        for (const criterio of Object.keys(criteriosAvaliados)) {
+            const criterioNormalizado = normalizarParteIdHistorico(criterio);
+
+            const candidatos = historicosExistentes
+                .filter(item => {
+                    const reg = item.data || {};
+                    const mesmoCriterio = normalizarParteIdHistorico(reg.criterio) === criterioNormalizado;
+                    const origemNormalizada = String(reg.origem || "").toLowerCase();
+                    const mesmaOrigem = ehJogo
+                        ? origemNormalizada.includes("jogo") || origemNormalizada.includes("amistoso")
+                        : origemNormalizada.includes("treino");
+                    const mesmoEvento = !reg.eventId || String(reg.eventId) === String(evId);
+
+                    return mesmoCriterio && mesmaOrigem && mesmoEvento;
+                })
+                .map(item => {
+                    const reg = item.data || {};
+                    const dataRegistroMs = new Date(reg.registradoEm || 0).getTime();
+                    const dataAvaliacaoMs = new Date(dataHistorico).getTime();
+                    const diferencaTempo = Math.abs(dataRegistroMs - dataAvaliacaoMs);
+
+                    const avaliadorCompativel =
+                        !reg.registradoPorEmail ||
+                        !av.validadoPorEmail ||
+                        String(reg.registradoPorEmail).trim().toLowerCase() === String(av.validadoPorEmail).trim().toLowerCase();
+
+                    return {
+                        ...item,
+                        diferencaTempo,
+                        avaliadorCompativel
+                    };
+                })
+                .filter(item => Number.isFinite(item.diferencaTempo) && item.diferencaTempo <= 24 * 60 * 60 * 1000)
+                .sort((a, b) => {
+                    if (a.avaliadorCompativel && !b.avaliadorCompativel) return -1;
+                    if (!a.avaliadorCompativel && b.avaliadorCompativel) return 1;
+                    return a.diferencaTempo - b.diferencaTempo;
+                });
+
+            const registroEncontrado = candidatos[0] || null;
+
+            if (candidatos.length > 1) {
+                console.warn("Mais de um histórico compatível encontrado:", {
+                    evId,
+                    emailNormalizado,
+                    criterio,
+                    candidatos: candidatos.map(item => item.id)
+                });
+                resultado.ambiguos++;
+            }
+
+            if (registroEncontrado) {
+                const reg = registroEncontrado.data || {};
+
+                await setDoc(
+                    doc(db, "users", emailNormalizado, "historicoHabilidades", registroEncontrado.id),
+                    {
+                        observacao: observacaoTreinador,
+                        eventId: evId,
+                        notaAvaliacao: Number(criteriosAvaliados[criterio]),
+                        houveAlteracao: Number(reg.valorAnterior) !== Number(reg.valorNovo),
+                        historicoReconstruido: true,
+                        reconstruidoEm: new Date().toISOString()
+                    },
+                    { merge: true }
+                );
+                resultado.atualizados++;
+            } else {
+                const valorAtual = Number(
+                    userData?.habilidades?.[criterio] ??
+                    userData?.[criterio] ??
+                    criteriosAvaliados[criterio] ??
+                    0
+                );
+
+                const historicoId = [
+                    normalizarParteIdHistorico(evId),
+                    normalizarParteIdHistorico(criterio)
+                ].join("__");
+
+                await setDoc(
+                    doc(db, "users", emailNormalizado, "historicoHabilidades", historicoId),
+                    {
+                        criterio,
+                        valorAnterior: valorAtual,
+                        valorNovo: valorAtual,
+                        diferenca: 0,
+                        origem: ehJogo ? "Avaliação de jogo/amistoso" : "Avaliação de treino",
+                        detalhes: "Histórico reconstruído de avaliação já aprovada",
+                        observacao: observacaoTreinador,
+                        eventId: evId,
+                        notaAvaliacao: Number(criteriosAvaliados[criterio]),
+                        houveAlteracao: false,
+                        registradoEm: dataHistorico,
+                        registradoPor: av.aprovadoPor || av.validadoPorNome || av.validadoPorEmail || "Equipe técnica",
+                        registradoPorEmail: av.validadoPorEmail || av.aprovadoPorEmail || "",
+                        historicoReconstruido: true,
+                        reconstruidoEm: new Date().toISOString()
+                    },
+                    { merge: true }
+                );
+                resultado.criados++;
+            }
+        }
+
+        console.table(resultado);
+        if (!silencioso) {
+            alert(
+                `Reparo concluído.\n\n` +
+                `Registros atualizados: ${resultado.atualizados}\n` +
+                `Registros criados: ${resultado.criados}\n` +
+                `Ignorados: ${resultado.ignorados}\n` +
+                `Ambíguos: ${resultado.ambiguos}`
+            );
+        }
+
+        window.limparCacheHistoricoHabilidades(emailNormalizado);
+        
+        return resultado;
+
+    } catch (e) {
+        console.error("Erro ao reparar histórico:", e);
+        if (!silencioso) {
+            alert("Ocorreu um erro ao reparar o histórico.");
+        }
+        return { atualizados: 0, criados: 0, ignorados: 1, ambiguos: 0 };
+    }
+};
+
+window.repararHistoricosAprovadosDoEvento = async (evId) => {
+    const emailAtual = String(auth.currentUser?.email || "").trim().toLowerCase();
+    const podeReparar =
+        window.currentUserData?.funcao === "ADM" ||
+        emailAtual === "christianhpo@gmail.com" ||
+        emailAtual === "gabriel0barbosa0@gmail.com";
+
+    if (!podeReparar) {
+        alert("Apenas o administrador pode reconstruir históricos.");
+        return;
+    }
+
+    try {
+        if (!evId) {
+            alert("ID do evento inválido.");
+            return;
+        }
+
+        // 1. Carregar o documento principal do evento apenas uma vez
+        const eventoRef = doc(db, "events", evId);
+        const eventoSnap = await getDoc(eventoRef);
+        const eventoData = eventoSnap.exists() ? eventoSnap.data() : {};
+
+        // 2. Determinar o tipo do evento
+        const tipoEventoNormalizado = normalizarTipoEventoAvaliacaoDVC({}, eventoData);
+
+        const resumoGeral = {
+            tipoEvento: tipoEventoNormalizado || "desconhecido",
+            atletasEncontrados: 0,
+            atletasProcessados: 0,
+            atletasComErro: 0,
+            criteriosProcessados: 0,
+            registrosAtualizados: 0,
+            registrosCriados: 0,
+            registrosIgnorados: 0,
+            registrosAmbiguos: 0,
+            erros: []
+        };
+
+        // 3. Obter todas as atletas avaliadas em events/{evId}/avaliacoesTecnicas
+        const avaliacoesRef = collection(db, "events", evId, "avaliacoesTecnicas");
+        const avaliacoesSnap = await getDocs(avaliacoesRef);
+
+        resumoGeral.atletasEncontrados = avaliacoesSnap.docs.length;
+
+        for (const docAvaliacao of avaliacoesSnap.docs) {
+            const av = docAvaliacao.data();
+            const emailAtleta = String(av.email || av.avaliadoEmail || docAvaliacao.id).trim().toLowerCase();
+
+            if (!emailAtleta) {
+                resumoGeral.atletasComErro++;
+                resumoGeral.erros.push(`Avaliação ${docAvaliacao.id} não possui e-mail válido.`);
+                continue;
+            }
+
+            try {
+                const resultadoAtleta = await window.repararHistoricoAvaliacaoAprovada(evId, emailAtleta, {
+                    silencioso: true,
+                    eventoData: eventoData,
+                    tipoEventoNormalizado: tipoEventoNormalizado
+                });
+
+                resumoGeral.atletasProcessados++;
+                resumoGeral.registrosAtualizados += resultadoAtleta.atualizados || 0;
+                resumoGeral.registrosCriados += resultadoAtleta.criados || 0;
+                resumoGeral.registrosIgnorados += resultadoAtleta.ignorados || 0;
+                resumoGeral.registrosAmbiguos += resultadoAtleta.ambiguos || 0;
+
+                const criteriosAvaliados = extrairCriteriosAvaliacaoAprovada(av, tipoEventoNormalizado || "treino");
+                resumoGeral.criteriosProcessados += Object.keys(criteriosAvaliados).length;
+
+            } catch (errAtleta) {
+                resumoGeral.atletasComErro++;
+                resumoGeral.erros.push(`Erro ao processar atleta ${emailAtleta}: ${errAtleta.message}`);
+                console.error(`Erro no reparo coletivo para atleta ${emailAtleta}:`, errAtleta);
+            }
+        }
+
+        console.log("[REPARO COLETIVO CONCLUÍDO] Resumo Geral:", resumoGeral);
+        console.table(resumoGeral);
+
+        alert(
+            `Reparo Coletivo Concluído para o Evento: ${evId}\n\n` +
+            `Tipo do Evento: ${resumoGeral.tipoEvento}\n` +
+            `Atletas Encontrados: ${resumoGeral.atletasEncontrados}\n` +
+            `Atletas Processados: ${resumoGeral.atletasProcessados}\n` +
+            `Atletas com Erro: ${resumoGeral.atletasComErro}\n` +
+            `Critérios Processados: ${resumoGeral.criteriosProcessados}\n` +
+            `Registros Atualizados: ${resumoGeral.registrosAtualizados}\n` +
+            `Registros Criados: ${resumoGeral.registrosCriados}\n` +
+            `Registros Ignorados: ${resumoGeral.registrosIgnorados}\n` +
+            `Registros Ambíguos: ${resumoGeral.registrosAmbiguos}`
+        );
+
+        return resumoGeral;
+
+    } catch (e) {
+        console.error("Erro ao executar reparo coletivo de histórico:", e);
+        alert("Ocorreu um erro ao executar o reparo coletivo.");
+    }
+};
