@@ -1146,20 +1146,24 @@ function gerarPontosRadarDVC(habilidades, listaSkills) {
     const centroX = 110;
     const centroY = 110;
     const raioMaximo = 78;
+    const raioLabels = raioMaximo + 38;
 
     return listaSkills.map((skill, index) => {
         const angulo = (-Math.PI / 2) + (2 * Math.PI * index / listaSkills.length);
         const nota = Number(habilidades[skill.id] ?? 3);
         const raio = (nota / 5) * raioMaximo;
+        const cos = Math.cos(angulo);
+        const sin = Math.sin(angulo);
 
-        const x = centroX + raio * Math.cos(angulo);
-        const y = centroY + raio * Math.sin(angulo);
+        const x = centroX + raio * cos;
+        const y = centroY + raio * sin;
 
-        const labelX = centroX + (raioMaximo + 20) * Math.cos(angulo);
-        const labelY = centroY + (raioMaximo + 20) * Math.sin(angulo);
+        const labelX = centroX + raioLabels * cos;
+        const labelY = centroY + raioLabels * sin;
+        const labelAnchor = cos > 0.25 ? "start" : (cos < -0.25 ? "end" : "middle");
 
-        const eixoX = centroX + raioMaximo * Math.cos(angulo);
-        const eixoY = centroY + raioMaximo * Math.sin(angulo);
+        const eixoX = centroX + raioMaximo * cos;
+        const eixoY = centroY + raioMaximo * sin;
 
         return {
             ...skill,
@@ -1168,6 +1172,7 @@ function gerarPontosRadarDVC(habilidades, listaSkills) {
             y,
             labelX,
             labelY,
+            labelAnchor,
             eixoX,
             eixoY
         };
@@ -1250,7 +1255,8 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
             <polygon 
                 points="${pontosGrade}" 
                 fill="none" 
-                class="stroke-gray-200 dark:stroke-gray-800" 
+                class="radar-grade-line-dvc"
+                stroke="rgba(0, 0, 0, 0.08)"
                 stroke-width="1">
             </polygon>
         `;
@@ -1262,7 +1268,8 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
             y1="110" 
             x2="${p.eixoX}" 
             y2="${p.eixoY}" 
-            class="stroke-gray-200 dark:stroke-gray-800" 
+            class="radar-grade-line-dvc"
+            stroke="rgba(0, 0, 0, 0.08)"
             stroke-width="1">
         </line>
     `).join('');
@@ -1274,11 +1281,12 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
             <text 
                 x="${p.labelX}" 
                 y="${p.labelY}" 
-                text-anchor="middle" 
+                text-anchor="${p.labelAnchor}" 
                 dominant-baseline="middle" 
                 font-size="7" 
                 font-weight="800" 
-                class="fill-gray-500 dark:fill-gray-400">
+                class="radar-label-dvc"
+                style="white-space:nowrap;">
                 ${texto}
             </text>
         `;
@@ -1490,7 +1498,13 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
             </div>
 
             <div class="bg-gray-50 dark:bg-gray-950 border dark:border-gray-800 rounded-2xl p-2 mb-4 flex justify-center">
-                <svg viewBox="-60 -5 340 235" width="100%" height="240" style="max-width:340px; overflow:visible;">
+                <svg viewBox="-90 -18 400 256" width="100%" height="250" style="max-width:360px; overflow:visible;">
+                    <style>
+                        .radar-grade-line-dvc { stroke: rgba(0, 0, 0, 0.08); }
+                        .dark .radar-grade-line-dvc { stroke: rgba(255, 255, 255, 0.15); }
+                        .radar-label-dvc { fill: #111827; white-space: nowrap; }
+                        .dark .radar-label-dvc { fill: #e5e7eb; }
+                    </style>
                     ${linhasGrade}
                     ${eixosHtml}
 
