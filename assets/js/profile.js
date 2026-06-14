@@ -1268,7 +1268,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
     `).join('');
 
     const labelsHtml = pontos.map(p => {
-        const texto = p.nome.length > 12 ? p.nome.slice(0, 11) + "." : p.nome;
+        const texto = window.escaparHtml ? window.escaparHtml(String(p.nome || "")) : String(p.nome || "");
 
         return `
             <text 
@@ -1490,7 +1490,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
             </div>
 
             <div class="bg-gray-50 dark:bg-gray-950 border dark:border-gray-800 rounded-2xl p-2 mb-4 flex justify-center">
-                <svg viewBox="0 0 220 220" width="100%" height="240" style="max-width:280px;">
+                <svg viewBox="-60 -5 340 235" width="100%" height="240" style="max-width:340px; overflow:visible;">
                     ${linhasGrade}
                     ${eixosHtml}
 
