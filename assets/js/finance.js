@@ -34,6 +34,8 @@ const get_AppCache = () => window.AppCache;
 const CHAVE_PIX_DVC = "drummondvoleibol@gmail.com";
 const VALOR_SUGERIDO_CONTRIBUICAO_DVC = "R$ 10,00";
 const logoContribuicaoDVC = "assets/img/loki2.webp";
+const LIMITE_ARQUIVO_COMPROVANTE_BYTES_DVC = 800000;
+const LIMITE_DATA_URL_COMPROVANTE_CHARS_DVC = 850000;
 
 // Inner helper functions for renderFinanceiro
 function valorMesAno(textoMesAno) {
@@ -109,6 +111,94 @@ function escaparHtmlFinanceiroDVC(valor = "") {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
+}
+
+function obterEmailFinanceiroAtualDVC() {
+    return String(auth.currentUser?.email || get_currentUserData()?.email || "").trim();
+}
+
+function obterUserDocIdFinanceiroAtualDVC() {
+    const user = get_currentUserData() || {};
+    return String(user.documentIdDVC || user.email || auth.currentUser?.email || "").trim();
+}
+
+function lerArquivoComoDataURLFinanceiroDVC(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(String(e.target?.result || ""));
+        reader.onerror = () => reject(new Error("Nao foi possivel ler o arquivo selecionado."));
+        reader.readAsDataURL(file);
+    });
+}
+
+function carregarImagemDataURLFinanceiroDVC(dataUrl) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("Nao foi possivel processar a imagem selecionada."));
+        img.src = dataUrl;
+    });
+}
+
+async function prepararComprovanteImagemFinanceiroDVC(file) {
+    const dataUrlOriginal = await lerArquivoComoDataURLFinanceiroDVC(file);
+
+    if (dataUrlOriginal.length <= LIMITE_DATA_URL_COMPROVANTE_CHARS_DVC) {
+        return {
+            dataUrl: dataUrlOriginal,
+            compactado: false,
+            tamanhoDataUrl: dataUrlOriginal.length,
+            tipo: file.type || ""
+        };
+    }
+
+    const img = await carregarImagemDataURLFinanceiroDVC(dataUrlOriginal);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+        const erro = new Error("Canvas indisponivel para compactar comprovante.");
+        erro.code = "dvc/canvas-unavailable";
+        throw erro;
+    }
+
+    const dimensoesMaximas = [1600, 1300, 1100, 900, 760];
+    const qualidades = [0.82, 0.74, 0.66, 0.58, 0.5, 0.42];
+    let melhorResultado = null;
+
+    for (const maxDimensao of dimensoesMaximas) {
+        const escala = Math.min(1, maxDimensao / img.width, maxDimensao / img.height);
+        canvas.width = Math.max(1, Math.round(img.width * escala));
+        canvas.height = Math.max(1, Math.round(img.height * escala));
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        for (const qualidade of qualidades) {
+            const dataUrlCompactado = canvas.toDataURL("image/jpeg", qualidade);
+            const resultado = {
+                dataUrl: dataUrlCompactado,
+                compactado: true,
+                tamanhoDataUrl: dataUrlCompactado.length,
+                tipo: "image/jpeg"
+            };
+
+            if (!melhorResultado || resultado.tamanhoDataUrl < melhorResultado.tamanhoDataUrl) {
+                melhorResultado = resultado;
+            }
+
+            if (resultado.tamanhoDataUrl <= LIMITE_DATA_URL_COMPROVANTE_CHARS_DVC) {
+                return resultado;
+            }
+        }
+    }
+
+    const erro = new Error("Imagem maior que o limite seguro do Firestore apos compactacao.");
+    erro.code = "dvc/image-too-large-after-compression";
+    erro.tamanhoDataUrl = melhorResultado?.tamanhoDataUrl || dataUrlOriginal.length;
+    throw erro;
 }
 
 function normalizarStatusFinanceiroDVC(valor = "") {
@@ -1048,7 +1138,7 @@ async function enviarComprovante() {
         return alert("Selecione o arquivo.");
     }
 
-    if (file.size > 800000) {
+    if (file.size > LIMITE_ARQUIVO_COMPROVANTE_BYTES_DVC) {
         return alert("Arquivo muito grande! No plano gratuito, tire um print da tela do comprovante para diminuir o tamanho antes de enviar (mÃ¡x: 800KB).");
     }
 
@@ -1065,49 +1155,74 @@ async function enviarComprovante() {
         btn.disabled = true;
     }
 
-    const reader = new FileReader();
+    try {
+        const imagemComprovante = await prepararComprovanteImagemFinanceiroDVC(file);
+        const base64 = imagemComprovante.dataUrl;
+        const email = obterEmailFinanceiroAtualDVC();
+        const userDocId = obterUserDocIdFinanceiroAtualDVC();
 
-    reader.onload = async (e) => {
-        try {
-            const base64 = e.target.result;
-            const email = auth.currentUser.email;
-            const enviadoEm = new Date().toISOString();
-            const docIdGlobal = `${mes.replace('/', '_')}_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
-
-            await setDoc(doc(db, "contribuicoesGlobais", docIdGlobal), {
-                mes: mes,
-                tipo: "Comprovante",
-                comprovante: base64,
-                enviadoEm: enviadoEm,
-                status: "Pendente",
-                resultadoFinanceiro: "",
-                nome: get_currentUserData()?.nome || "",
-                email: email,
-                arquivoNome: file.name || "comprovante"
-            }, { merge: true });
-
-            await updateDoc(doc(db, "users", email), {
-                comprovantesEnviados: arrayUnion(mes)
-            });
-
-            window.limparCacheDados("financeiro"); window.limparCacheContribuicoesAtleta();
-            window.limparCacheDados("atletas");
-            alert("Enviado!");
-            restaurarBotao();
-            renderFinance();
-        } catch (err) {
-            console.error("Erro ao enviar comprovante:", err);
-            restaurarBotao();
-            alert("NÃ£o foi possÃ­vel enviar o comprovante.");
+        if (!email || !userDocId) {
+            throw new Error("Usuario autenticado sem e-mail ou documento financeiro identificado.");
         }
-    };
 
-    reader.onerror = () => {
+        const enviadoEm = new Date().toISOString();
+        const docIdLegado = mes.replace('/', '_');
+        const arquivoTamanhoProcessado = imagemComprovante.tamanhoDataUrl || base64.length;
+        const arquivoCompactado = Boolean(imagemComprovante.compactado);
+        const dadosComprovante = {
+            mes: mes,
+            tipo: "Comprovante",
+            comprovante: base64,
+            enviadoEm: enviadoEm,
+            atualizadoEm: enviadoEm,
+            status: "Pendente",
+            resultadoFinanceiro: "",
+            nome: get_currentUserData()?.nome || "",
+            email: email,
+            arquivoNome: file.name || "comprovante",
+            arquivoTipo: imagemComprovante.tipo || file.type || "",
+            arquivoTamanho: file.size || 0,
+            arquivoTamanhoProcessado: arquivoTamanhoProcessado,
+            arquivoCompactado: arquivoCompactado,
+            historicoEnvios: arrayUnion({
+                tipo: "Comprovante",
+                mes: mes,
+                enviadoEm: enviadoEm,
+                enviadoPor: get_currentUserData()?.nome || email,
+                email: email,
+                arquivoNome: file.name || "comprovante",
+                arquivoTamanho: file.size || 0,
+                arquivoTamanhoProcessado: arquivoTamanhoProcessado,
+                arquivoCompactado: arquivoCompactado
+            })
+        };
+
+        await salvarContribuicaoGlobal(email, docIdLegado, dadosComprovante);
+        await setDoc(doc(db, "users", userDocId, "contribuicoes", docIdLegado), dadosComprovante, { merge: true });
+        await setDoc(doc(db, "users", userDocId), {
+            comprovantesEnviados: arrayUnion(mes)
+        }, { merge: true });
+
+        window.limparCacheDados("financeiro"); window.limparCacheContribuicoesAtleta();
+        window.limparCacheDados("atletas");
+        alert("Enviado!");
         restaurarBotao();
-        alert("NÃ£o foi possÃ­vel ler o arquivo selecionado.");
-    };
-
-    reader.readAsDataURL(file);
+        renderFinance();
+    } catch (err) {
+        console.error("Erro ao enviar comprovante:", err);
+        restaurarBotao();
+        const codigoErro = String(err?.code || "");
+        const mensagemErro = String(err?.message || "");
+        if (codigoErro.includes("permission-denied")) {
+            alert("Nao foi possivel enviar o comprovante por permissao do cadastro. Saia, entre novamente e tente mais uma vez.");
+            return;
+        }
+        if (codigoErro.includes("invalid-argument") || codigoErro.includes("image-too-large-after-compression") || mensagemErro.includes("maximum") || mensagemErro.includes("larger than")) {
+            alert("Nao foi possivel enviar porque a imagem ficou grande demais apos o processamento. Tire um print mais leve e tente novamente.");
+            return;
+        }
+        alert("Nao foi possivel enviar o comprovante.");
+    }
 }
 
 // 8. enviarJustificativa
