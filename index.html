@@ -33,7 +33,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        html, body { min-height: 100%; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; min-height: 100dvh; overflow: hidden; }
         .dark body { background-color: #030712; }
         .hidden-screen { display: none !important; }
         .fade-in { animation: fadeIn 0.3s ease-in; }
@@ -42,6 +43,13 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #990000; border-radius: 10px; }
         input:disabled, select:disabled { background-color: #f9fafb; color: #9ca3af; cursor: not-allowed; border-bottom: 1px solid #e5e7eb !important; appearance: none; }
         .dark input:disabled, .dark select:disabled { background-color: #1f2937; color: #6b7280; border-bottom: 1px solid #374151 !important; }
+        #app-container { height: min(850px, calc(100dvh - 1rem)); max-height: calc(100dvh - 1rem); }
+        #main-content { min-height: 0; }
+        #nav-bar { flex-shrink: 0; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)); }
+        @supports not (height: 100dvh) {
+            body { min-height: 100vh; }
+            #app-container { height: min(850px, calc(100vh - 1rem)); max-height: calc(100vh - 1rem); }
+        }
 
         /* Overrides para classes do Tailwind que não foram compiladas com dark mode */
         .dark .dark\:bg-gray-900 { background-color: #111827 !important; }
@@ -229,7 +237,7 @@
 
         <div id="main-content" class="hidden-screen flex-1 overflow-y-auto p-4 pb-24 custom-scroll"></div>
 
-        <nav id="nav-bar" class="hidden-screen absolute bottom-0 left-0 right-0 z-50 border-t dark:border-gray-800 bg-white dark:bg-gray-900 px-2 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.10)] dark:shadow-[0_-4px_12px_rgba(0,0,0,0.50)] transition-colors duration-200">
+        <nav id="nav-bar" class="hidden-screen z-50 border-t dark:border-gray-800 bg-white dark:bg-gray-900 px-2 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.10)] dark:shadow-[0_-4px_12px_rgba(0,0,0,0.50)] transition-colors duration-200">
     <div class="flex justify-around items-center gap-1">
 
         <button onclick="changeTab('home')" id="nav-home" class="nav-btn text-gray-400 flex flex-col items-center justify-center px-2 py-1 rounded-xl">
