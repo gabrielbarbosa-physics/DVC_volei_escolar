@@ -42,7 +42,7 @@ import {
 
 const firebaseConfig = {
     apiKey: "AIzaSyDFDaMuKx5a1cAj1KAbnirGIeVZ44E6IkQ",
-    authDomain: "auth.dvc-app.com.br",
+    authDomain: "dvc2-1d3cd.firebaseapp.com",
     projectId: "dvc2-1d3cd",
     storageBucket: "dvc2-1d3cd.firebasestorage.app",
     messagingSenderId: "768590711144",
