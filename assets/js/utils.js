@@ -572,7 +572,8 @@ function renderBadgeDVC(texto, tipo = "neutro", extraClasses = "") {
         amarelo: "bg-yellow-50 text-yellow-800 border-yellow-100",
         azul: "bg-blue-50 text-blue-700 border-blue-100",
         rosa: "bg-pink-50 text-pink-700 border-pink-100",
-        cinza: "bg-gray-100 text-gray-600 border-gray-200"
+        cinza: "bg-gray-100 text-gray-600 border-gray-200",
+        roxo: "bg-purple-50 text-purple-700 border-purple-100"
     };
 
     return `
@@ -629,7 +630,8 @@ function renderBadgesAtletaDVC(user = {}, opcoes = {}) {
     ];
 
     if (financeiro === "Justificado") badges.push(renderBadgeDVC("Justificado", "amarelo"));
-    if (financeiro === STATUS_FINANCEIRO_CARENCIA) badges.push(renderBadgeDVC("Carência", "amarelo"));
+    if (financeiro === STATUS_FINANCEIRO_CARENCIA) badges.push(renderBadgeDVC("Carência", "roxo"));
+    if (financeiro === "Em carência") badges.push(renderBadgeDVC("Em carência", "roxo"));
     if (financeiro === "Inadimplente") badges.push(renderBadgeDVC("Inadimplente", "vermelho"));
 
     return `
@@ -816,6 +818,15 @@ window.normalizarCategoriaRankingDVC = normalizarCategoriaRankingDvc;
 window.normalizarFuncaoVoleiRankingDvc = normalizarFuncaoVoleiRankingDvc;
 window.normalizarFuncaoVoleiRankingDVC = normalizarFuncaoVoleiRankingDvc;
 
+function toggleDarkModeDVC() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('dvc-theme', isDark ? 'dark' : 'light');
+    const event = new CustomEvent('themeChanged', { detail: { isDark } });
+    window.dispatchEvent(event);
+    return isDark;
+}
+window.toggleDarkModeDVC = toggleDarkModeDVC;
+
 // Export listings
 export {
     corrigirMojibakeDVC,
@@ -866,5 +877,6 @@ export {
     getNomeFuncaoVoleiDVC,
     normalizarGeneroRankingDvc,
     normalizarCategoriaRankingDvc,
-    normalizarFuncaoVoleiRankingDvc
+    normalizarFuncaoVoleiRankingDvc,
+    toggleDarkModeDVC
 };

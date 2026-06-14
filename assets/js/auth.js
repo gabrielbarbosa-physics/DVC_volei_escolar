@@ -61,6 +61,13 @@ async function loginGoogle() {
     }
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    const btnGoogle = document.getElementById("btn-google");
+    if (btnGoogle) {
+        btnGoogle.addEventListener("click", loginGoogle);
+    }
+});
+
 function logout() {
     return signOut(auth).then(() => location.reload());
 }
