@@ -79,13 +79,13 @@ function renderImagemHomeDVC(item, classes = "", loading = "lazy") {
 
 function renderCardPilarDVC(icone, titulo, texto) {
     return `
-        <div class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm flex gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+        <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm flex gap-3 transition-colors duration-200">
+            <div class="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 flex items-center justify-center shrink-0">
                 <i class="fa-solid ${icone} text-[#990000] text-sm"></i>
             </div>
             <div>
-                <h3 class="text-xs font-black uppercase text-gray-800 leading-none">${titulo}</h3>
-                <p class="text-[10px] text-gray-500 font-semibold leading-relaxed mt-2">${texto}</p>
+                <h3 class="text-xs font-black uppercase text-gray-800 dark:text-gray-200 leading-none">${titulo}</h3>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed mt-2">${texto}</p>
             </div>
         </div>
     `;
@@ -93,8 +93,8 @@ function renderCardPilarDVC(icone, titulo, texto) {
 
 function renderCardTrajetoriaDVC(item) {
     return `
-        <article class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm flex flex-col">
-            <div class="h-48 bg-gray-100">
+        <article class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm flex flex-col transition-colors duration-200">
+            <div class="h-48 bg-gray-100 dark:bg-gray-950">
                 ${renderImagemHomeDVC(item, "w-full h-full object-cover")}
             </div>
             <div class="p-4 flex-1 flex flex-col justify-between">
@@ -103,14 +103,14 @@ function renderCardTrajetoriaDVC(item) {
                         <span class="bg-[#990000] text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">
                             ${item.ano}
                         </span>
-                        <span class="bg-gray-100 text-gray-500 text-[7px] font-black px-2 py-0.5 rounded uppercase">
+                        <span class="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[7px] font-black px-2 py-0.5 rounded uppercase">
                             ${item.selo}
                         </span>
                     </div>
-                    <h3 class="text-xs font-black uppercase text-gray-800 leading-tight">
+                    <h3 class="text-xs font-black uppercase text-gray-800 dark:text-gray-200 leading-tight">
                         ${item.tituloCard || item.titulo}
                     </h3>
-                    <p class="text-[10px] text-gray-500 font-semibold leading-relaxed mt-2">
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed mt-2">
                         ${item.texto}
                     </p>
                 </div>
@@ -147,16 +147,16 @@ function renderCardProcessoDVC(item) {
     const legendaSegura = getLegendaMemoriaHomeDVC(tituloSeguro, item?.legenda);
 
     return `
-        <div class="snap-center shrink-0 w-[200px] bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-            <div class="h-32 bg-gray-100">
+        <div class="snap-center shrink-0 w-[200px] bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm flex flex-col transition-colors duration-200">
+            <div class="h-32 bg-gray-100 dark:bg-gray-950">
                 ${renderImagemHomeDVC(item, "w-full h-full object-cover")}
             </div>
             <div class="p-3 flex-1 flex flex-col justify-between">
                 <div>
-                    <p class="text-[8px] font-bold text-gray-400 uppercase truncate">
+                    <p class="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase truncate">
                         ${tituloSeguro}
                     </p>
-                    <p class="text-[9px] font-semibold text-gray-600 leading-snug mt-1 h-7 overflow-hidden line-clamp-2">
+                    <p class="text-[9px] font-semibold text-gray-600 dark:text-gray-300 leading-snug mt-1 h-7 overflow-hidden line-clamp-2">
                         ${legendaSegura}
                     </p>
                 </div>
@@ -243,21 +243,21 @@ function scrollParaSecaoHomeDVC(secaoId, conteudoId = null) {
 
 function renderSobreAppHomeDVC() {
     return `
-        <section id="sobre-app-home-dvc" class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm">
-            <button onclick="window.toggleSecaoHomeDVC('conteudo-sobre-app-home-dvc')" class="w-full flex items-center justify-between text-left outline-none">
+        <section id="sobre-app-home-dvc" class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm transition-colors duration-200">
+            <button onclick="window.toggleSecaoHomeDVC('conteudo-sobre-app-home-dvc')" class="w-full flex items-center justify-between text-left outline-none cursor-pointer">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-mobile-screen text-indigo-700 text-sm"></i>
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-mobile-screen text-indigo-700 dark:text-indigo-400 text-sm"></i>
                     </div>
                     <div>
                         <p class="text-[10px] font-black uppercase text-[#990000]">Como o app ajuda no DVC?</p>
-                        <h2 class="text-xs font-black text-gray-900 uppercase leading-tight mt-0.5">Organização, participação e evolução em um só lugar.</h2>
+                        <h2 class="text-xs font-black text-gray-900 dark:text-gray-200 uppercase leading-tight mt-0.5">Organização, participação e evolução em um só lugar.</h2>
                     </div>
                 </div>
-                <i id="chevron-conteudo-sobre-app-home-dvc" class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                <i id="chevron-conteudo-sobre-app-home-dvc" class="fa-solid fa-chevron-down text-gray-400 dark:text-gray-500 transition-transform duration-300"></i>
             </button>
-            <div id="conteudo-sobre-app-home-dvc" class="hidden mt-4 pt-4 border-t border-gray-100 space-y-3">
-                <p class="text-[10px] font-semibold text-gray-600 leading-relaxed mb-3">
+            <div id="conteudo-sobre-app-home-dvc" class="hidden mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                <p class="text-[10px] font-semibold text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
                     O app do DVC organiza a vida do projeto: avisos, agenda, presença, perfil, evolução, contribuições, avaliações e desafios de inteligência de quadra. Mais do que uma ferramenta de controle, ele ajuda cada participante a acompanhar sua trajetória e fortalecer o coletivo.
                 </p>
                 <div class="grid grid-cols-1 gap-2">
@@ -276,18 +276,18 @@ function renderSobreProjetoHomeDVC(pilares) {
         const [icone, titulo, texto] = pilar;
         const conteudoId = `conteudo-pilar-${index}`;
         return `
-            <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                <button onclick="window.toggleSecaoHomeDVC('${conteudoId}')" class="w-full flex items-center justify-between p-4 text-left outline-none">
+            <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm transition-colors duration-200">
+                <button onclick="window.toggleSecaoHomeDVC('${conteudoId}')" class="w-full flex items-center justify-between p-4 text-left outline-none cursor-pointer">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+                        <div class="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 flex items-center justify-center shrink-0">
                             <i class="fa-solid ${icone} text-[#990000] text-xs"></i>
                         </div>
-                        <h3 class="text-xs font-black uppercase text-gray-800 leading-none">${titulo}</h3>
+                        <h3 class="text-xs font-black uppercase text-gray-800 dark:text-gray-200 leading-none">${titulo}</h3>
                     </div>
-                    <i id="chevron-${conteudoId}" class="fa-solid fa-chevron-down text-gray-400 text-xs transition-transform duration-300"></i>
+                    <i id="chevron-${conteudoId}" class="fa-solid fa-chevron-down text-gray-400 dark:text-gray-500 text-xs transition-transform duration-300"></i>
                 </button>
                 <div id="${conteudoId}" class="hidden px-4 pb-4 pt-1">
-                    <p class="text-[10px] text-gray-500 font-semibold leading-relaxed">${texto}</p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed">${texto}</p>
                 </div>
             </div>
         `;
@@ -313,7 +313,7 @@ function renderVideoHomeDVC({ src, poster = "", titulo = "", texto = "", etiquet
     const posterAttr = poster ? `poster="${arquivoMidiaDVC(poster)}"` : "";
 
     return `
-        <article class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm">
+        <article class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm transition-colors duration-200">
             <div class="relative rounded-2xl overflow-hidden bg-black mb-3">
                 <video controls muted playsinline preload="metadata" ${posterAttr} class="w-full max-h-[280px] object-contain bg-black">
                     <source src="${arquivoMidiaDVC(src)}" type="video/quicktime">
@@ -321,9 +321,9 @@ function renderVideoHomeDVC({ src, poster = "", titulo = "", texto = "", etiquet
                 </video>
             </div>
             <p class="text-[9px] font-black uppercase text-[#990000] mb-1">${etiqueta}</p>
-            <h3 class="text-sm font-black text-gray-900 uppercase leading-tight">${titulo}</h3>
-            <p class="text-[10px] text-gray-500 font-semibold leading-relaxed mt-2">${texto}</p>
-            <p class="text-[8px] text-gray-400 font-bold uppercase mt-3">Vídeo disponível no acervo do projeto.</p>
+            <h3 class="text-sm font-black text-gray-900 dark:text-gray-200 uppercase leading-tight">${titulo}</h3>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed mt-2">${texto}</p>
+            <p class="text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase mt-3">Vídeo disponível no acervo do projeto.</p>
         </article>
     `;
 }
@@ -368,7 +368,6 @@ async function renderHome() {
         jaViuHomeDVC = true;
     }
 
-    const avisosHomeHtml = window.renderAvisosHomeDVC ? await window.renderAvisosHomeDVC() : "";
     const avaliacaoMensalEquipeHtml = window.renderAvaliacaoMensalEquipeDVC ? await window.renderAvaliacaoMensalEquipeDVC("home") : "";
 
     const pilares = [
@@ -467,21 +466,20 @@ async function renderHome() {
 
 
 
-            ${avisosHomeHtml}
             ${avaliacaoMensalEquipeHtml}
 
             ${renderSobreAppHomeDVC()}
             ${renderSobreProjetoHomeDVC(pilares)}
 
-            <section class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm">
+            <section class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm transition-colors duration-200">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <p class="text-[10px] font-black uppercase text-[#990000]">História do projeto</p>
-                        <p id="texto-toggle-historia-home-dvc" class="text-[9px] font-semibold text-gray-500 leading-relaxed">
+                        <p id="texto-toggle-historia-home-dvc" class="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-relaxed">
                             ${jaViuHomeDVC ? "A história completa fica recolhida para o uso diário ficar rápido." : "Toque para conhecer a trajetória, os processos e as memórias do DVC."}
                         </p>
                     </div>
-                    <button id="btn-toggle-historia-home-dvc" onclick="toggleHistoriaHomeDVC()" class="shrink-0 rounded-full bg-[#990000] text-white px-4 py-3 text-[9px] font-black uppercase shadow-sm">
+                    <button id="btn-toggle-historia-home-dvc" onclick="toggleHistoriaHomeDVC()" class="shrink-0 rounded-full bg-[#990000] text-white px-4 py-3 text-[9px] font-black uppercase shadow-sm cursor-pointer">
                         <i class="fa-solid fa-chevron-down mr-2"></i> Conhecer nossa história
                     </button>
                 </div>
@@ -490,14 +488,14 @@ async function renderHome() {
                     <section class="space-y-3">
                         <div>
                             <p class="text-[10px] font-black uppercase text-[#990000]">Identidade DVC</p>
-                            <h2 class="text-lg font-black text-gray-900 uppercase leading-tight">Vestir a camisa, ocupar a quadra, construir história</h2>
+                            <h2 class="text-lg font-black text-gray-900 dark:text-gray-200 uppercase leading-tight">Vestir a camisa, ocupar a quadra, construir história</h2>
                         </div>
-                        <article class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                            <div class="h-56 bg-gray-100">
+                        <article class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm transition-colors duration-200">
+                            <div class="h-56 bg-gray-100 dark:bg-gray-950">
                                 ${renderImagemHomeDVC(identidadePrincipal, "w-full h-full object-cover")}
                             </div>
                             <div class="p-5">
-                                <p class="text-xs font-semibold text-gray-600 leading-relaxed">
+                                <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 leading-relaxed">
                                     A identidade do DVC nasce da presença: jovens que ocupam a quadra, vestem a camisa e constroem juntos uma história coletiva.
                                 </p>
                             </div>
@@ -512,14 +510,14 @@ async function renderHome() {
                         </article>
                     </section>
 
-                    <section class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                        <div class="h-52 bg-gray-100">
+                    <section class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm transition-colors duration-200">
+                        <div class="h-52 bg-gray-100 dark:bg-gray-950">
                             ${renderImagemHomeDVC(buscarMidiaHomeDVC("assets/img/interno.webp"), "w-full h-full object-cover")}
                         </div>
                         <div class="p-5">
                             <p class="text-[10px] font-black uppercase text-[#990000]">Mais que um time</p>
-                            <h2 class="text-lg font-black uppercase text-gray-900 leading-tight mt-1">Mais que treino. Uma rede de apoio.</h2>
-                            <p class="text-xs font-semibold text-gray-600 leading-relaxed mt-3">
+                            <h2 class="text-lg font-black uppercase text-gray-900 dark:text-gray-200 leading-tight mt-1">Mais que treino. Uma rede de apoio.</h2>
+                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 leading-relaxed mt-3">
                                 Cada encontro é também um espaço de convivência, escuta, responsabilidade e construção coletiva. O DVC fortalece vínculos enquanto desenvolve atletas e pessoas.
                             </p>
                         </div>
@@ -528,7 +526,7 @@ async function renderHome() {
                     <section class="space-y-3">
                         <div>
                             <p class="text-[10px] font-black uppercase text-[#990000]">Nossa trajetória</p>
-                            <h2 class="text-lg font-black text-gray-900 uppercase leading-tight">Resultados que nasceram do processo</h2>
+                            <h2 class="text-lg font-black text-gray-900 dark:text-gray-200 uppercase leading-tight">Resultados que nasceram do processo</h2>
                         </div>
                         <div class="grid grid-cols-1 gap-3">
                             ${trajetoria.map(item => renderCardTrajetoriaDVC(item)).join("")}
@@ -543,14 +541,14 @@ async function renderHome() {
 
                     ${renderSecaoDvcEmMovimento()}
 
-                    <section class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                        <div class="h-56 bg-gray-100">
+                    <section class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm transition-colors duration-200">
+                        <div class="h-56 bg-gray-100 dark:bg-gray-950">
                             ${renderImagemHomeDVC(alemDaQuadra, "w-full h-full object-cover")}
                         </div>
                         <div class="p-5">
                             <p class="text-[10px] font-black uppercase text-[#990000]">Além da quadra</p>
-                            <h2 class="text-lg font-black uppercase text-gray-900 leading-tight mt-1">Desenvolvimento humano também é vitória.</h2>
-                            <p class="text-xs font-semibold text-gray-600 leading-relaxed mt-3">
+                            <h2 class="text-lg font-black uppercase text-gray-900 dark:text-gray-200 leading-tight mt-1">Desenvolvimento humano também é vitória.</h2>
+                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 leading-relaxed mt-3">
                                 Nossa maior conquista acontece quando você ocupa o seu espaço no mundo. A quadra é apenas o ensaio para as grandes vitórias da sua vida, dos seus estudos e do seu futuro. O DVC caminha ao seu lado em cada passo.
                             </p>
                         </div>

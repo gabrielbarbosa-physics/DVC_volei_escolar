@@ -366,7 +366,7 @@ function botaoFiltroRankingDVC(chave, valor, label, contador = null) {
 function renderTagsRankingDVC(atleta = {}, modoEscuro = false) {
     const classeBase = modoEscuro
         ? "bg-white/10 text-white/85 border-white/15"
-        : "bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-450 border-gray-100 dark:border-gray-800";
+        : "bg-gray-50 text-gray-500 border-gray-100 dark-ranking-tag";
 
     return `
         <div class="flex flex-wrap gap-1.5 mt-2">
@@ -384,6 +384,7 @@ function renderCardTopLokiDVC(atleta, posicao, destaque = false) {
     const logoClaro = PROJETO_ATUAL_DVC?.logoFundoClaro || PROJETO_ATUAL_DVC?.logo || "assets/img/loki1.webp";
     const score = formatarPontuacaoRankingDVC(atleta.pontuacaoRanking, window.filtrosRankingDVC?.tipo || "tecnico", atleta.valorOcultoParaMim);
     const unidade = getUnidadeRankingDVC(window.filtrosRankingDVC?.tipo || "tecnico");
+    const hasPhoto = !!(atleta.photoURL || atleta.fotoUrl || atleta.foto);
 
     if (destaque) {
         return `
@@ -395,8 +396,11 @@ function renderCardTopLokiDVC(atleta, posicao, destaque = false) {
                             <p class="text-[8px] font-black uppercase text-white/60">Loki Destaque #${posicao}</p>
                             <h3 class="text-lg font-black uppercase leading-tight truncate mt-1">${escaparHtml(atleta.nome || "Sem nome")}</h3>
                         </div>
-                        <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center p-1.5 shrink-0">
-                            <img src="${logoClaro}" class="w-full h-full object-contain">
+                        <div class="w-12 h-12 rounded-full bg-white/10 dark:bg-gray-950/40 border border-white/20 dark:border-gray-800/60 flex items-center justify-center shrink-0 overflow-hidden dark-avatar-container">
+                            ${hasPhoto 
+                                ? `<img src="${atleta.photoURL || atleta.fotoUrl || atleta.foto}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='${logoEscuro}';">`
+                                : `<img src="${logoEscuro}" class="w-full h-full object-contain p-1">`
+                            }
                         </div>
                     </div>
                     <div class="mt-5 flex items-end justify-between gap-3">
@@ -412,13 +416,23 @@ function renderCardTopLokiDVC(atleta, posicao, destaque = false) {
         `;
     }
 
+    const classesCard = posicao === 2
+        ? "bg-white dark:bg-gradient-to-b dark:from-gray-850 dark:to-gray-900 border-red-100 dark:border-gray-500/40 dark-podium-silver"
+        : "bg-white dark:bg-gray-900 border-red-100 dark:border-amber-800/30 dark-podium-bronze";
+
     return `
-        <div class="relative overflow-hidden bg-white dark:bg-gray-900 border border-red-100 dark:border-red-950/40 rounded-3xl p-4 shadow-sm text-gray-900 dark:text-gray-100">
+        <div class="relative overflow-hidden ${classesCard} rounded-3xl p-4 shadow-sm text-gray-900 dark:text-gray-100">
             <img src="${logoClaro}" class="absolute -right-7 -bottom-8 w-28 h-28 opacity-10 object-contain">
             <div class="relative z-10">
                 <div class="flex items-center justify-between gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 flex items-center justify-center p-1.5 shrink-0">
-                        <img src="${logoClaro}" class="w-full h-full object-contain">
+                    <div class="w-11 h-11 rounded-full bg-red-50 dark:bg-gray-950/40 border border-red-100 dark:border-gray-800/60 flex items-center justify-center shrink-0 overflow-hidden dark-avatar-container">
+                        ${hasPhoto 
+                            ? `<img src="${atleta.photoURL || atleta.fotoUrl || atleta.foto}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=document.documentElement.classList.contains('dark') ? '${logoEscuro}' : '${logoClaro}';">`
+                            : `
+                                <img src="${logoClaro}" class="w-full h-full object-contain p-1 light-avatar">
+                                <img src="${logoEscuro}" class="w-full h-full object-contain p-1 dark-avatar">
+                            `
+                        }
                     </div>
                     <span class="bg-[#990000] text-white px-2 py-1 rounded-full text-[9px] font-black">#${posicao}</span>
                 </div>
@@ -426,7 +440,7 @@ function renderCardTopLokiDVC(atleta, posicao, destaque = false) {
                 <h3 class="text-xs font-black uppercase text-gray-900 dark:text-gray-100 truncate mt-1">${escaparHtml(atleta.nome || "Sem nome")}</h3>
                 <div class="mt-3 flex items-end justify-between gap-2">
                     <p class="text-2xl font-black text-[#990000] dark:text-red-400 leading-none">${score}</p>
-                    <p class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">${unidade}</p>
+                    <p class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-555">${unidade}</p>
                 </div>
                 ${renderTagsRankingDVC(atleta)}
             </div>
@@ -447,14 +461,21 @@ function renderCardRankingAtletaDVC(atleta, posicao) {
     }
     
     const podeAbrirPerfil = usuarioPodeAbrirPerfilRankingDVC(atleta);
-    const avatarUrl = atleta.photoURL || atleta.fotoUrl || atleta.foto || 'assets/img/logo.webp';
+    const hasPhoto = !!(atleta.photoURL || atleta.fotoUrl || atleta.foto);
     const corScore = tipo === "inteligencia" ? "text-indigo-900 dark:text-indigo-400" : "text-[#990000] dark:text-red-400";
+
+    const avatarHtml = hasPhoto
+        ? `<img src="${atleta.photoURL || atleta.fotoUrl || atleta.foto}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=document.documentElement.classList.contains('dark') ? 'assets/img/logo2.svg' : 'assets/img/logo.svg';">`
+        : `
+            <img src="assets/img/logo.svg" class="w-full h-full object-contain p-1 light-avatar">
+            <img src="assets/img/logo2.svg" class="w-full h-full object-contain p-1 dark-avatar">
+        `;
 
     return `
         <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 shadow-sm flex items-center justify-between gap-3 animate-fadeIn text-gray-900 dark:text-gray-100">
             <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 flex items-center justify-center shrink-0 overflow-hidden">
-                    <img src="${avatarUrl}" class="w-full h-full object-cover" onerror="this.src='assets/img/logo.webp'">
+                <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-855 flex items-center justify-center shrink-0 overflow-hidden">
+                    ${avatarHtml}
                 </div>
                 <div class="min-w-0 text-left">
                     <p class="text-xs font-black uppercase text-gray-900 dark:text-gray-100 truncate">
@@ -821,10 +842,10 @@ async function renderRankingDVCNovo(tipoRankingParametro = null) {
                 </div>
 
                 <!-- Mini-Cards de Métricas em linha única compacta -->
-                <div class="flex flex-row ${usuarioPodeAprovarAvaliacoes() ? 'justify-between' : 'justify-center'} items-center bg-gray-50 dark:bg-gray-955 p-2 rounded-xl text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-3 border border-gray-200/50 dark:border-gray-800">
-                    <span class="uppercase">Atletas Encontrados: <strong class="text-[#990000] dark:text-red-400 ml-1">${contadorEncontrados}</strong></span>
+                <div class="flex flex-row ${usuarioPodeAprovarAvaliacoes() ? 'justify-between' : 'justify-center'} items-center bg-[#990000] p-2 rounded-xl text-[10px] text-white font-bold mb-3 border border-red-800/10">
+                    <span class="uppercase text-white">Atletas Encontrados: <strong class="text-white ml-1">${contadorEncontrados}</strong></span>
                     ${usuarioPodeAprovarAvaliacoes() ? `
-                        <span class="uppercase">Aguardando Avaliação: <strong class="text-yellow-700 dark:text-yellow-450 ml-1">${aguardandoAvaliacao.length}</strong></span>
+                        <span class="uppercase text-white">Aguardando Avaliação: <strong class="text-white ml-1">${aguardandoAvaliacao.length}</strong></span>
                     ` : ""}
                 </div>
 

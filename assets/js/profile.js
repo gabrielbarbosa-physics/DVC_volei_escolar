@@ -815,7 +815,7 @@ async function renderProfile() {
                 
                 <div class="flex items-center gap-3 min-w-0 z-10">
                     <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center p-0.5 shrink-0 overflow-hidden">
-                        <img src="${auth.currentUser?.photoURL || 'assets/img/logo.webp'}" class="w-full h-full object-cover rounded-xl" onerror="this.src='assets/img/logo.webp'">
+                        <img src="${auth.currentUser?.photoURL || 'assets/img/logo2.svg'}" class="w-full h-full object-cover rounded-xl" onerror="this.src='assets/img/logo2.svg'">
                     </div>
                     <div class="min-w-0">
                         <p class="text-[8px] font-black uppercase text-white/50 truncate">Ficha de Jogador</p>
@@ -1310,13 +1310,13 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
     }).join('');
 
     const detalheSelecionado = skillSelecionada ? `
-        <div class="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/40 rounded-xl p-3 mb-4 text-left">
+        <div class="bg-red-50 dark:bg-gray-900 border border-red-100 dark:border-gray-800 rounded-xl p-3 mb-4 text-left">
             <p class="text-[9px] font-black text-[#990000] dark:text-red-400 uppercase mb-1">
                 Habilidade selecionada
             </p>
 
             <div class="flex justify-between items-center">
-                <p class="text-sm font-black text-gray-800 dark:text-gray-200 uppercase">
+                <p class="text-sm font-black text-gray-800 dark:text-gray-100 uppercase">
                     ${skillSelecionada.nome}
                 </p>
 
@@ -1333,8 +1333,8 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                     Média da categoria: ${Number(habilidadesMediaCategoria[skillSelecionada.id] || 0).toFixed(1)}/5
                 </p>
                 ` : ''}
-            <div id="historico-habilidade-radar-dvc" class="mt-3 bg-white dark:bg-gray-900 border border-dashed dark:border-gray-800 rounded-lg p-2">
-                <p class="text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase">
+            <div id="historico-habilidade-radar-dvc" class="mt-3 bg-white dark:bg-gray-950 border border-dashed dark:border-gray-800 rounded-lg p-2">
+                <p class="text-[8px] text-gray-400 dark:text-gray-400 font-bold uppercase">
                     Selecione uma habilidade para carregar o histórico.
                 </p>
             </div>

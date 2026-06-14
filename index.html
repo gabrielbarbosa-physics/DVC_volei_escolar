@@ -42,6 +42,129 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #990000; border-radius: 10px; }
         input:disabled, select:disabled { background-color: #f9fafb; color: #9ca3af; cursor: not-allowed; border-bottom: 1px solid #e5e7eb !important; appearance: none; }
         .dark input:disabled, .dark select:disabled { background-color: #1f2937; color: #6b7280; border-bottom: 1px solid #374151 !important; }
+
+        /* Overrides para classes do Tailwind que não foram compiladas com dark mode */
+        .dark .dark\:bg-gray-900 { background-color: #111827 !important; }
+        .dark .dark\:bg-gray-950 { background-color: #030712 !important; }
+        .dark .dark\:bg-gray-800 { background-color: #1f2937 !important; }
+        .dark .dark\:bg-gray-850 { background-color: #1f2937 !important; }
+        .dark .dark\:bg-white\/10 { background-color: rgba(255, 255, 255, 0.1) !important; }
+        
+        .dark .dark\:border-gray-700 { border-color: #374151 !important; }
+        .dark .dark\:border-gray-800 { border-color: #1f2937 !important; }
+        .dark .dark\:border-gray-850 { border-color: #1f2937 !important; }
+        .dark .dark\:border-gray-900 { border-color: #111827 !important; }
+        
+        .dark .dark\:text-gray-100 { color: #f3f4f6 !important; }
+        .dark .dark\:text-gray-200 { color: #e5e7eb !important; }
+        .dark .dark\:text-gray-300 { color: #d1d5db !important; }
+        .dark .dark\:text-gray-400 { color: #9ca3af !important; }
+        .dark .dark\:text-gray-450 { color: #858d99 !important; }
+        .dark .dark\:text-gray-500 { color: #6b7280 !important; }
+        .dark .dark\:text-red-400 { color: #f87171 !important; }
+        .dark .dark\:text-green-400 { color: #4ade80 !important; }
+        .dark .dark\:text-blue-400 { color: #60a5fa !important; }
+        .dark .dark\:text-orange-400 { color: #fb923c !important; }
+        .dark .dark\:text-yellow-405 { color: #facc15 !important; }
+        .dark .dark\:text-red-405 { color: #f87171 !important; }
+        
+        .dark .dark\:bg-green-955\/20 { background-color: rgba(74, 222, 128, 0.1) !important; }
+        .dark .dark\:bg-green-955\/40 { background-color: rgba(74, 222, 128, 0.2) !important; }
+        .dark .dark\:bg-blue-955\/20 { background-color: rgba(96, 165, 250, 0.1) !important; }
+        .dark .dark\:bg-yellow-955\/20 { background-color: rgba(250, 204, 21, 0.1) !important; }
+        .dark .dark\:bg-red-955\/20 { background-color: rgba(248, 113, 113, 0.1) !important; }
+        .dark .dark\:bg-gray-100 { background-color: #f3f4f6 !important; }
+        .dark .dark\:text-gray-900 { color: #111827 !important; }
+        .dark .dark\:border-green-900\/50 { border-color: rgba(34, 197, 94, 0.3) !important; }
+        
+        .dark .dark\:hover\:bg-gray-700:hover { background-color: #374151 !important; }
+        .dark .dark\:hover\:bg-gray-850\/50:hover { background-color: rgba(31, 41, 55, 0.5) !important; }
+        .dark .dark\:focus\:border-red-650:focus { border-color: #ef4444 !important; }
+
+        /* Alternância do logo de login e avatar em modo escuro */
+        .dark-logo, .dark-avatar { display: none !important; }
+        .light-logo, .light-avatar { display: block !important; }
+        .dark .dark-logo, .dark .dark-avatar { display: block !important; }
+        .dark .light-logo, .dark .light-avatar { display: none !important; }
+        .dark .dark-avatar-container {
+            background-color: rgba(3, 7, 18, 0.4) !important;
+            border-color: rgba(31, 41, 55, 0.6) !important;
+        }
+        .dark .dark-ranking-tag {
+            background-color: rgba(3, 7, 18, 0.6) !important;
+            color: #d1d5db !important;
+            border-color: rgba(31, 41, 55, 0.8) !important;
+        }
+        .dark .dark-mural-badge {
+            background-color: rgba(3, 7, 18, 0.4) !important;
+            border-color: rgba(31, 41, 55, 0.8) !important;
+            color: #f87171 !important;
+        }
+        .dark .dark-match-card {
+            background-image: none !important;
+            background-color: #111827 !important;
+            border-color: #1f2937 !important;
+        }
+        .dark .dark-blue-chip {
+            background-color: rgba(23, 37, 84, 0.4) !important;
+            color: #60a5fa !important;
+            border-color: rgba(30, 58, 138, 0.5) !important;
+        }
+        .dark .dark-gray-chip {
+            background-color: rgba(3, 7, 18, 0.5) !important;
+            color: #9ca3af !important;
+            border-color: #1f2937 !important;
+        }
+        .dark .dark-convocados-box {
+            background-color: #030712 !important;
+            border-color: #1f2937 !important;
+        }
+        .dark .dark-podium-silver {
+            background-image: linear-gradient(to bottom, #1f2937, #111827) !important;
+            border-color: rgba(107, 114, 128, 0.4) !important;
+        }
+        .dark .dark-podium-bronze {
+            background-image: linear-gradient(to bottom, #1d1511, #111827) !important;
+            border-color: rgba(180, 83, 9, 0.45) !important;
+        }
+        @keyframes pulse-vinho-light {
+            0%, 100% {
+                box-shadow: 0 0 12px 2px rgba(153, 0, 0, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 4px 0px rgba(153, 0, 0, 0.05);
+            }
+        }
+        @keyframes pulse-vinho-dark {
+            0%, 100% {
+                box-shadow: 0 0 14px 3px rgba(153, 0, 0, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 6px 1px rgba(153, 0, 0, 0.15);
+            }
+        }
+        .animate-pulse-slow {
+            animation: pulse-vinho-light 3s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+        }
+        .dark .animate-pulse-slow {
+            animation: pulse-vinho-dark 3s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+        }
+        .shadow-glow-vinho-light {
+            box-shadow: 0 0 12px 2px rgba(153, 0, 0, 0.2) !important;
+        }
+        .dark .dark\:shadow-glow-vinho-dark {
+            box-shadow: 0 0 14px 3px rgba(153, 0, 0, 0.5) !important;
+        }
+
+        /* Refinamento da Barra de Navegação no Modo Escuro (Menu Inferior) */
+        .dark .nav-btn {
+            background-color: transparent !important;
+            color: #6b7280 !important;
+        }
+        .dark .nav-btn.nav-active-dark {
+            color: #990000 !important;
+            background-color: transparent !important;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-2 bg-gray-100 dark:bg-gray-950 transition-colors duration-200">
@@ -70,7 +193,10 @@
                     <i class="fa-solid fa-moon text-sm"></i>
                 </button>
             </div>
-            <div class="flex justify-center mb-12"><img src="assets/img/logo.webp" alt="DVC logo" style="width:220px; height:auto;"></div>
+            <div class="flex justify-center mb-12">
+                <img src="assets/img/logo.svg" alt="DVC logo" class="light-logo" style="width:220px; height:auto;">
+                <img src="assets/img/logo2.svg" alt="DVC logo" class="dark-logo" style="width:220px; height:auto;">
+            </div>
             <h2 class="text-2xl font-bold text-center mb-8 text-gray-700 dark:text-gray-200">Bem-vindo ao DVC</h2>
             <button id="btn-google" class="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-800 py-4 rounded-full font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm transition">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083L43.595,20L24,20v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>

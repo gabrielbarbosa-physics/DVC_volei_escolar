@@ -142,18 +142,15 @@ function renderQuizPerfilHtmlDVC(userData = {}) {
 
     if (!temHistorico) {
         return corrigirTextoVisivelQuizDVC(`
-            <div class="bg-white p-5 rounded-2xl border border-gray-200 mb-4 shadow-sm text-left relative overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 mb-4 shadow-sm text-left relative overflow-hidden">
                 <div class="flex items-center gap-2 mb-1">
                     <i class="fa-solid fa-brain text-indigo-600 text-lg"></i>
-                    <h3 class="text-xs font-black text-indigo-900 uppercase tracking-wide">Inteligência de Quadra</h3>
+                    <h3 class="text-xs font-black text-indigo-900 dark:text-gray-100 uppercase tracking-wide">Inteligência de Quadra</h3>
                 </div>
                 <p class="text-[9px] font-bold text-gray-400 uppercase mb-4">Leitura de jogo, comunicação e tomada de decisão.</p>
                 
-                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-center">
-                    <p class="text-[10px] text-indigo-800 font-semibold mb-3">Você ainda não concluiu nenhum Set Mental. Entre em quadra no desafio da semana e fortaleça sua inteligência de jogo.</p>
-                    <button onclick="window.iniciarQuizVolei()" class="bg-indigo-700 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-md transition-colors hover:bg-indigo-800 w-full">
-                        Começar desafio
-                    </button>
+                <div class="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-xl p-4 text-center">
+                    <p class="text-[10px] text-indigo-800 dark:text-indigo-300 font-semibold">Você ainda não concluiu nenhum Set Mental. Acesse o Mural para entrar no desafio da semana e fortalecer sua inteligência de jogo.</p>
                 </div>
             </div>
         `);
@@ -166,8 +163,8 @@ function renderQuizPerfilHtmlDVC(userData = {}) {
     const ultimaBadgeVisivel = corrigirTextoVisivelQuizDVC(ultimaBadge);
 
     const botaoAcaoHtml = respondeuEstaSemana 
-        ? `<button onclick="window.iniciarQuizVolei()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-black text-[10px] uppercase shadow-sm transition-colors hover:bg-gray-200 text-center">Ver resultado da semana</button>`
-        : `<button onclick="window.iniciarQuizVolei()" class="flex-1 bg-indigo-700 text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-sm transition-colors hover:bg-indigo-800 text-center">Entrar no desafio da semana</button>`;
+        ? `<button onclick="window.iniciarQuizVolei()" class="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 py-3 rounded-xl font-black text-[10px] uppercase shadow-sm transition-colors hover:bg-gray-200 dark:hover:bg-gray-750 text-center">Ver resultado da semana</button>`
+        : ``;
 
     let badgeHtml = "";
     if (ultimaBadge) {
@@ -186,28 +183,30 @@ function renderQuizPerfilHtmlDVC(userData = {}) {
     const semanaAmigavel = partesSemana.length === 2 ? `Semana ${partesSemana[1]} - ${partesSemana[0]}` : ultimaSemana;
 
     return corrigirTextoVisivelQuizDVC(`
-        <div class="bg-white p-5 rounded-2xl border border-gray-200 mb-4 shadow-sm text-left relative overflow-hidden">
+        <div class="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 mb-4 shadow-sm text-left relative overflow-hidden">
             <div class="flex items-center gap-2 mb-1">
                 <i class="fa-solid fa-brain text-indigo-600 text-lg"></i>
-                <h3 class="text-xs font-black text-indigo-900 uppercase tracking-wide">Inteligência de Quadra</h3>
+                <h3 class="text-xs font-black text-indigo-900 dark:text-gray-100 uppercase tracking-wide">Inteligência de Quadra</h3>
             </div>
             <p class="text-[9px] font-bold text-gray-400 uppercase mb-4">Leitura de jogo, comunicação e tomada de decisão.</p>
             
-            <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 mb-4">
-                <p class="text-[9px] font-black text-gray-500 uppercase mb-2">Último Set Mental</p>
+            <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl p-3 mb-4">
+                <p class="text-[9px] font-black text-gray-500 dark:text-gray-100 uppercase mb-2">Último Set Mental</p>
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-[10px] font-bold text-gray-600"><span class="font-black text-gray-800">${semanaAmigavel}</span></span>
-                    <span class="text-[10px] font-bold text-gray-600">Placar Oficial: <span class="font-black text-green-700">+${pontuacao} pts</span></span>
+                    <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300"><span class="font-black text-gray-800 dark:text-gray-100">${semanaAmigavel}</span></span>
+                    <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Placar Oficial: <span class="font-black text-green-700 dark:text-green-400">+${pontuacao} pts</span></span>
                 </div>
-                ${melhorStreak > 0 ? `<div class="flex justify-between items-center mb-2"><span class="text-[10px] font-bold text-gray-600">Maior Sequência: <span class="font-black text-orange-600">${melhorStreak} acertos</span></span></div>` : ''}
+                ${melhorStreak > 0 ? `<div class="flex justify-between items-center mb-2"><span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Maior Sequência: <span class="font-black text-orange-600 dark:text-orange-400">${melhorStreak} acertos</span></span></div>` : ''}
                 ${badgeHtml ? `<div class="mt-2">${badgeHtml}</div>` : ''}
             </div>
 
+            ${botaoAcaoHtml ? `
             <div class="flex gap-2 w-full mt-2">
                 ${botaoAcaoHtml}
             </div>
+            ` : ''}
             <div class="w-full mt-2">
-                <button onclick="window.abrirHistoricoQuizPerfilDVC('${emailNormalizado}', '${emailParaHistorico}')" class="w-full bg-white border border-gray-200 text-gray-600 px-3 py-3 rounded-xl font-black text-[10px] uppercase shadow-sm transition-colors hover:bg-gray-50">
+                <button onclick="window.abrirHistoricoQuizPerfilDVC('${emailNormalizado}', '${emailParaHistorico}')" class="w-full bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 px-3 py-3 rounded-xl font-black text-[10px] uppercase shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-900">
                     Ver mais desafios
                 </button>
             </div>

@@ -484,19 +484,65 @@ async function salvarAvaliacaoEvento(evId, tipoEvento) {
                 notasEvento[criterio.chave] = Number(select?.value || 3);
             });
 
-            await setDoc(doc(db, "events", evId, "avaliacoesTecnicasPendentes", emailAtleta), {
-                email: emailAtleta,
-                nome: nomeAtleta,
-                tipoEvento: tipoEvento,
-                criterios: notasEvento,
-                observacao: observacao,
-                avaliadorEmail: avaliadorEmail,
-                avaliadorNome: avaliadorNome,
+            const emailAtletaNormalizado = String(emailAtleta || "")
+                .trim()
+                .toLowerCase();
+
+            const avaliadorEmailNormalizado = String(
+                avaliadorEmail || auth.currentUser?.email || ""
+            )
+                .trim()
+                .toLowerCase();
+
+            if (!emailAtletaNormalizado) {
+                console.warn("Avaliação ignorada: atleta sem e-mail válido.", {
+                    evId,
+                    nomeAtleta
+                });
+                continue;
+            }
+
+            if (!avaliadorEmailNormalizado) {
+                throw new Error("Não foi possível identificar o e-mail do avaliador.");
+            }
+
+            const pendenciaRef = doc(
+                db,
+                "events",
+                evId,
+                "avaliacoesTecnicasPendentes",
+                emailAtletaNormalizado
+            );
+
+            const pendenciaSnap = await getDoc(pendenciaRef);
+
+            if (pendenciaSnap.exists()) {
+                console.warn(
+                    "Já existe uma avaliação técnica pendente para este atleta neste evento:",
+                    emailAtletaNormalizado
+                );
+
+                continue;
+            }
+
+            await setDoc(pendenciaRef, {
+                // Campos já utilizados pelo aplicativo
+                email: emailAtletaNormalizado,
+                nome: nomeAtleta || "",
+                tipoEvento: tipoEvento || "",
+                criterios: notasEvento || {},
+                observacao: String(observacao || "").trim(),
+                avaliadorNome: avaliadorNome || "",
                 status: "Pendente",
+                criadoEm: new Date().toISOString(),
+
+                // Campos obrigatórios exigidos pelas regras do Firestore
+                avaliadorEmail: avaliadorEmailNormalizado,
+                avaliadoEmail: emailAtletaNormalizado,
+                statusValidacao: "pendente",
                 impactoAplicado: false,
-                impactoAplicadoEm: "",
-                impactoAplicadoPor: "",
-                criadoEm: new Date().toISOString()
+                tipoAvaliacao: "pos_treino_equipe_tecnica",
+                origemAvaliacao: "equipe_tecnica"
             });
 
             totalSalvos++;
@@ -521,7 +567,12 @@ async function salvarAvaliacaoEvento(evId, tipoEvento) {
 
     } catch (e) {
         console.error("Erro ao salvar avaliação do evento:", e);
-        alert("Não foi possível salvar a avaliação. Verifique as permissões do Firebase.");
+
+        alert(
+            "Não foi possível salvar a avaliação.\n\n" +
+            "Código: " + (e?.code || "sem código") + "\n" +
+            "Detalhe: " + (e?.message || String(e))
+        );
     }
 }
 

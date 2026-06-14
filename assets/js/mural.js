@@ -10,7 +10,7 @@
 
 // MURAL AND AVISOS MODULE DVC APP
 
-import { db, auth, getDocs, collection, doc, getDoc, setDoc, updateDoc, deleteDoc } from "./firebase.js";
+import { db, auth, getDocs, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion } from "./firebase.js";
 import {
     normalizarBuscaDVC,
     normalizarFuncaoTecnica,
@@ -31,20 +31,20 @@ const refreshUI = () => {
 };
 
 const CATEGORIAS_AVISOS_DVC = {
-    geral: { label: "Geral", icone: "fa-bullhorn", classe: "bg-gray-50 text-gray-600 border-gray-200" },
-    treino: { label: "Treino", icone: "fa-volleyball", classe: "bg-red-50 text-[#990000] border-red-100" },
-    financeiro: { label: "Financeiro", icone: "fa-file-invoice-dollar", classe: "bg-green-50 text-green-700 border-green-100" },
-    uniforme: { label: "Uniforme", icone: "fa-shirt", classe: "bg-blue-50 text-blue-700 border-blue-100" },
-    campeonato: { label: "Campeonato", icone: "fa-trophy", classe: "bg-yellow-50 text-yellow-800 border-yellow-100" },
-    documentos: { label: "Documentos", icone: "fa-file-lines", classe: "bg-indigo-50 text-indigo-700 border-indigo-100" },
-    urgente: { label: "Urgente", icone: "fa-triangle-exclamation", classe: "bg-red-100 text-[#990000] border-red-200" }
+    geral: { label: "Geral", icone: "fa-bullhorn", classe: "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700" },
+    treino: { label: "Treino", icone: "fa-volleyball", classe: "bg-red-50 dark:bg-red-950/20 text-[#990000] dark:text-red-400 border-red-100 dark:border-red-900/50" },
+    financeiro: { label: "Financeiro", icone: "fa-file-invoice-dollar", classe: "bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-100 dark:border-green-900/50" },
+    uniforme: { label: "Uniforme", icone: "fa-shirt", classe: "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/50" },
+    campeonato: { label: "Campeonato", icone: "fa-trophy", classe: "bg-yellow-50 dark:bg-yellow-950/20 text-yellow-800 dark:text-yellow-400 border-yellow-100 dark:border-yellow-900/50" },
+    documentos: { label: "Documentos", icone: "fa-file-lines", classe: "bg-indigo-50 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/50" },
+    urgente: { label: "Urgente", icone: "fa-triangle-exclamation", classe: "bg-red-100 dark:bg-red-950/40 text-[#990000] dark:text-red-400 border-red-200 dark:border-red-900/60" }
 };
 
 const PRIORIDADES_AVISOS_DVC = {
-    baixa: { label: "Baixa", peso: 1, classe: "bg-gray-50 text-gray-500 border-gray-100" },
-    normal: { label: "Normal", peso: 2, classe: "bg-white text-gray-500 border-gray-200" },
-    alta: { label: "Alta", peso: 3, classe: "bg-yellow-50 text-yellow-800 border-yellow-100" },
-    urgente: { label: "Urgente", peso: 4, classe: "bg-red-50 text-[#990000] border-red-100" }
+    baixa: { label: "Baixa", peso: 1, classe: "bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-gray-700" },
+    normal: { label: "Normal", peso: 2, classe: "bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-800" },
+    alta: { label: "Alta", peso: 3, classe: "bg-yellow-50 dark:bg-yellow-950/20 text-yellow-800 dark:text-yellow-400 border-yellow-100 dark:border-yellow-900/50" },
+    urgente: { label: "Urgente", peso: 4, classe: "bg-red-50 dark:bg-red-950/20 text-[#990000] dark:text-red-400 border-red-100 dark:border-red-900/50" }
 };
 
 function snapshotToArray(snapshot) {
@@ -124,6 +124,16 @@ function ordenarAvisosDVC(a, b) {
     return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0);
 }
 
+window.verSequenciaJogosBanner = function() {
+    irParaBlocoMural('mural-sequencia-jogos');
+    setTimeout(() => {
+        const detailsList = document.querySelectorAll('#mural-sequencia-jogos details');
+        detailsList.forEach(d => {
+            if (!d.open) d.open = true;
+        });
+    }, 400);
+};
+
 window.toggleComunicadoMuralDVC = function (avisoId, botao, event) {
     if (event) {
         event.preventDefault();
@@ -166,16 +176,16 @@ function renderCardAvisoDVC(aviso = {}, compacto = false, admin = false, ehDesta
 
     // DVC MURAL — DESTAQUE: diferencia o comunicado principal dos cards operacionais.
     const cardClass = isCardDestaque 
-        ? "bg-gradient-to-br from-white via-white to-red-50 border border-red-200 border-l-4 border-l-[#990000] rounded-2xl p-4 shadow-md relative overflow-hidden"
-        : "bg-white border border-gray-100 rounded-2xl p-4 shadow-sm";
+        ? "bg-gradient-to-br from-white via-white to-red-50 dark:from-gray-900 dark:via-gray-900 dark:to-red-950/20 border border-red-200 dark:border-red-900/60 border-l-4 border-l-[#990000] rounded-2xl p-4 shadow-md relative overflow-hidden transition-colors duration-200"
+        : "bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-colors duration-200";
 
     const titleClass = isCardDestaque
-        ? "text-[15px] font-black text-slate-950 uppercase leading-tight mt-2"
-        : "text-sm font-black text-gray-900 uppercase leading-tight mt-2";
+        ? "text-[15px] font-black text-slate-950 dark:text-gray-100 uppercase leading-tight mt-2"
+        : "text-sm font-black text-gray-900 dark:text-gray-200 uppercase leading-tight mt-2";
 
     const msgClass = isCardDestaque
-        ? "text-[11px] text-gray-600 font-medium leading-relaxed mt-2 line-clamp-3 msg-aviso-dvc"
-        : "text-[10px] text-gray-500 font-semibold leading-relaxed mt-2";
+        ? "text-[11px] text-gray-600 dark:text-gray-300 font-medium leading-relaxed mt-2 line-clamp-3 msg-aviso-dvc"
+        : "text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed mt-2";
 
     const roundedIcon = isCardDestaque ? "rounded-xl" : "rounded-2xl";
 
@@ -239,7 +249,7 @@ function renderCardAvisoDVC(aviso = {}, compacto = false, admin = false, ehDesta
                 <p id="mensagem-aviso-mural-${aviso.id}" class="${msgClass}" ${isCardDestaque ? 'style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"' : ''}>${textoMensagem}</p>
                 ${readMoreAction}
                 
-                <p class="text-[8px] font-bold uppercase text-gray-400 mt-2">
+                <p class="text-[8px] font-bold uppercase text-gray-400 dark:text-gray-500 mt-2">
                     ${dtCriadoFormatada ? `Publicado em ${dtCriadoFormatada}` : ""}
                     ${dtExpiraFormatada ? ` &bull; Válido até ${dtExpiraFormatada}` : ""}
                 </p>
@@ -252,9 +262,9 @@ function renderCardAvisoDVC(aviso = {}, compacto = false, admin = false, ehDesta
 
                 ${admin ? `
                     <div class="grid grid-cols-3 gap-2 mt-3">
-                        <button onclick="abrirModalCriarAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-gray-900 text-white rounded-xl py-2 text-[8px] font-black uppercase">Editar</button>
-                        <button onclick="desativarAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-yellow-50 text-yellow-800 border border-yellow-100 rounded-xl py-2 text-[8px] font-black uppercase">${aviso.ativo === false ? "Ativar" : "Desativar"}</button>
-                        <button onclick="excluirAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-white text-red-700 border border-red-100 rounded-xl py-2 text-[8px] font-black uppercase">Excluir</button>
+                        <button onclick="abrirModalCriarAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-gray-900 dark:bg-gray-800 text-white rounded-xl py-2 text-[8px] font-black uppercase cursor-pointer">Editar</button>
+                        <button onclick="desativarAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-yellow-50 dark:bg-yellow-950/20 text-yellow-800 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-900/50 rounded-xl py-2 text-[8px] font-black uppercase cursor-pointer">${aviso.ativo === false ? "Ativar" : "Desativar"}</button>
+                        <button onclick="excluirAvisoDVC('${safeEditParam(aviso.id)}')" class="bg-white dark:bg-gray-950 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-950 rounded-xl py-2 text-[8px] font-black uppercase cursor-pointer">Excluir</button>
                     </div>
                 ` : ""}
             </div>
@@ -275,13 +285,13 @@ async function renderAvisosHomeDVC() {
         if (!importantes.length) return "";
 
         return `
-            <section class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm">
+            <section class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm transition-colors duration-200">
                 <div class="flex items-center justify-between gap-3 mb-3">
                     <div>
                         <p class="text-[10px] font-black uppercase text-[#990000]">Avisos importantes</p>
-                        <p class="text-[9px] font-semibold text-gray-500">Comunicados ativos da gestão DVC.</p>
+                        <p class="text-[9px] font-semibold text-gray-500 dark:text-gray-400">Comunicados ativos da gestão DVC.</p>
                     </div>
-                    <button onclick="changeTab('mural')" class="text-[8px] font-black uppercase text-[#990000]">Ver todos</button>
+                    <button onclick="changeTab('mural')" class="text-[8px] font-black uppercase text-[#990000] cursor-pointer">Ver todos</button>
                 </div>
                 <div class="space-y-2">
                     ${importantes.map(aviso => renderCardAvisoDVC(aviso, true)).join("")}
@@ -350,71 +360,71 @@ async function abrirModalCriarAvisoDVC(avisoId = null) {
 
         const modal = `
             <div id="m-aviso-dvc" class="fixed inset-0 bg-black/80 z-[110] p-4 flex items-center justify-center">
-                <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl max-h-[88vh] overflow-y-auto">
+                <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl shadow-2xl max-h-[88vh] overflow-y-auto transition-colors duration-200">
                     <div class="bg-gradient-to-r from-gray-950 via-[#4b0d0d] to-[#990000] text-white p-4 flex items-start justify-between gap-3">
                         <div>
                             <p class="text-[8px] font-black uppercase text-white/60">Comunicados DVC</p>
                             <h3 class="text-sm font-black uppercase">${avisoId ? "Editar aviso" : "Criar aviso"}</h3>
                         </div>
-                        <button onclick="document.getElementById('m-aviso-dvc')?.remove()" class="w-9 h-9 rounded-full bg-white/10 border border-white/20">
+                        <button onclick="document.getElementById('m-aviso-dvc')?.remove()" class="w-9 h-9 rounded-full bg-white/10 border border-white/20 cursor-pointer">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
 
                     <div class="p-4 space-y-3">
                         <div>
-                            <label class="text-[8px] font-black uppercase text-gray-400">Título</label>
-                            <input id="aviso-titulo-dvc" value="${escaparHtml(aviso.titulo || "")}" class="w-full border rounded-2xl p-3 text-xs font-semibold bg-gray-50 outline-none">
+                            <label class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Título</label>
+                            <input id="aviso-titulo-dvc" value="${escaparHtml(aviso.titulo || "")}" class="w-full border dark:border-gray-800 rounded-2xl p-3 text-xs font-semibold bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none">
                         </div>
                         <div>
-                            <label class="text-[8px] font-black uppercase text-gray-400">Mensagem</label>
-                            <textarea id="aviso-mensagem-dvc" class="w-full min-h-[120px] border rounded-2xl p-3 text-xs font-semibold bg-gray-50 outline-none">${escaparHtml(aviso.mensagem || "")}</textarea>
+                            <label class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Mensagem</label>
+                            <textarea id="aviso-mensagem-dvc" class="w-full min-h-[120px] border dark:border-gray-800 rounded-2xl p-3 text-xs font-semibold bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none">${escaparHtml(aviso.mensagem || "")}</textarea>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="text-[8px] font-black uppercase text-gray-400">Categoria</label>
-                                <select id="aviso-categoria-dvc" class="w-full border rounded-2xl p-3 text-[10px] font-black uppercase bg-gray-50">
+                                <label class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Categoria</label>
+                                <select id="aviso-categoria-dvc" class="w-full border dark:border-gray-800 rounded-2xl p-3 text-[10px] font-black uppercase bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none">
                                     ${["Geral", "Treino", "Financeiro", "Uniforme", "Campeonato", "Documentos", "Urgente"].map(opcao => `<option value="${opcao}" ${String(aviso.categoria || "Geral") === opcao ? "selected" : ""}>${opcao}</option>`).join("")}
                                 </select>
                             </div>
                             <div>
-                                <label class="text-[8px] font-black uppercase text-gray-400">Prioridade</label>
-                                <select id="aviso-prioridade-dvc" class="w-full border rounded-2xl p-3 text-[10px] font-black uppercase bg-gray-50">
+                                <label class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Prioridade</label>
+                                <select id="aviso-prioridade-dvc" class="w-full border dark:border-gray-800 rounded-2xl p-3 text-[10px] font-black uppercase bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none">
                                     ${["Baixa", "Normal", "Alta", "Urgente"].map(opcao => `<option value="${opcao}" ${String(aviso.prioridade || "Normal") === opcao ? "selected" : ""}>${opcao}</option>`).join("")}
                                 </select>
                             </div>
                         </div>
                         <div>
-                            <label class="text-[8px] font-black uppercase text-gray-400">Público</label>
-                            <select id="aviso-publico-dvc" class="w-full border rounded-2xl p-3 text-[10px] font-black uppercase bg-gray-50">
+                            <label class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Público</label>
+                            <select id="aviso-publico-dvc" class="w-full border dark:border-gray-800 rounded-2xl p-3 text-[10px] font-black uppercase bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none">
                                 ${["Todos", "Atletas", "Equipe Técnica", "Masculino", "Feminino", "Sub-17", "Adulto"].map(opcao => `<option value="${opcao}" ${String(aviso.publico || "Todos") === opcao ? "selected" : ""}>${opcao}</option>`).join("")}
                             </select>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
-                            <label class="bg-gray-50 border rounded-2xl p-3 text-[9px] font-black uppercase text-gray-600 flex items-center gap-2">
+                            <label class="bg-gray-50 dark:bg-gray-950 border dark:border-gray-800 rounded-2xl p-3 text-[9px] font-black uppercase text-gray-600 dark:text-gray-400 flex items-center gap-2">
                                 <input id="aviso-fixado-dvc" type="checkbox" class="accent-[#990000]" ${aviso.fixado ? "checked" : ""}>
                                 Fixado
                             </label>
-                            <label class="bg-gray-50 border rounded-2xl p-3 text-[9px] font-black uppercase text-gray-600 flex items-center gap-2">
+                            <label class="bg-gray-50 dark:bg-gray-950 border dark:border-gray-800 rounded-2xl p-3 text-[9px] font-black uppercase text-gray-600 dark:text-gray-400 flex items-center gap-2">
                                 <input id="aviso-ativo-dvc" type="checkbox" class="accent-[#990000]" ${aviso.ativo === false ? "" : "checked"}>
                                 Ativo
                             </label>
                         </div>
                         <div>
-                            <label class="text-[8px] font-black uppercase text-gray-400">Link opcional</label>
-                            <input id="aviso-link-dvc" value="${escaparHtml(aviso.link || "")}" class="w-full border rounded-2xl p-3 text-xs font-semibold bg-gray-50 outline-none" placeholder="https://...">
+                            <label class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Link opcional</label>
+                            <input id="aviso-link-dvc" value="${escaparHtml(aviso.link || "")}" class="w-full border dark:border-gray-800 rounded-2xl p-3 text-xs font-semibold bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none" placeholder="https://...">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="text-[8px] font-black uppercase text-gray-400">Texto do botão</label>
-                                <input id="aviso-botao-dvc" value="${escaparHtml(aviso.botaoTexto || "")}" class="w-full border rounded-2xl p-3 text-xs font-semibold bg-gray-50 outline-none" placeholder="Abrir link">
+                                <label class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Texto do botão</label>
+                                <input id="aviso-botao-dvc" value="${escaparHtml(aviso.botaoTexto || "")}" class="w-full border dark:border-gray-800 rounded-2xl p-3 text-xs font-semibold bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none" placeholder="Abrir link">
                             </div>
                             <div>
-                                <label class="text-[8px] font-black uppercase text-gray-400">Expira em</label>
-                                <input id="aviso-expira-dvc" type="date" value="${escaparHtml(aviso.expiraEm || "")}" class="w-full border rounded-2xl p-3 text-xs font-semibold bg-gray-50 outline-none">
+                                <label class="text-[8px] font-black uppercase text-gray-400 dark:text-gray-500">Expira em</label>
+                                <input id="aviso-expira-dvc" type="date" value="${escaparHtml(aviso.expiraEm || "")}" class="w-full border dark:border-gray-800 rounded-2xl p-3 text-xs font-semibold bg-gray-50 dark:bg-gray-950 dark:text-gray-100 outline-none">
                             </div>
                         </div>
-                        <button onclick="salvarAvisoDVC('${safeEditParam(avisoId || "")}')" class="w-full bg-[#990000] text-white py-3 rounded-2xl text-[10px] font-black uppercase shadow-sm">
+                        <button onclick="salvarAvisoDVC('${safeEditParam(avisoId || "")}')" class="w-full bg-[#990000] text-white py-3 rounded-2xl text-[10px] font-black uppercase shadow-sm cursor-pointer">
                             Salvar aviso
                         </button>
                     </div>
@@ -521,29 +531,29 @@ async function renderGestaoAvisosDVC() {
         const ativos = avisos.filter(avisoEstaAtivoDVC).length;
 
         alvo.innerHTML = `
-            <section class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm mb-5">
+            <section class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm mb-5 transition-colors duration-200">
                 <div class="flex items-start justify-between gap-3 mb-3">
                     <div>
                         <p class="text-[10px] font-black text-[#990000] uppercase">
                             <i class="fa-solid fa-bullhorn mr-1"></i> Avisos / comunicados DVC
                         </p>
-                        <p class="text-[8px] font-bold text-gray-400 uppercase mt-1">
+                        <p class="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase mt-1">
                             Criar, editar, fixar e desativar comunicados
                         </p>
                     </div>
-                    <button onclick="abrirModalCriarAvisoDVC()" class="bg-[#990000] text-white rounded-2xl px-4 py-3 text-[9px] font-black uppercase shadow-sm">
+                    <button onclick="abrirModalCriarAvisoDVC()" class="bg-[#990000] text-white rounded-2xl px-4 py-3 text-[9px] font-black uppercase shadow-sm cursor-pointer">
                         Criar aviso
                     </button>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 mb-3">
-                    <div class="bg-red-50 border border-red-100 rounded-2xl p-3 text-center">
+                    <div class="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 rounded-2xl p-3 text-center">
                         <p class="text-2xl font-black text-[#990000]">${ativos}</p>
-                        <p class="text-[8px] font-black uppercase text-red-800">Ativos</p>
+                        <p class="text-[8px] font-black uppercase text-red-800 dark:text-red-400">Ativos</p>
                     </div>
-                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-center">
-                        <p class="text-2xl font-black text-gray-700">${avisos.length}</p>
-                        <p class="text-[8px] font-black uppercase text-gray-500">Total</p>
+                    <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center">
+                        <p class="text-2xl font-black text-gray-700 dark:text-gray-200">${avisos.length}</p>
+                        <p class="text-[8px] font-black uppercase text-gray-500 dark:text-gray-400">Total</p>
                     </div>
                 </div>
 
@@ -552,8 +562,8 @@ async function renderGestaoAvisosDVC() {
                         ${avisos.map(aviso => renderCardAvisoDVC(aviso, false, true)).join("")}
                     </div>
                 ` : `
-                    <div class="bg-gray-50 border border-dashed rounded-2xl p-4 text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">Nenhum aviso criado ainda.</p>
+                    <div class="bg-gray-50 dark:bg-gray-950 border border-dashed dark:border-gray-800 rounded-2xl p-4 text-center">
+                        <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Nenhum aviso criado ainda.</p>
                     </div>
                 `}
             </section>
@@ -589,7 +599,7 @@ async function renderMural() {
     const projetoSelo = window.PROJETO_ATUAL_DVC?.selo || "DVC";
     const projetoLogo = window.PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
     const projetoLogoFundoClaro = window.PROJETO_ATUAL_DVC?.logoFundoClaro || "assets/img/loki1.webp";
-    const avisosMuralHtml = await renderAvisosMuralDVC();
+
 
     c.innerHTML = `
         <div class="bg-gradient-to-br from-gray-950 via-gray-900 to-[#990000] text-white p-5 rounded-3xl mb-5 shadow-xl relative overflow-hidden border border-white/10">
@@ -616,7 +626,7 @@ async function renderMural() {
                         </div>
                     </div>
 
-                    <div class="bg-white text-[#990000] px-3 py-1 rounded-full shadow-sm">
+                    <div class="bg-white text-[#990000] px-3 py-1 rounded-full shadow-sm border border-transparent dark-mural-badge">
                         <span class="text-[9px] font-black uppercase">
                             Selo ${projetoSelo}
                         </span>
@@ -627,57 +637,51 @@ async function renderMural() {
                 Acompanhe os avisos do projeto, próximos compromissos, jogos organizados no treino e aniversariantes do mês.
                 </p>
 
-                <div class="grid grid-cols-3 gap-2 mt-5">
+                <div class="flex flex-row items-center gap-2 mt-4 overflow-x-auto [&::-webkit-scrollbar]:hidden" style="scrollbar-width: none;">
                     <button 
                         onclick="irParaBlocoMural('mural-sequencia-jogos')" 
-                        class="min-h-[76px] bg-white/10 hover:bg-white/20 border border-white/15 rounded-2xl px-2 py-3 text-center active:scale-95 transition backdrop-blur-sm flex flex-col items-center justify-center gap-2">
-                        <span class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
-                            <i class="fa-solid fa-list-ol text-white text-sm"></i>
-                        </span>
-                        <p class="text-[9px] leading-none font-black uppercase text-white/80">Jogos</p>
+                        class="bg-white/10 hover:bg-white/20 border border-white/15 rounded-full px-3 py-1.5 flex items-center gap-1.5 active:scale-95 transition shrink-0">
+                        <i class="fa-solid fa-list-ol text-white text-[10px]"></i>
+                        <span class="text-[9px] font-black uppercase tracking-wider text-white/90">Jogos</span>
                     </button>
 
                     <button 
                         onclick="irParaBlocoMural('mural-proximo-jogo')" 
-                        class="min-h-[76px] bg-white/10 hover:bg-white/20 border border-white/15 rounded-2xl px-2 py-3 text-center active:scale-95 transition backdrop-blur-sm flex flex-col items-center justify-center gap-2">
-                        <span class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
-                            <i class="fa-solid fa-volleyball text-white text-sm"></i>
-                        </span>
-                        <p class="text-[9px] leading-none font-black uppercase text-white/80">Amistoso</p>
+                        class="bg-white/10 hover:bg-white/20 border border-white/15 rounded-full px-3 py-1.5 flex items-center gap-1.5 active:scale-95 transition shrink-0">
+                        <i class="fa-solid fa-volleyball text-white text-[10px]"></i>
+                        <span class="text-[9px] font-black uppercase tracking-wider text-white/90">Amistoso</span>
                     </button>
 
                     <button 
                         onclick="irParaBlocoMural('mural-aniversariantes')" 
-                        class="min-h-[76px] bg-white/10 hover:bg-white/20 border border-white/15 rounded-2xl px-2 py-3 text-center active:scale-95 transition backdrop-blur-sm flex flex-col items-center justify-center gap-2">
-                        <span class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
-                            <i class="fa-solid fa-cake-candles text-white text-sm"></i>
-                        </span>
-                        <p class="text-[9px] leading-none font-black uppercase text-white/80">Aniversários</p>
+                        class="bg-white/10 hover:bg-white/20 border border-white/15 rounded-full px-3 py-1.5 flex items-center gap-1.5 active:scale-95 transition shrink-0">
+                        <i class="fa-solid fa-cake-candles text-white text-[10px]"></i>
+                        <span class="text-[9px] font-black uppercase tracking-wider text-white/90">Aniversários</span>
                     </button>
                 </div>
+
+                <div id="banner-dynamic-sequencia" class="hidden"></div>
             </div>
         </div>
-        ${avisosMuralHtml}
-        <div id="mural-sequencia-jogos" class="mb-5 hidden"></div>
         <div id="mural-proximo-jogo" class="mb-5">
-            <p class="text-[10px] font-black text-[#990000] uppercase mb-2">
+            <p class="text-[10px] font-black text-[#990000] dark:text-red-400 uppercase mb-2">
                 <i class="fa-solid fa-volleyball mr-1"></i> Próximo amistoso
             </p>
 
-            <div class="bg-white border rounded-xl p-4 text-center">
-                <p class="text-[10px] text-gray-400 font-bold uppercase">
+            <div class="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-4 text-center transition-colors duration-200">
+                <p class="text-[10px] text-gray-400 dark:text-gray-550 font-bold uppercase">
                     Carregando próximo amistoso...
                 </p>
             </div>
         </div>
-
+        <div id="mural-sequencia-jogos" class="mb-5 hidden"></div>
         <div id="mural-aniversariantes" class="mb-5">
-            <p class="text-[10px] font-black text-[#990000] uppercase mb-2">
+            <p class="text-[10px] font-black text-[#990000] dark:text-red-400 uppercase mb-2">
                 <i class="fa-solid fa-cake-candles mr-1"></i> Aniversariantes do mês
             </p>
 
-            <div class="bg-white border rounded-xl p-4 text-center">
-                <p class="text-[10px] text-gray-400 font-bold uppercase">
+            <div class="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-4 text-center transition-colors duration-200">
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase">
                     Carregando aniversariantes...
                 </p>
             </div>
@@ -723,7 +727,7 @@ async function renderMural() {
         const proximoJogo = jogos[0];
 
         const jogoHtml = proximoJogo ? `
-            <div class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm overflow-hidden relative">
+            <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm overflow-hidden relative transition-colors duration-200">
                 <div class="absolute top-0 left-0 right-0 h-1 bg-[#990000]"></div>
 
                 <div class="flex items-center justify-between gap-3 mb-4">
@@ -742,42 +746,43 @@ async function renderMural() {
                     </p>
                 </div>
 
-                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-4">
                     <div class="text-center min-w-0">
-                        <div class="mx-auto w-14 h-14 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center p-2">
-                            <img src="${projetoLogoFundoClaro}" class="w-full h-full object-contain">
+                        <div class="mx-auto w-14 h-14 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-center p-2">
+                            <img src="${projetoLogoFundoClaro}" class="w-full h-full object-contain light-logo">
+                            <img src="${projetoLogo}" class="w-full h-full object-contain p-0.5 dark-logo">
                         </div>
-                        <p class="text-[10px] font-black text-gray-950 uppercase mt-2 truncate">DVC</p>
+                        <p class="text-[10px] font-black text-gray-950 dark:text-gray-100 uppercase mt-2 truncate">DVC</p>
                     </div>
 
-                    <div class="w-11 h-11 rounded-full bg-gray-950 text-white flex items-center justify-center shadow-md border border-[#990000]/30">
+                    <div class="w-11 h-11 rounded-full bg-gray-950 dark:bg-gray-800 text-white flex items-center justify-center shadow-md border border-[#990000]/30">
                         <span class="text-[11px] font-black uppercase">VS</span>
                     </div>
 
                     <div class="text-center min-w-0">
-                        <div class="mx-auto w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center">
-                            <i class="fa-solid fa-shield-halved text-[#990000] text-xl"></i>
+                        <div class="mx-auto w-14 h-14 rounded-2xl bg-red-50 dark:bg-gray-900 border border-red-100 dark:border-gray-800 flex items-center justify-center">
+                            <i class="fa-solid fa-shield-halved text-[#990000] dark:text-red-400 text-xl"></i>
                         </div>
-                        <p class="text-[10px] font-black text-gray-950 uppercase mt-2 truncate">
+                        <p class="text-[10px] font-black text-gray-950 dark:text-gray-100 uppercase mt-2 truncate">
                             ${proximoJogo.adversario || "Adversário"}
                         </p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
-                    <div class="bg-gray-50 border border-gray-100 rounded-2xl px-3 py-2 flex items-center gap-2">
+                    <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl px-3 py-2 flex items-center gap-2">
                         <i class="fa-regular fa-calendar text-[#990000] text-xs"></i>
-                        <span class="text-[10px] font-bold text-gray-700">${new Date(proximoJogo.data).toLocaleDateString('pt-BR')}</span>
+                        <span class="text-[10px] font-bold text-gray-700 dark:text-gray-300">${new Date(proximoJogo.data).toLocaleDateString('pt-BR')}</span>
                     </div>
 
-                    <div class="bg-red-50 border border-red-100 rounded-2xl px-3 py-2 flex items-center gap-2">
-                        <i class="fa-regular fa-clock text-[#990000] text-xs"></i>
-                        <span class="text-[10px] font-bold text-gray-700">${new Date(proximoJogo.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div class="bg-red-50 dark:bg-gray-950 border border-red-100 dark:border-gray-800 rounded-2xl px-3 py-2 flex items-center gap-2">
+                        <i class="fa-regular fa-clock text-[#990000] dark:text-red-400 text-xs"></i>
+                        <span class="text-[10px] font-bold text-gray-700 dark:text-gray-100">${new Date(proximoJogo.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
 
-                    <div class="bg-gray-50 border border-gray-100 rounded-2xl px-3 py-2 flex items-center gap-2 min-w-0">
+                    <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl px-3 py-2 flex items-center gap-2 min-w-0">
                         <i class="fa-solid fa-location-dot text-[#990000] text-xs"></i>
-                        <span class="text-[10px] font-bold text-gray-700 truncate">${proximoJogo.local || "Local não informado"}</span>
+                        <span class="text-[10px] font-bold text-gray-700 dark:text-gray-300 truncate">${proximoJogo.local || "Local não informado"}</span>
                     </div>
                 </div>
 
@@ -795,8 +800,8 @@ async function renderMural() {
                 </div>
             </div>
         ` : `
-            <div class="bg-white border border-dashed rounded-xl p-4 text-center">
-                <p class="text-[10px] text-gray-400 font-bold uppercase">
+            <div class="bg-white dark:bg-gray-900 border border-dashed dark:border-gray-800 rounded-xl p-4 text-center transition-colors duration-200">
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase">
                     Nenhum amistoso futuro cadastrado.
                 </p>
             </div>
@@ -805,7 +810,7 @@ async function renderMural() {
         const elProximoJogo = document.getElementById('mural-proximo-jogo');
         if (elProximoJogo) {
             elProximoJogo.innerHTML = `
-                <p class="text-[10px] font-black text-[#990000] uppercase mb-2">
+                <p class="text-[10px] font-black text-[#990000] dark:text-red-400 uppercase mb-2">
                     <i class="fa-solid fa-volleyball mr-1"></i> Próximo amistoso
                 </p>
                 ${jogoHtml}
@@ -840,40 +845,50 @@ async function renderMural() {
                 aniversariantes.push({
                     nome: user.nome || "Sem nome",
                     dia: diaNascimento,
-                    nascimento: user.nascimento
+                    nascimento: user.nascimento,
+                    photoURL: user.photoURL || user.fotoUrl || user.foto || ""
                 });
             }
         });
 
-        aniversariantes.sort((a, b) => a.dia - b.dia);
+        const diaAtual = agora.getDate();
+        const aniversariantesFiltrados = aniversariantes
+            .filter(aniv => aniv.dia >= diaAtual)
+            .sort((a, b) => a.dia - b.dia);
 
-        const aniversariantesHtml = aniversariantes.length > 0 ? `
-            <div class="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden">
-                ${aniversariantes.map(aniv => `
-                    <div class="flex items-center gap-3 p-3 border-b border-gray-100 last:border-b-0">
-                        <div class="w-11 h-11 rounded-full bg-gradient-to-br from-[#990000] to-gray-950 text-white flex items-center justify-center font-black text-sm shadow-sm">
-                            ${String(aniv.dia).padStart(2, "0")}
-                        </div>
+        const aniversariantesHtml = aniversariantesFiltrados.length > 0 ? `
+            <div class="flex overflow-x-auto gap-3 snap-x pb-2 pt-2 [&::-webkit-scrollbar]:hidden" style="scrollbar-width: none;">
+                ${aniversariantesFiltrados.map(aniv => {
+                    const isHoje = aniv.dia === diaAtual;
+                    const cardClass = isHoje
+                        ? "bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 rounded-2xl p-3 shadow-[0_0_12px_rgba(234,179,8,0.25)] scale-105 text-center snap-start flex flex-col items-center justify-center w-28 shrink-0 relative transition-all"
+                        : "bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 shadow-sm text-center snap-start flex flex-col items-center justify-center w-28 shrink-0 transition-all";
+                    const badgeText = isHoje
+                        ? '<span class="text-[8px] font-black uppercase text-yellow-700 dark:text-yellow-400 tracking-wider">🎉 Hoje!</span>'
+                        : `<span class="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase mt-0.5">Dia ${String(aniv.dia).padStart(2, "0")}</span>`;
+                    const circleClass = isHoje
+                        ? "w-10 h-10 rounded-full bg-yellow-400 text-white flex items-center justify-center font-black text-xs shadow-sm mb-2 shrink-0 border-none"
+                        : "w-10 h-10 rounded-full bg-[#990000] text-white flex items-center justify-center font-black text-xs shadow-sm mb-2 shrink-0 border-none";
 
-                        <div class="flex-1">
-                            <p class="text-xs font-semibold text-gray-900 uppercase tracking-wide">
+                    const photoHtml = aniv.photoURL
+                        ? `<img src="${aniv.photoURL}" class="w-10 h-10 rounded-full object-cover border-2 ${isHoje ? 'border-yellow-400' : 'border-[#990000]'} mb-2 shadow-sm shrink-0" onerror="this.onerror=null; this.outerHTML='<div class=\&quot;${circleClass}\&quot;>${String(aniv.dia).padStart(2, "0")}</div>';">`
+                        : `<div class="${circleClass}">${String(aniv.dia).padStart(2, "0")}</div>`;
+
+                    return `
+                        <div class="${cardClass}">
+                            ${photoHtml}
+                            <p class="text-[10px] font-black text-gray-950 dark:text-gray-100 uppercase tracking-wide truncate w-full" title="${escaparHtml(aniv.nome)}">
                                 ${aniv.nome}
                             </p>
-                            <p class="text-[9px] font-bold text-gray-400 uppercase">
-                                Aniversário neste mês
-                            </p>
+                            ${badgeText}
                         </div>
-
-                        <span class="w-9 h-9 rounded-full bg-red-50 text-[#990000] flex items-center justify-center">
-                            <i class="fa-solid fa-cake-candles text-sm"></i>
-                        </span>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         ` : `
-            <div class="bg-white border border-dashed rounded-xl p-4 text-center">
-                <p class="text-[10px] text-gray-400 font-bold uppercase">
-                    Nenhum aniversariante ativo neste mês.
+            <div class="bg-white dark:bg-gray-900 border border-dashed dark:border-gray-800 rounded-xl p-4 text-center transition-colors duration-200">
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-medium py-2">
+                    Nenhum próximo aniversário neste mês.
                 </p>
             </div>
         `;
@@ -881,19 +896,23 @@ async function renderMural() {
         const elAniversariantes = document.getElementById('mural-aniversariantes');
         if (elAniversariantes) {
             elAniversariantes.innerHTML = `
-                <p class="text-[10px] font-black text-[#990000] uppercase mb-2">
+                <p class="text-[10px] font-black text-[#990000] dark:text-red-400 uppercase mb-2">
                     <i class="fa-solid fa-cake-candles mr-1"></i> Aniversariantes do mês
                 </p>
                 ${aniversariantesHtml}
             `;
         }
 
+        setTimeout(() => {
+            verificarComunicadosObrigatoriosDVC();
+        }, 100);
+
     } catch (e) {
         console.error("Erro ao carregar mural", e);
 
         c.innerHTML += `
-            <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-                <p class="text-xs font-bold text-red-700">
+            <div class="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-xl p-4 text-center transition-colors duration-200">
+                <p class="text-xs font-bold text-red-700 dark:text-red-400">
                     Não foi possível carregar o mural agora.
                 </p>
             </div>
@@ -916,6 +935,162 @@ window.renderGestaoAvisosDVC = renderGestaoAvisosDVC;
 window.irParaBlocoMural = irParaBlocoMural;
 window.renderMural = renderMural;
 
+// ============================================================================
+// ACKNOLWEDGE PATTERN: COMUNICADO OBRIGATÓRIO COM CONFIRMAÇÃO
+// ============================================================================
+
+async function verificarComunicadosObrigatoriosDVC() {
+    if (!auth.currentUser || !window.currentUserData) return;
+
+    try {
+        const avisos = await carregarAvisosDVCCache();
+        const lidos = window.currentUserData.comunicadosLidos || [];
+
+        // Filtra avisos que estão ativos, são direcionados a este usuário e ainda não foram marcados como lidos
+        const pendentes = avisos.filter(aviso => 
+            avisoEstaAtivoDVC(aviso) && 
+            avisoEhParaUsuarioDVC(aviso) && 
+            !lidos.includes(aviso.id)
+        );
+
+        if (pendentes.length > 0) {
+            abrirModalLeituraObrigatoriaDVC(pendentes[0]);
+        }
+    } catch (e) {
+        console.warn("Erro ao verificar comunicados obrigatórios:", e);
+    }
+}
+
+function abrirModalLeituraObrigatoriaDVC(aviso) {
+    if (document.getElementById("m-comunicado-obrigatorio")) return;
+
+    // Bloqueia a rolagem do body e do container de trás
+    document.body.style.overflow = "hidden";
+    const mainContent = document.getElementById("main-content");
+    if (mainContent) mainContent.style.overflow = "hidden";
+
+    const modalHtml = `
+        <div id="m-comunicado-obrigatorio" class="fixed inset-0 flex items-center justify-center p-4 backdrop-blur-md text-left block border-none fade-in" style="z-index: 999999; background-color: rgba(3, 7, 18, 0.95);">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col relative border border-gray-200 dark:border-gray-800 text-left block transition-colors duration-200" style="max-height: 80vh;">
+                <!-- Header -->
+                <div class="text-white p-5 text-left shrink-0" style="background: linear-gradient(to right, #030712, #4b0d0d, #990000);">
+                    <p class="text-[8px] font-black uppercase text-white/60 tracking-wider">Comunicado Importante</p>
+                    <h3 class="text-xs font-black uppercase mt-1 leading-tight">${escaparHtml(aviso.titulo || "Aviso Obrigatório")}</h3>
+                </div>
+
+                <!-- Body (Scrollable container) -->
+                <div id="comunicado-corpo-scroll" class="p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 text-xs font-normal leading-relaxed whitespace-pre-wrap text-left block custom-scroll">${escaparHtml(aviso.mensagem || "")}</div>
+
+                <!-- Footer / Confirm Button -->
+                <div class="p-4 border-t dark:border-gray-800 bg-gray-50 dark:bg-gray-950 shrink-0 flex flex-col gap-2">
+                    <button 
+                        id="btn-confirmar-leitura" 
+                        disabled 
+                        onclick="confirmarLeituraComunicadoDVC('${safeEditParam(aviso.id)}')" 
+                        class="w-full bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 py-3 rounded-2xl font-black uppercase shadow-inner dark:shadow-none cursor-not-allowed transition-all duration-300" style="font-size: 9px;">
+                        Confirmar Leitura (3s)
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+    let tempoRestante = 3;
+    const btn = document.getElementById("btn-confirmar-leitura");
+
+    const timer = setInterval(() => {
+        tempoRestante--;
+        if (tempoRestante > 0) {
+            if (btn) btn.textContent = `Confirmar Leitura (${tempoRestante}s)`;
+        } else {
+            clearInterval(timer);
+            habilitarBotaoConfirmar();
+        }
+    }, 1000);
+
+    const container = document.getElementById("comunicado-corpo-scroll");
+    let scrollAtingido = false;
+
+    if (container) {
+        container.addEventListener("scroll", () => {
+            if (container.scrollHeight - container.scrollTop <= container.clientHeight + 15) {
+                scrollAtingido = true;
+                if (tempoRestante <= 0) {
+                    habilitarBotaoConfirmar();
+                }
+            }
+        });
+    }
+
+    function habilitarBotaoConfirmar() {
+        const isShortText = container ? (container.scrollHeight <= container.clientHeight) : true;
+        if (tempoRestante <= 0 && (scrollAtingido || isShortText)) {
+            if (btn && btn.hasAttribute("disabled")) {
+                btn.removeAttribute("disabled");
+                btn.className = "w-full bg-[#990000] text-white py-3 rounded-2xl font-black uppercase shadow-md active:scale-95 transition-all cursor-pointer hover:bg-red-800";
+                btn.style.fontSize = "9px";
+                btn.textContent = "Confirmar Leitura";
+            }
+        }
+    }
+}
+
+async function confirmarLeituraComunicadoDVC(avisoId) {
+    if (!auth.currentUser || !window.currentUserData) return;
+
+    const btn = document.getElementById("btn-confirmar-leitura");
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Gravando...";
+    }
+
+    try {
+        const email = auth.currentUser.email;
+        const userRef = doc(db, "users", email);
+
+        // a) Grava no Firestore na propriedade array comunicadosLidos
+        await updateDoc(userRef, {
+            comunicadosLidos: arrayUnion(avisoId)
+        });
+
+        // Atualiza estado local
+        if (!window.currentUserData.comunicadosLidos) {
+            window.currentUserData.comunicadosLidos = [];
+        }
+        if (!window.currentUserData.comunicadosLidos.includes(avisoId)) {
+            window.currentUserData.comunicadosLidos.push(avisoId);
+        }
+
+        // Restaura a rolagem do body e do container de trás
+        document.body.style.overflow = "";
+        const mainContent = document.getElementById("main-content");
+        if (mainContent) mainContent.style.overflow = "";
+
+        // b) Fecha o modal
+        document.getElementById("m-comunicado-obrigatorio")?.remove();
+
+        // c) Invalida cache local e força re-renderização do mural
+        if (window.AppCache) {
+            window.AppCache.avisos = null;
+        }
+
+        await renderMural();
+    } catch (e) {
+        console.error("Erro ao confirmar leitura do comunicado:", e);
+        alert("Não foi possível registrar a confirmação. Tente novamente.");
+        if (btn) {
+            btn.removeAttribute("disabled");
+            btn.textContent = "Confirmar Leitura";
+        }
+    }
+}
+
+window.verificarComunicadosObrigatoriosDVC = verificarComunicadosObrigatoriosDVC;
+window.abrirModalLeituraObrigatoriaDVC = abrirModalLeituraObrigatoriaDVC;
+window.confirmarLeituraComunicadoDVC = confirmarLeituraComunicadoDVC;
+
 export {
     CATEGORIAS_AVISOS_DVC,
     PRIORIDADES_AVISOS_DVC,
@@ -934,5 +1109,8 @@ export {
     excluirAvisoDVC,
     renderGestaoAvisosDVC,
     irParaBlocoMural,
-    renderMural
+    renderMural,
+    verificarComunicadosObrigatoriosDVC,
+    abrirModalLeituraObrigatoriaDVC,
+    confirmarLeituraComunicadoDVC
 };
