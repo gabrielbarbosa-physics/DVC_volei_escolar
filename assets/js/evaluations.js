@@ -185,10 +185,10 @@ function renderInfoCriteriosAvaliacaoDVC() {
         return `
           <details class="bg-white border border-gray-100 rounded-xl p-3">
             <summary class="cursor-pointer list-none text-[10px] font-black uppercase text-gray-800">
-              <span class="mr-1"></span> 
+              <span class="mr-1"></span>
             </summary>
             <div class="mt-2 space-y-2">
-              
+
             </div>
           </details>
         `;
@@ -198,7 +198,7 @@ function renderInfoCriteriosAvaliacaoDVC() {
         <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3">
           <p class="text-[9px] font-black uppercase text-gray-500 mb-2"></p>
           <div class="space-y-2">
-            
+
           </div>
         </div>
       `;
@@ -369,7 +369,7 @@ window.salvarAvaliacao = async (email) => {
 
         const avaliadorNome = window.currentUserData?.nome || auth.currentUser?.email || "Equipe tecnica";
 
-        await updateDoc(userRef, { 
+        await updateDoc(userRef, {
             habilidades: habilidades,
             habilidadesAvaliadasPorEquipe: true,
             habilidadesStatus: "Aprovada",
@@ -643,8 +643,8 @@ window.abrirAvaliacaoColegas = async () => {
         const modal = `
             <div id="m-avaliacao-colegas" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
                 <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative shadow-2xl max-h-[85vh] overflow-y-auto">
-                    <button 
-                        onclick="document.getElementById('m-avaliacao-colegas').remove()" 
+                    <button
+                        onclick="document.getElementById('m-avaliacao-colegas').remove()"
                         class="absolute top-4 right-4 text-gray-400 font-black text-xl">
                         &times;
                     </button>
@@ -783,11 +783,11 @@ async function usuarioTemAvaliacaoColegaPendenteDVC() {
     try {
         const mes = getMesAtualAvaliacao();
         const emailAvaliador = String(auth.currentUser.email).trim().toLowerCase();
-        
+
         // Uses DVC_CACHE if available and fresh (TTL 2m)
         const avaliacoes = await carregarAvaliacoesParesDVC(false);
-        const jaAvaliou = avaliacoes.some(av => 
-            String(av.mes || "").trim() === mes && 
+        const jaAvaliou = avaliacoes.some(av =>
+            String(av.mes || "").trim() === mes &&
             String(av.avaliadorEmail || "").trim().toLowerCase() === emailAvaliador
         );
         return !jaAvaliou;
@@ -1259,7 +1259,7 @@ window.renderPainelAvaliacoesEquipeTecnica = async () => {
             if (!grupos.has(email)) grupos.set(email, []);
             grupos.get(email).push(av);
         });
-        
+
         const cards = Array.from(grupos.entries())
             .sort((a, b) => String(a[1][0]?.avaliadoNome || "").localeCompare(String(b[1][0]?.avaliadoNome || "")))
             .map(([email, lista]) => {
@@ -1325,8 +1325,8 @@ window.renderPainelAvaliacoesEquipeTecnica = async () => {
                 <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Mês</label>
                 <input id="filtro-mes-avaliacao-equipe-dvc" type="month" value="${escaparHtml(mesSelecionado)}" onchange="renderPainelAvaliacoesEquipeTecnica()" class="w-full border rounded-2xl p-3 text-xs font-black uppercase bg-gray-50 mb-3">
                 ${cards.join("") || `
-                    <div class="bg-gray-50 border border-dashed rounded-2xl p-4 text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">Nenhuma avaliação recebida neste mês.</p>
+                    <div class="bg-gray-50 dark:bg-gray-950 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-4 text-center">
+                        <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Nenhuma avaliação recebida neste mês.</p>
                     </div>
                 `}
             </section>

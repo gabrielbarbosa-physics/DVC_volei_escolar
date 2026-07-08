@@ -11,16 +11,16 @@
 // js/finance.js
 // Stage 6: Financeiro Extraction
 
-import { 
-    db, 
-    auth, 
-    doc, 
-    getDoc, 
-    setDoc, 
-    updateDoc, 
-    deleteDoc, 
-    collection, 
-    getDocs, 
+import {
+    db,
+    auth,
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    deleteDoc,
+    collection,
+    getDocs,
     arrayUnion
 } from "./firebase.js";
 
@@ -705,7 +705,7 @@ function montarCardContribuicaoMesFinanceiroDVC(optionsHtml = "", avisoCarenciaC
                         >
                             ENVIAR COMPROVANTE
                         </button>
-                        
+
                         <div class="rounded-xl border border-[#990000] bg-gray-950 px-4 py-3">
                             <p class="text-[11px] font-semibold leading-relaxed text-white">
                                 <span class="text-red-500 font-black uppercase text-[9px] block mb-1">Informa&ccedil;&atilde;o</span>
@@ -1001,8 +1001,8 @@ async function abrirModoTesteAtleta() {
         const modal = `
             <div id="m-modo-teste" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
                 <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative shadow-2xl">
-                    <button 
-                        onclick="document.getElementById('m-modo-teste').remove()" 
+                    <button
+                        onclick="document.getElementById('m-modo-teste').remove()"
                         class="absolute top-4 right-4 text-red-600 font-black text-xl">
                         X
                     </button>
@@ -1023,8 +1023,8 @@ async function abrirModoTesteAtleta() {
                         ${options}
                     </select>
 
-                    <button 
-                        onclick="iniciarModoTesteAtleta()" 
+                    <button
+                        onclick="iniciarModoTesteAtleta()"
                         class="w-full bg-[#990000] text-white py-3 rounded-lg font-black text-[10px] uppercase shadow-md">
                         Visualizar Perfil
                     </button>
@@ -1402,13 +1402,13 @@ async function abrirPendenciasFinanceiras() {
             const isCarenciaEspecial = item.tipo === "CarenciaEspecial";
             return `
                 <div class="${
-                    isCarenciaEspecial 
-                        ? 'bg-red-50 border-red-200' 
-                        : isJustificativa 
-                            ? 'bg-blue-50 border-blue-200' 
+                    isCarenciaEspecial
+                        ? 'bg-red-50 border-red-200'
+                        : isJustificativa
+                            ? 'bg-blue-50 border-blue-200'
                             : 'bg-green-50 border-green-200'
                 } border rounded-xl p-4 mb-3">
-                    
+
                     <div class="flex justify-between items-start gap-2 mb-2">
                         <div>
                             <p class="text-xs font-black text-gray-800 uppercase">
@@ -1420,17 +1420,17 @@ async function abrirPendenciasFinanceiras() {
                         </div>
 
                         <span class="${
-                            isCarenciaEspecial 
-                                ? 'bg-[#990000]' 
-                                : isJustificativa 
-                                    ? 'bg-blue-600' 
+                            isCarenciaEspecial
+                                ? 'bg-[#990000]'
+                                : isJustificativa
+                                    ? 'bg-blue-600'
                                     : 'bg-green-600'
                         } text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">
                             ${
-                                isCarenciaEspecial 
-                                    ? 'CarÃªncia especial' 
-                                    : isJustificativa 
-                                        ? 'Justificativa' 
+                                isCarenciaEspecial
+                                    ? 'CarÃªncia especial'
+                                    : isJustificativa
+                                        ? 'Justificativa'
                                         : 'Comprovante'
                             }
                         </span>
@@ -1474,14 +1474,14 @@ async function abrirPendenciasFinanceiras() {
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
-                            <button 
-                                onclick="aceitarCarenciaEspecial('${item.email}', '${item.docId}', this)" 
+                            <button
+                                onclick="aceitarCarenciaEspecial('${item.email}', '${item.docId}', this)"
                                 class="bg-green-600 text-white py-2 rounded-lg font-bold text-[9px] uppercase">
                                 Aceitar carÃªncia
                             </button>
 
-                            <button 
-                                onclick="recusarCarenciaEspecial('${item.email}', '${item.docId}', this)" 
+                            <button
+                                onclick="recusarCarenciaEspecial('${item.email}', '${item.docId}', this)"
                                 class="bg-red-600 text-white py-2 rounded-lg font-bold text-[9px] uppercase">
                                 Recusar
                             </button>
@@ -1496,22 +1496,22 @@ async function abrirPendenciasFinanceiras() {
                             </p>
                         </div>
 
-                        <button 
-                            onclick="aprovarJustificativa('${item.email}', '${item.docId}', this)" 
+                        <button
+                            onclick="aprovarJustificativa('${item.email}', '${item.docId}', this)"
                             class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-[9px] uppercase">
                             Marcar como Justificado
                         </button>
                     ` : `
                         <div class="flex gap-2">
-                            <a 
-                                href="${item.comprovante}" 
-                                download="${item.nome}_${item.mes.replace('/','_')}.webp" 
+                            <a
+                                href="${item.comprovante}"
+                                download="${item.nome}_${item.mes.replace('/','_')}.webp"
                                 class="flex-1 bg-blue-600 text-white text-center py-2 rounded-lg font-bold text-[9px] uppercase">
                                 Baixar
                             </a>
 
-                            <button 
-                                onclick="validarExpress('${item.email}', '${item.docId}', this)" 
+                            <button
+                                onclick="validarExpress('${item.email}', '${item.docId}', this)"
                                 class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-[9px] uppercase">
                                 Validar
                             </button>
@@ -1530,8 +1530,8 @@ async function abrirPendenciasFinanceiras() {
         const modal = `
             <div id="m-pendencias-financeiras" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
                 <div class="bg-white w-full max-w-sm rounded-2xl p-5 max-h-[85vh] overflow-y-auto relative shadow-2xl">
-                    <button 
-                        onclick="document.getElementById('m-pendencias-financeiras').remove()" 
+                    <button
+                        onclick="document.getElementById('m-pendencias-financeiras').remove()"
                         class="absolute top-4 right-4 text-red-600 font-black text-xl">
                         X
                     </button>
@@ -1560,17 +1560,17 @@ async function abrirPendenciasFinanceiras() {
 // 11. Legacy atualizarFinanceiro for compatibility
 async function atualizarFinanceiroLegacy(email, status, selectElement) {
     const dataAtual = new Date();
-    const mesAtual = dataAtual.getFullYear() + "-" + String(dataAtual.getMonth() + 1).padStart(2, '0'); 
-    
+    const mesAtual = dataAtual.getFullYear() + "-" + String(dataAtual.getMonth() + 1).padStart(2, '0');
+
     let updates = { financeiro: status };
     if(status === 'Em dia' || status === 'Justificado') {
         updates.mesFinanceiro = mesAtual;
     }
-    
+
     await updateDoc(doc(db, "users", email.trim()), updates);
     window.limparCacheDados("atletas");
 
-    selectElement.style.outline = "2px solid #22c55e"; 
+    selectElement.style.outline = "2px solid #22c55e";
     setTimeout(() => {
         selectElement.style.outline = "none";
     }, 1000);
@@ -1592,7 +1592,7 @@ async function atualizarFinanceiro(email, status, selectElement = null) {
 
         const userRef = doc(db, "users", emailLimpo);
         const userSnap = await getDoc(userRef);
-        
+
         const dadosAtleta = userSnap.exists() ? userSnap.data() : {};
         const statusNormalizado = window.normalizarTextoFinanceiro(status);
 
@@ -1696,14 +1696,14 @@ function diferencaMeses(mesAntigo, mesAtual) {
 // 13. verificarViradaDeMes
 async function verificarViradaDeMes() {
     const dataAtual = new Date();
-    
-    if (dataAtual.getDate() <= get_DIA_LIMITE_FINANCEIRO_MENSAL()) return; 
+
+    if (dataAtual.getDate() <= get_DIA_LIMITE_FINANCEIRO_MENSAL()) return;
 
     const mesAtual = dataAtual.getFullYear() + "-" + String(dataAtual.getMonth() + 1).padStart(2, '0');
-    
+
     const snap = await window.carregarUsuariosCacheMockDVC();
     let promessas = [];
-    
+
     snap.forEach((u) => {
         let user = u.data();
         if (window.usuarioEstaEmCarenciaCadastro(user, dataAtual)) return;
@@ -1716,11 +1716,11 @@ async function verificarViradaDeMes() {
             }));
         }
     });
-    
+
     if(promessas.length > 0) {
         await Promise.all(promessas);
         if (typeof window.filterAdminList === "function") {
-            window.filterAdminList(); 
+            window.filterAdminList();
         }
     }
 }
@@ -1748,7 +1748,7 @@ async function verificarInadimplenciaProlongada() {
             if (!uÃšltimoMesRegular) {
                 return;
             }
-            const estaRegularNoMes = 
+            const estaRegularNoMes =
                 (window.usuarioEstaEmDia(user) || window.usuarioEstaJustificado(user)) &&
                 uÃšltimoMesRegular === mesAtual;
 
@@ -1779,7 +1779,7 @@ MÃªs de referÃªncia: ${mesAtual}
 ATLETAS QUE SERÃƒO INATIVADOS - 3 MESES SEM CONTRIBUIÃ‡ÃƒO
 Total: ${paraInativar.length}
 
-${paraInativar.length > 0 
+${paraInativar.length > 0
     ? paraInativar.map(window.formatarContatoFinanceiro).join("\n\n")
     : "Nenhum atleta nesta situaÃ§Ã£o."}
 
@@ -1788,7 +1788,7 @@ ${paraInativar.length > 0
 ATLETAS QUE SERÃƒO MARCADOS COMO EXCLUÃDOS - 4 MESES OU MAIS SEM CONTRIBUIÃ‡ÃƒO
 Total: ${paraExcluir.length}
 
-${paraExcluir.length > 0 
+${paraExcluir.length > 0
     ? paraExcluir.map(window.formatarContatoFinanceiro).join("\n\n")
     : "Nenhum atleta nesta situaÃ§Ã£o."}
 
@@ -1907,8 +1907,8 @@ function abrirModalCarenciaEspecial(mes, textoJustificativa) {
     const modal = `
         <div id="m-carencia-especial" class="fixed inset-0 bg-black/80 z-[120] p-4 flex items-center justify-center">
             <div class="bg-white w-full max-w-sm rounded-3xl p-5 max-h-[85vh] overflow-y-auto relative shadow-2xl">
-                <button 
-                    onclick="document.getElementById('m-carencia-especial').remove()" 
+                <button
+                    onclick="document.getElementById('m-carencia-especial').remove()"
                     class="absolute top-4 right-4 text-gray-400 font-black text-xl">
                     X
                 </button>
@@ -1918,7 +1918,7 @@ function abrirModalCarenciaEspecial(mes, textoJustificativa) {
                 </h2>
 
                 <p class="text-[10px] text-gray-600 font-semibold leading-relaxed mb-4">
-                    VocÃª estÃ¡ chegando a 3 meses consecutivos sem contribuir. 
+                    VocÃª estÃ¡ chegando a 3 meses consecutivos sem contribuir.
                     O tempo mÃ¡ximo de carÃªncia automÃ¡tica Ã© de 3 meses consecutivos.
                 </p>
 
@@ -1946,8 +1946,8 @@ function abrirModalCarenciaEspecial(mes, textoJustificativa) {
                 </label>
                 <textarea id="carencia-resposta-3" class="w-full p-3 border rounded-xl text-xs mb-4 h-20 outline-none" placeholder="Ex: ajudar na organizaÃ§Ã£o, pontualidade, apoio nos treinos, divulgaÃ§Ã£o..."></textarea>
 
-                <button 
-                    onclick="enviarCarenciaEspecial('${mes}', \`${textoJustificativa.replace(/`/g, "'")}\`)" 
+                <button
+                    onclick="enviarCarenciaEspecial('${mes}', \`${textoJustificativa.replace(/`/g, "'")}\`)"
                     class="w-full bg-[#990000] text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-md">
                     Enviar para anÃ¡lise
                 </button>
@@ -2140,7 +2140,7 @@ async function validarExpress(email, docId, btnElement) {
         const analisadoEm = new Date().toISOString();
         const analisadoPor = get_currentUserData()?.nome || auth.currentUser?.email || "Gestao";
 
-        await atualizarContribuicaoGlobalComEspelho(email, docId, { 
+        await atualizarContribuicaoGlobalComEspelho(email, docId, {
             status: "Validado",
             resultadoFinanceiro: "Pago",
             validadoEm: analisadoEm,
@@ -2154,9 +2154,9 @@ async function validarExpress(email, docId, btnElement) {
             })
         });
 
-        await updateDoc(doc(db, "users", email), { 
-            status: "Ativo", 
-            financeiro: "Em dia", 
+        await updateDoc(doc(db, "users", email), {
+            status: "Ativo",
+            financeiro: "Em dia",
             mesFinanceiro: formatoMes,
             carenciaCadastroEncerrada: true,
             carenciaCadastroEncerradaEm: analisadoEm
@@ -2284,6 +2284,14 @@ function montarRegistroContribuicaoGlobal(email, docIdLegado, dados) {
         atualizadoEm: dados.atualizadoEm || new Date().toISOString()
     };
 }
+
+window.montarIdContribuicaoGlobal = function(email, docIdLegado) {
+    return `${String(email).trim().toLowerCase()}_${docIdLegado}`;
+};
+
+window.refContribuicaoGlobal = function(docIdGlobal) {
+    return doc(db, "contribuicoesGlobais", docIdGlobal);
+};
 
 async function salvarContribuicaoGlobal(email, docIdLegado, dados) {
     const docIdGlobal = window.montarIdContribuicaoGlobal(email, docIdLegado);

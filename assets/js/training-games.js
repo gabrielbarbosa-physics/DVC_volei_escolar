@@ -447,14 +447,14 @@ function renderizarClassificacaoTreinoHtml(classificacao = [], finalizado = fals
             ${classificacao.map((item, index) => {
                 const time = times && Array.isArray(times) ? times.find(t => t.id === item.id) : null;
                 const temAtletas = time && Array.isArray(time.atletas) && time.atletas.length > 0;
-                
+
                 const cardClass = `${index === 0 && finalizado ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'} border rounded-2xl p-3 shadow-sm block transition`;
-                const clickHandler = temAtletas 
-                    ? `onclick="toggleTeamList('lista-time-main-${index}', 'icon-time-main-${index}')" class="${cardClass} cursor-pointer"` 
+                const clickHandler = temAtletas
+                    ? `onclick="toggleTeamList('lista-time-main-${index}', 'icon-time-main-${index}')" class="${cardClass} cursor-pointer"`
                     : (eventId && item.id ? `onclick="abrirModalTimeIndividualTreino('${safeEditParam(eventId)}', '${safeEditParam(item.id)}')" class="${cardClass} cursor-pointer"` : `class="${cardClass}"`);
-                
+
                 const tag = (eventId && item.id && !temAtletas) ? 'button' : 'div';
-                
+
                 return `
                 <${tag} ${clickHandler}>
                     <div class="flex items-center justify-between gap-3">
@@ -796,7 +796,7 @@ function renderizarListaAtletasTimeTreino(time) {
                     ${index + 1}. ${atleta.nome || atleta.email}
                     ${atleta.tipoParticipante === 'visitante' ? `<span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[8px] font-black uppercase text-amber-800 ml-1">VISITANTE</span>` : ''}
                 </p>
-                ${atleta.tipoParticipante === 'visitante' 
+                ${atleta.tipoParticipante === 'visitante'
                     ? `<p class="text-[8px] font-bold text-gray-400 uppercase mt-0.5">${atleta.categoria || 'NÃO INFORMADO'} &middot; ${atleta.nivelEstimado || 'MÉDIA'}</p>`
                     : renderBadgesAtletaDVC(atleta)}
             </div>
@@ -869,7 +869,7 @@ async function carregarSequenciaJogosMural() {
                         el.innerHTML = "";
                         return;
             }
-    
+
         const evento = eventosComSequencia[0];
         const rodadas = evento.sequenciaJogosRodadas || [];
         const proxima = rodadas.find(r => r.status !== "Concluido");
@@ -896,7 +896,7 @@ async function carregarSequenciaJogosMural() {
                     </p>
 
                     ${podeGerenciar ? `
-                        <button 
+                        <button
                             onclick="carregarJogosTreinoNoMural()"
                             class="mt-3 w-full bg-green-700 text-white py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm active:scale-[0.99] transition">
                             Ver partidas
@@ -979,7 +979,7 @@ async function carregarSequenciaJogosMural() {
                 </div>
 
                 ${podeGerenciar ? `
-                    <button 
+                    <button
                         onclick="marcarJogoSequenciaConcluido('${evento.id}', '${proxima.id}')"
                         class="mt-4 w-full bg-white text-[#990000] py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm active:scale-[0.99] transition">
                         Marcar jogo realizado
@@ -999,7 +999,7 @@ async function carregarSequenciaJogosMural() {
             ` : ''}
 
             ${podeGerenciar ? `
-                <button 
+                <button
                     onclick="carregarJogosTreinoNoMural()"
                     class="w-full bg-gray-900 text-white py-2.5 rounded-2xl text-[9px] font-black uppercase shadow-sm active:scale-[0.99] transition">
                     Ver partidas
@@ -1106,7 +1106,7 @@ async function sortearTimesEquilibradosLegadoDVC(evId) {
 
         const selectQtd = document.getElementById(`qtd-times-${evId}`);
         const qtdTimes = Math.min(5, Math.max(2, Number(selectQtd?.value || 2)));
-        
+
         resultadoDiv.innerHTML = `
             <p class="text-[10px] text-gray-400 font-bold text-center">
                 Sorteando ${qtdTimes} times...
@@ -1156,7 +1156,7 @@ async function sortearTimesEquilibradosLegadoDVC(evId) {
 
         const buscasUsuarios = presencas.map(async presDoc => {
             const emailAtleta = presDoc.id;
-            const userDataCache = await obterUsuarioCacheDVC(emailAtleta); 
+            const userDataCache = await obterUsuarioCacheDVC(emailAtleta);
             const userSnap = userDataCache ? { exists: () => true, data: () => userDataCache } : await getDoc(doc(db, "users", emailAtleta));
 
             if (userSnap.exists()) {
@@ -1309,8 +1309,8 @@ async function sortearTimesEquilibradosLegadoDVC(evId) {
         ];
 
         const renderTime = (time, index) => {
-            const media = time.atletas.length > 0 
-                        ? (time.somaEquilibrio / time.atletas.length).toFixed(1) 
+            const media = time.atletas.length > 0
+                        ? (time.somaEquilibrio / time.atletas.length).toFixed(1)
                         : "0.0";
 
             return `
@@ -1335,7 +1335,7 @@ async function sortearTimesEquilibradosLegadoDVC(evId) {
                             </p>
 
                             <p class="text-[8px] font-bold text-gray-400 uppercase">
-                                ${atleta.tipoParticipante === 'visitante' 
+                                ${atleta.tipoParticipante === 'visitante'
                                     ? `${atleta.categoria || 'NÃO INFORMADO'} &middot; ${atleta.nivelEstimado || 'MÉDIA'}`
                                     : (atleta.sexo === "M" ? "Masculino" : atleta.sexo === "F" ? "Feminino" : "Não informado")}
                             </p>
@@ -1771,7 +1771,7 @@ async function buscarAtletasParticipantesTreino(eventId, evento = {}) {
 
     const participantes = [];
     const buscas = Array.from(fontesPorEmail.values()).map(async fonte => {
-        const userDataCache = await obterUsuarioCacheDVC(fonte.email); 
+        const userDataCache = await obterUsuarioCacheDVC(fonte.email);
         const userSnap = userDataCache ? { exists: () => true, data: () => userDataCache } : await getDoc(doc(db, "users", fonte.email));
 
         if (!userSnap.exists()) return;
@@ -1831,7 +1831,7 @@ async function carregarVisitantesTreino(eventId) {
     const snapshot = await getDocs(collection(db, "events", eventId, "visitantesTreino"));
     const visitantes = [];
     snapshot.forEach(doc => visitantes.push(doc.data()));
-    
+
     salvarCacheDVC(cacheKey, visitantes);
     return visitantes;
 }
@@ -1961,8 +1961,8 @@ window.obterScoreParticipanteSorteioDVC = function(participante = {}) {
 };
 
 window.calcularScoreVisitanteTreinoDVC = function(visitante = {}, atletasPresentes = []) {
-    const nivel = typeof normalizarTextoDVC === 'function' 
-        ? normalizarTextoDVC(visitante.nivelEstimado || "") 
+    const nivel = typeof normalizarTextoDVC === 'function'
+        ? normalizarTextoDVC(visitante.nivelEstimado || "")
         : String(visitante.nivelEstimado || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
     if (nivel === "INICIANTE") return 2;
@@ -2041,7 +2041,7 @@ window.alternarVisitanteNoSorteioDVC = async function(eventId, visitanteId, novo
         alert("Acesso permitido somente para a equipe técnica.");
         return;
     }
-    
+
     try {
         await updateDoc(doc(db, "events", eventId, "visitantesTreino", visitanteId), {
             ativoNoSorteio: novoValor,
@@ -2057,16 +2057,16 @@ window.alternarVisitanteNoSorteioDVC = async function(eventId, visitanteId, novo
 
 window.renderizarListaVisitantesTreino = async (eventId) => {
     const container = document.getElementById("lista-visitantes-treino");
-    
+
     try {
         const visitantes = await carregarVisitantesTreino(eventId);
         const ativos = visitantes.filter(v => v.ativo !== false);
-        
+
         if (ativos.length === 0) {
             container.innerHTML = '<p class="text-[8px] font-bold text-gray-400 uppercase text-center py-2">Nenhum visitante adicionado</p>';
             return;
         }
-        
+
         container.innerHTML = ativos.map(v => `
             <div class="flex flex-col bg-white border border-gray-100 p-2 rounded-xl gap-2">
                 <div class="flex items-center justify-between">
@@ -2083,7 +2083,7 @@ window.renderizarListaVisitantesTreino = async (eventId) => {
                     <span class="text-[8px] font-black uppercase ${v.ativoNoSorteio !== false ? 'text-green-700' : 'text-gray-500'}">
                         ${v.ativoNoSorteio !== false ? 'INCLUÍDO NO SORTEIO' : 'FORA DO SORTEIO'}
                     </span>
-                    <button onclick="alternarVisitanteNoSorteioDVC('${safeEditParam(eventId)}', '${safeEditParam(v.id)}', ${v.ativoNoSorteio === false ? 'true' : 'false'})" 
+                    <button onclick="alternarVisitanteNoSorteioDVC('${safeEditParam(eventId)}', '${safeEditParam(v.id)}', ${v.ativoNoSorteio === false ? 'true' : 'false'})"
                             class="px-2 py-1 rounded text-[8px] font-black uppercase border ${v.ativoNoSorteio !== false ? 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors' : 'bg-[#990000] border-[#990000] text-white hover:bg-[#7a0000] transition-colors'}">
                         ${v.ativoNoSorteio !== false ? 'Retirar' : 'Incluir'}
                     </button>
@@ -2101,22 +2101,22 @@ window.abrirModalAddVisitanteTreino = async (eventId, visitanteId = null) => {
         alert("Acesso permitido somente para a equipe técnica.");
         return;
     }
-    
+
     const visitantes = await carregarVisitantesTreino(eventId);
     const ativos = visitantes.filter(v => v.ativo !== false);
-    
+
     let visitante = null;
     if (visitanteId) {
         visitante = visitantes.find(v => v.id === visitanteId);
     } else if (ativos.length >= 5) {
         return alert("Este treino ja possui o limite de 5 visitantes temporarios.");
     }
-    
+
     const id = visitante ? visitante.id : (crypto.randomUUID ? crypto.randomUUID() : 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
-    
+
     const modalId = 'modal-add-visitante';
     document.getElementById(modalId)?.remove();
-    
+
     const formHtml = `
         <div id="${modalId}" class="fixed inset-0 z-[110] bg-black/80 p-4 flex items-center justify-center">
             <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
@@ -2183,7 +2183,7 @@ window.abrirModalAddVisitanteTreino = async (eventId, visitanteId = null) => {
             </div>
         </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', formHtml);
 };
 
@@ -2193,15 +2193,15 @@ window.salvarVisitanteTreino = async (eventId, visitanteId, isEdit) => {
         alert("Acesso permitido somente para a equipe técnica.");
         return;
     }
-    
+
     const nome = document.getElementById('vis-nome').value.trim();
     if (!nome) return alert("O nome do visitante e obrigatorio.");
-    
+
     const visitantes = await carregarVisitantesTreino(eventId);
     if (!isEdit && visitantes.some(v => v.ativo !== false && v.nome.toUpperCase() === nome.toUpperCase())) {
         if (!confirm("Ja existe um visitante ativo com este nome. Deseja continuar mesmo assim?")) return;
     }
-    
+
     // DVC VISITANTES — ETAPA 1: separa os dados editáveis dos metadados de criação.
     const dadosEditaveis = {
         nome: nome,
@@ -2211,15 +2211,15 @@ window.salvarVisitanteTreino = async (eventId, visitanteId, isEdit) => {
         posicao: document.getElementById('vis-posicao').value,
         atualizadoEm: serverTimestamp()
     };
-    
+
     try {
         const btn = event.currentTarget;
         const oldText = btn.innerText;
         btn.innerText = "Salvando...";
         btn.disabled = true;
-        
+
         const docRef = doc(db, "events", eventId, "visitantesTreino", visitanteId);
-        
+
         if (isEdit) {
             // DVC VISITANTES — ETAPA 1: não altera ativoNoSorteio durante a edição.
             await updateDoc(docRef, dadosEditaveis);
@@ -2236,10 +2236,10 @@ window.salvarVisitanteTreino = async (eventId, visitanteId, isEdit) => {
             };
             await setDoc(docRef, novoVisitante);
         }
-        
+
         // DVC VISITANTES — ETAPA 1: invalida apenas o cache dos visitantes deste evento.
         invalidarCacheDVC(`visitantes_treino_${eventId}`);
-        
+
         document.getElementById('modal-add-visitante')?.remove();
         renderizarListaVisitantesTreino(eventId);
     } catch (e) {
@@ -2258,16 +2258,16 @@ window.inativarVisitanteTreino = async (eventId, visitanteId) => {
         alert("Acesso permitido somente para a equipe técnica.");
         return;
     }
-    
+
     if (!confirm("Tem certeza que deseja remover este visitante do treino?")) return;
-    
+
     try {
         // DVC VISITANTES — ETAPA 1: preserva o documento ao inativar.
         await updateDoc(doc(db, "events", eventId, "visitantesTreino", visitanteId), {
             ativo: false,
             atualizadoEm: serverTimestamp()
         });
-        
+
         invalidarCacheDVC(`visitantes_treino_${eventId}`);
         renderizarListaVisitantesTreino(eventId);
     } catch (e) {
@@ -2283,12 +2283,12 @@ window.salvarESortearDVC = async (eventId) => {
         btn.innerText = "SALVANDO...";
         btn.disabled = true;
     }
-    
+
     // DVC CHAMADA — PARTE 1.2: continua somente após o salvamento bem-sucedido.
     if (typeof window.salvarChamadaEvento === "function") {
         await window.salvarChamadaEvento(eventId);
     }
-    
+
     // DVC CHAMADA — PARTE 1.2: atualiza a réplica salva apenas após sucesso.
     // DVC CHAMADA — PARTE 1.2: mantém alterações pendentes quando a gravação falha.
     if (!chamadaTemAlteracoesPendentes(eventId)) {
@@ -2309,7 +2309,7 @@ window.abrirModalConfigSorteioTreino = async (eventId) => {
 
     if (chamadaTemAlteracoesPendentes(eventId)) {
         document.getElementById("modal-config-sorteio-treino")?.remove();
-        
+
         const modalHtml = `
             <div id="modal-pendentes-sorteio" class="fixed inset-0 z-[100] bg-black/75 p-4 flex items-center justify-center">
                 <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-full">
@@ -2368,7 +2368,7 @@ window.abrirModalConfigSorteioTreino = async (eventId) => {
                     <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
                         <p class="text-[9px] font-black uppercase text-amber-900">Times sorteados apenas com atletas ativos no treino e visitantes incluídos.</p>
                         ${avisoForaSorteioModal ? `<p class="text-[8px] font-bold uppercase text-amber-700 mt-1">${avisoForaSorteioModal}</p>` : ''}
-                        
+
                         <div class="mt-2 pt-2 border-t border-amber-200/50">
                             <p class="text-[8px] font-bold text-amber-700 uppercase">Atletas presentes: <span id="contador-atletas-presentes">${resumoPresencasModal.ativos || 0}</span></p>
                             <p class="text-[8px] font-bold text-amber-700 uppercase">Visitantes incluídos: <span id="contador-visitantes-incluidos">...</span></p>
@@ -2403,15 +2403,15 @@ window.abrirModalConfigSorteioTreino = async (eventId) => {
     `;
 
     document.body.insertAdjacentHTML("beforeend", modal);
-    
+
     // Update the visitor counts async
     carregarVisitantesTreino(eventId).then(visitantes => {
         const inclusos = visitantes.filter(visitantePodeParticiparSorteioDVC).length;
         const presentes = resumoPresencasModal.ativos || 0;
-        
+
         const elVisitantes = document.getElementById('contador-visitantes-incluidos');
         const elTotal = document.getElementById('contador-total-sorteio');
-        
+
         if (elVisitantes) elVisitantes.innerText = inclusos;
         if (elTotal) elTotal.innerText = presentes + inclusos;
     }).catch(err => console.error("Erro ao atualizar contadores", err));
@@ -2576,15 +2576,15 @@ window.abrirModalTimeIndividualTreino = async (eventId, timeId) => {
     try {
         const eventoSnap = await getDoc(doc(db, "events", eventId));
         if (!eventoSnap.exists()) return alert("Evento não encontrado.");
-        
+
         const evento = eventoSnap.data();
         const times = Array.isArray(evento.timesSorteados) ? evento.timesSorteados : [];
         const time = times.find(t => t.id === timeId);
-        
+
         if (!time) return alert("Time não encontrado.");
-        
+
         document.getElementById("m-time-individual-treino-dvc")?.remove();
-        
+
         const modal = `
             <div id="m-time-individual-treino-dvc" class="fixed inset-0 z-[120] bg-black/80 p-4 flex items-center justify-center backdrop-blur-sm">
                 <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl max-h-[88vh] flex flex-col overflow-hidden animate-slide-up">
@@ -2597,7 +2597,7 @@ window.abrirModalTimeIndividualTreino = async (eventId, timeId) => {
                             <i class="fa-solid fa-xmark text-sm"></i>
                         </button>
                     </div>
-                    
+
                     <div class="p-4 overflow-y-auto">
                         <div class="flex items-center justify-between mb-4">
                             <p class="text-[10px] font-black text-gray-500 uppercase">${(time.atletas || []).length} ATLETA(S)</p>
@@ -2792,7 +2792,7 @@ window.abrirModalTimesTreino = async (eventId) => {
                                     { bg: "bg-cyan-50", border: "border-cyan-200", text: "text-cyan-900", left: "border-cyan-500", icon: "text-cyan-400", badge: "azul" }
                                 ];
                                 const cor = palette[idx % palette.length];
-                                
+
                                 return `
                                 <article class="bg-white border ${cor.border} rounded-2xl shadow-sm overflow-hidden border-l-4 ${cor.left}">
                                     <button onclick="document.getElementById('atletas-time-${idx}').classList.toggle('hidden'); document.getElementById('icon-time-${idx}').classList.toggle('rotate-180')" class="w-full text-left p-3 flex items-center justify-between gap-3 ${cor.bg} transition-colors focus:outline-none">
@@ -2835,29 +2835,29 @@ window.abrirResumoTreinoFinalizadoDVC = async (eventId) => {
         const eventos = await carregarEventosCacheDVC();
         const eventoDoc = eventos.find(d => d.id === eventId);
         if (!eventoDoc) return alert("Treino não encontrado no histórico.");
-        
+
         const evento = { ...eventoDoc };
         const rodadas = Array.isArray(evento.rodadasTreino) ? [...evento.rodadasTreino] : [];
         rodadas.sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
-        
+
         const times = Array.isArray(evento.timesSorteados) ? evento.timesSorteados : [];
         const classificacao = Array.isArray(evento.classificacaoTreino) && evento.classificacaoTreino.length
             ? evento.classificacaoTreino
             : calcularClassificacaoTreino(times, rodadas);
-            
+
         const campeao = classificacao[0];
         const statusAvaliacao = getStatusAvaliacaoTreinoDVC(evento);
         const podeGerenciar = usuarioEhEquipeTecnica();
         const avaliacaoPendente = avaliacaoTreinoPendenteDVC(evento);
         const dataFormatada = evento.data ? new Date(evento.data).toLocaleString("pt-BR") : "Data não informada";
-        
+
         const modalId = `modal-resumo-treino-${eventId}`;
         document.getElementById(modalId)?.remove();
 
         const htmlModal = `
             <div id="${modalId}" class="fixed inset-0 bg-gray-950/60 z-[100] flex flex-col justify-end sm:justify-center sm:p-4 animate-fade-in" onclick="if(event.target===this) this.remove()">
                 <div class="bg-gray-50 w-full sm:max-w-md sm:mx-auto rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl animate-slide-up sm:animate-fade-in">
-                    
+
                     <div class="p-4 bg-white rounded-t-3xl border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
                         <div class="min-w-0">
                             <p class="text-[10px] font-black uppercase text-[#990000]">Resumo do Treino</p>

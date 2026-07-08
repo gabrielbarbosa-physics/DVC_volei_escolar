@@ -662,13 +662,13 @@ async function carregarPesquisasTrimestraisCache(force = false, chaveTrimestrePa
             return [];
         }
     }
-    
+
     let chaveAtiva = chaveTrimestreParametro || "";
     if (typeof window.obterChavePesquisaAtivaDVC === "function") {
         const dataRef = window.obterDataAtualDVC ? window.obterDataAtualDVC() : new Date();
         chaveAtiva = chaveAtiva || window.obterChavePesquisaAtivaDVC(dataRef);
     }
-    
+
     if (!chaveAtiva) return [];
 
     const cachePorTrimestre = window.DVC_CACHE?.pesquisasTrimestraisPorTrimestre?.[chaveAtiva];
@@ -679,17 +679,17 @@ async function carregarPesquisasTrimestraisCache(force = false, chaveTrimestrePa
     if (!force && cache?.dados && cache.chaveTrimestre === chaveAtiva && (Date.now() - cache.atualizadoEm < TTL)) {
         return cache.dados;
     }
-    
+
     try {
         console.log("[DVC leitura] pesquisasTrimestrais");
         const q = query(collection(db, "pesquisasTrimestrais"), where("chaveTrimestre", "==", chaveAtiva));
         const snap = await getDocs(q);
-        
+
         const dados = snap.docs.map(docSnap => ({
             id: docSnap.id,
             ...docSnap.data()
         }));
-        
+
         if (!window.DVC_CACHE) window.DVC_CACHE = {};
         window.DVC_CACHE.pesquisasTrimestraisPorTrimestre = window.DVC_CACHE.pesquisasTrimestraisPorTrimestre || {};
         window.DVC_CACHE.pesquisasTrimestraisPorTrimestre[chaveAtiva] = {
@@ -701,7 +701,7 @@ async function carregarPesquisasTrimestraisCache(force = false, chaveTrimestrePa
             atualizadoEm: Date.now(),
             chaveTrimestre: chaveAtiva
         };
-        
+
         return dados;
     } catch (e) {
         console.warn("Erro ao buscar pesquisas trimestrais:", e);
@@ -1323,17 +1323,17 @@ function renderProgressoDVC(titulo, contagem, total, legendaMap) {
             <p class="text-[10px] font-black uppercase text-gray-800 dark:text-gray-200 mb-3">${titulo}</p>
             <div class="space-y-3">
     `;
-    
+
     const codigos = ["A", "B", "C", "D", "E", "F"];
     let hasData = false;
     codigos.forEach(cod => {
         const desc = legendaMap[cod];
         if (!desc) return;
-        
+
         const count = contagem[cod] || 0;
         const pct = total ? Math.round((count / total) * 100) : 0;
         if (count > 0) hasData = true;
-        
+
         html += `
             <div>
                 <div class="flex justify-between items-center text-[9px] font-bold text-gray-600 dark:text-gray-400 mb-1">
@@ -1346,13 +1346,13 @@ function renderProgressoDVC(titulo, contagem, total, legendaMap) {
             </div>
         `;
     });
-    
+
     if (!hasData) {
         html += `
             <p class="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase text-center py-2">Sem respostas registradas.</p>
         `;
     }
-    
+
     html += `
             </div>
         </div>
@@ -1524,7 +1524,7 @@ async function renderDashboardEditaisDVC() {
             const statusFin = typeof window.obterStatusFinanceiroEfetivo === "function"
                 ? window.obterStatusFinanceiroEfetivo(user)
                 : (user.financeiro || "");
-            
+
             if (statusFin === "Em dia") {
                 pagosPorMes[mesAtualTexto] = (pagosPorMes[mesAtualTexto] || 0) + 1;
             } else if (statusFin === "Justificado") {
@@ -1638,7 +1638,7 @@ async function renderDashboardEditaisDVC() {
                     <p class="text-[9px] font-bold text-white/60 mt-2 uppercase">Gestão, editais e prestação de contas coletiva</p>
                 </div>
             </div>
-            
+
             <div class="bg-gray-100 dark:bg-gray-950 border border-gray-200/50 dark:border-gray-850 rounded-2xl p-1 mb-4 flex gap-1 sticky top-[58px] z-20 backdrop-blur-md shadow-sm">
                 <button id="btn-subaba-dash-visao" onclick="window.mudarSubAbaDashboard('visao')" class="flex-1 px-1 py-2 rounded-xl text-[8px] font-black uppercase leading-tight transition">
                     Visão Geral
@@ -1897,7 +1897,7 @@ async function renderAdmin() {
     }
 
     window.limparComprovantesAntigosPainel();
-    window.verificarViradaDeMes(); 
+    window.verificarViradaDeMes();
 
     const projetoNomeGestao = PROJETO_ATUAL_DVC?.nome || "DVC";
     const projetoLogoGestao = PROJETO_ATUAL_DVC?.logo || "assets/img/loki2.webp";
@@ -1934,21 +1934,21 @@ async function renderAdmin() {
                 </div>
 
                 <div class="grid grid-cols-3 gap-2 mt-4">
-                    <button 
-                        onclick="irParaBlocoGestao('box-novos-cadastros')" 
+                    <button
+                        onclick="irParaBlocoGestao('box-novos-cadastros')"
                         class="bg-white/10 border border-white/10 rounded-2xl p-2 text-center active:scale-95 transition">
                         <i class="fa-solid fa-user-plus text-white text-sm mb-1"></i>
                         <p class="text-[8px] font-black uppercase text-white/70">Novos</p>
                     </button>
 
-                    <button 
-                        onclick="abrirPendenciasFinanceiras()" 
+                    <button
+                        onclick="abrirPendenciasFinanceiras()"
                         class="bg-white/10 border border-white/10 rounded-2xl p-2 text-center active:scale-95 transition">
                         <i class="fa-solid fa-file-invoice-dollar text-white text-sm mb-1"></i>
                         <p class="text-[8px] font-black uppercase text-white/70">Pendências</p>
                     </button>
 
-                    <button 
+                    <button
                         onclick="irParaBlocoGestao('admin-users-list')"
                         class="bg-white/10 border border-white/10 rounded-2xl p-2 text-center active:scale-95 transition">
                         <i class="fa-solid fa-users text-white text-sm mb-1"></i>
@@ -2002,14 +2002,14 @@ async function renderAdmin() {
         <div id="box-avaliacoes-equipe-tecnica" class="mb-4"></div>
 
         <div class="grid grid-cols-2 gap-2 mb-5">
-            <button 
-                onclick="baixarRelatorioPresencasDVC(this)" 
+            <button
+                onclick="baixarRelatorioPresencasDVC(this)"
                 class="bg-blue-600 text-white px-3 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm">
                 <i class="fa-solid fa-file-excel mr-1"></i> Presenças
             </button>
 
-            <button 
-                onclick="baixarRelatorioAtletasDVC(this)" 
+            <button
+                onclick="baixarRelatorioAtletasDVC(this)"
                 class="bg-green-600 text-white px-3 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm">
                 <i class="fa-solid fa-users mr-1"></i> Atletas
             </button>
@@ -2025,23 +2025,23 @@ async function renderAdmin() {
                         Comprovantes, justificativas e carências aguardando análise
                     </p>
                 </div>
-                <button 
-                    onclick="abrirPendenciasFinanceiras()" 
+                <button
+                    onclick="abrirPendenciasFinanceiras()"
                     class="bg-[#990000] text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase shrink-0">
                     Ver
                 </button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <div class="bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30 rounded-xl p-3 text-center">
+                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl p-3 text-center">
                     <p id="count-comprovantes-pendentes" class="text-2xl font-black text-green-700 dark:text-green-400">-</p>
-                    <p class="text-[8px] font-bold text-green-800 dark:text-green-500 uppercase">
+                    <p class="text-[8px] font-bold text-gray-500 dark:text-gray-400 uppercase">
                         Comprovantes
                     </p>
                 </div>
 
-                <div class="bg-blue-50 dark:bg-blue-955/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-3 text-center">
+                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl p-3 text-center">
                     <p id="count-justificativas-pendentes" class="text-2xl font-black text-blue-700 dark:text-blue-400">-</p>
-                    <p class="text-[8px] font-bold text-blue-800 dark:text-blue-500 uppercase">
+                    <p class="text-[8px] font-bold text-gray-500 dark:text-gray-400 uppercase">
                         Justificativas
                     </p>
                 </div>
@@ -2049,8 +2049,8 @@ async function renderAdmin() {
         </div>
         <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm mb-5 text-gray-900 dark:text-gray-100">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/50 flex items-center justify-center">
-                    <i class="fa-solid fa-filter text-[#990000] dark:text-red-400"></i>
+                <div class="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 flex items-center justify-center">
+                    <i class="fa-solid fa-filter text-gray-400 dark:text-gray-500"></i>
                 </div>
 
                 <div>
@@ -2064,11 +2064,11 @@ async function renderAdmin() {
             </div>
 
             <div class="space-y-2">
-                <input 
-                    type="text" 
-                    id="admin-search" 
-                    oninput="buscarGestaoDVC()" 
-                    placeholder="Pesquisar atleta..." 
+                <input
+                    type="text"
+                    id="admin-search"
+                    oninput="buscarGestaoDVC()"
+                    placeholder="Pesquisar atleta..."
                     class="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-xs outline-none bg-gray-50 dark:bg-gray-950 font-semibold text-gray-900 dark:text-gray-100">
 
                 <div class="grid grid-cols-2 gap-2">
@@ -2162,7 +2162,7 @@ async function filterAdminList() {
     const statusF = document.getElementById('admin-filter-status').value;
     const financeF = document.getElementById('admin-filter-finance').value;
     const monthF = document.getElementById('admin-filter-month').value;
-    
+
     let baseUsers = window.AppCache?.atletas || window.DVC_CACHE?.users?.dados;
     if (!baseUsers || baseUsers.length === 0) {
         baseUsers = await window.carregarAtletasCache();
@@ -2173,12 +2173,12 @@ async function filterAdminList() {
 
     let htmlListaGestao = "";
     let totalGestaoRenderizados = 0;
-    
+
     const isAuxiliar = window.currentUserData?.funcao === "Auxiliar";
 
     users.forEach(user => {
         if(user.email === "gabriel0barbosa0@gmail.com") return;
-        
+
         const financeiroEfetivo = window.obterStatusFinanceiroEfetivo(user);
         const statusEfetivo = window.usuarioTemStatusConvocavel(user) ? "Ativo" : (user.status || "Sem status");
         const textoBusca = window.normalizarBuscaDVC([
@@ -2205,7 +2205,7 @@ async function filterAdminList() {
         if(matchesSearch && matchesRole && matchesSex && matchesStatus && matchesFinance && matchesMonth) {
 
             // --- LÓGICA DAS CORES POR SEXO (INTEGRADO) ---
-            let corDaFaixa = "border-gray-200"; 
+            let corDaFaixa = "border-gray-200";
             if (user.sexo === "F") corDaFaixa = "border-pink-500";
             else if (user.sexo === "M") corDaFaixa = "border-blue-500";
             if (financeiroEfetivo === "Justificado" || financeiroEfetivo === STATUS_FINANCEIRO_CARENCIA) corDaFaixa = "border-yellow-400";
@@ -2213,12 +2213,12 @@ async function filterAdminList() {
             let advs = user.advertencias || [];
             let advCount = advs.length;
             let isSuspenso = advCount >= 3;
-            let advId = user.email.replace(/[^a-zA-Z0-9]/g, ''); 
-            
+            let advId = user.email.replace(/[^a-zA-Z0-9]/g, '');
+
             let advIcons = "";
             for(let i=1; i<=3; i++) {
-                advIcons += i <= advCount 
-                    ? '<i class="fa-solid fa-square-xmark text-red-600 mr-1"></i>' 
+                advIcons += i <= advCount
+                    ? '<i class="fa-solid fa-square-xmark text-red-600 mr-1"></i>'
                     : '<i class="fa-regular fa-square text-gray-300 mr-1"></i>';
             }
 
@@ -2231,31 +2231,31 @@ async function filterAdminList() {
 
             const scoreGeralAdmin = window.calcularScoreGeralDVC(user.habilidades || {});
             const financeiroCor = financeiroEfetivo === "Em dia"
-                ? "text-green-700 bg-green-50 border-green-100"
+                ? "text-green-700 bg-green-50 border-green-100 dark:text-green-400 dark:bg-green-950/30 dark:border-green-900/50"
                 : financeiroEfetivo === "Justificado"
-                    ? "text-blue-700 bg-blue-50 border-blue-100"
+                    ? "text-blue-700 bg-blue-50 border-blue-100 dark:text-blue-400 dark:bg-blue-950/30 dark:border-blue-900/50"
                     : financeiroEfetivo === STATUS_FINANCEIRO_CARENCIA
-                        ? "text-amber-700 bg-amber-50 border-amber-100"
-                        : "text-red-700 bg-red-50 border-red-100";
+                        ? "text-amber-700 bg-amber-50 border-amber-100 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-900/50"
+                        : "text-red-700 bg-red-50 border-red-100 dark:text-red-400 dark:bg-red-950/30 dark:border-red-900/50";
 
             const statusCor = statusEfetivo === "Ativo"
-                ? "text-green-700 bg-green-50 border-green-100"
-                : "text-gray-600 bg-gray-50 border-gray-200";
+                ? "text-green-700 bg-green-50 border-green-100 dark:text-green-400 dark:bg-green-950/30 dark:border-green-900/50"
+                : "text-gray-600 bg-gray-50 border-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:border-gray-700";
 
             const sexoLabel = user.sexo === "F" ? "Feminino" : user.sexo === "M" ? "Masculino" : "Sexo não informado";
             const sexoCor = user.sexo === "F"
-                ? "text-pink-700 bg-pink-50 border-pink-100"
+                ? "text-pink-700 bg-pink-50 border-pink-100 dark:text-pink-400 dark:bg-pink-950/30 dark:border-pink-900/50"
                 : user.sexo === "M"
-                    ? "text-blue-700 bg-blue-50 border-blue-100"
-                    : "text-gray-500 bg-gray-50 border-gray-200";
+                    ? "text-blue-700 bg-blue-50 border-blue-100 dark:text-blue-400 dark:bg-blue-950/30 dark:border-blue-900/50"
+                    : "text-gray-500 bg-gray-50 border-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:border-gray-700";
 
             const html = `
-<div class="bg-white border border-gray-200 mb-4 rounded-2xl shadow-sm overflow-hidden border-l-4 ${corDaFaixa}">
-    
+<div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 mb-4 rounded-2xl shadow-sm overflow-hidden border-l-4 ${corDaFaixa}">
+
     <div class="p-4">
         <div class="flex items-start justify-between gap-3 mb-3">
             <div class="min-w-0">
-                <p class="text-sm font-black uppercase text-gray-900 truncate">
+                <p class="text-sm font-black uppercase text-gray-900 dark:text-gray-100 truncate">
                     ${user.nome || "Sem nome"}
                 </p>
 
@@ -2300,26 +2300,26 @@ async function filterAdminList() {
                 </p>
             </div>
 
-            <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+            <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl p-3">
                 <p class="text-[8px] font-black text-gray-400 uppercase">
                     Score Geral
                 </p>
-                <p class="text-xs font-black text-[#990000] uppercase mt-1">
+                <p class="text-xs font-black text-[#990000] dark:text-red-400 uppercase mt-1">
                     ${scoreGeralAdmin.toFixed(1)}
                 </p>
             </div>
 
-            <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+            <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl p-3">
                 <p class="text-[8px] font-black text-gray-400 uppercase">
                     Função em quadra
                 </p>
-                <p class="text-xs font-black text-gray-800 uppercase mt-1 truncate">
+                <p class="text-xs font-black text-gray-800 dark:text-gray-200 uppercase mt-1 truncate">
                     ${nomeFuncaoQuadra}
                 </p>
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 mb-3">
+        <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl p-3 mb-3">
             <div class="flex items-center justify-between gap-2">
                 <div>
                     <p class="text-[8px] font-black text-gray-400 uppercase">
@@ -2343,20 +2343,20 @@ async function filterAdminList() {
         </div>
 
         <div class="grid grid-cols-2 gap-2">
-            <button 
+            <button
                 onclick="abrirModalAvaliacao('${emailSeguro}', '${nomeSeguro}')"
                 class="bg-[#990000] text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-sm">
                 <i class="fa-solid fa-chart-line mr-1"></i> Avaliar
             </button>
 
-            <button 
+            <button
                 onclick="verDocs('${emailSeguro.trim()}', '${nomeSeguro}')"
                 class="bg-gray-900 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-sm">
                 <i class="fa-solid fa-file-invoice-dollar mr-1"></i> Contrib.
             </button>
         </div>
 
-        <button 
+        <button
             onclick="toggleAcoesGestao('${advId}')"
             class="w-full mt-2 bg-gray-100 text-gray-700 py-3 rounded-xl font-black text-[9px] uppercase border">
             <i class="fa-solid fa-sliders mr-1"></i> Mais ações
@@ -2373,8 +2373,8 @@ async function filterAdminList() {
                 <label class="text-[8px] font-black text-gray-400 uppercase">
                     Financeiro
                 </label>
-                <select 
-                    onchange="atualizarFinanceiro('${emailSeguro}', this.value, this)" 
+                <select
+                    onchange="atualizarFinanceiro('${emailSeguro}', this.value, this)"
                     class="w-full mt-1 text-[10px] p-2 border rounded-xl bg-white font-bold">
                     <option value="Em dia" ${financeiroEfetivo === 'Em dia' ? 'selected' : ''}>Em dia</option>
                     <option value="Inadimplente" ${financeiroEfetivo === 'Inadimplente' ? 'selected' : ''}>Inadimplente</option>
@@ -2388,8 +2388,8 @@ async function filterAdminList() {
                 <label class="text-[8px] font-black text-gray-400 uppercase">
                     Status
                 </label>
-                <select 
-                    onchange="updateUser('${emailSeguro}', {status: this.value})" 
+                <select
+                    onchange="updateUser('${emailSeguro}', {status: this.value})"
                     class="w-full mt-1 text-[10px] p-2 border rounded-xl bg-white font-bold">
                     <option value="Ativo" ${statusEfetivo === 'Ativo' ? 'selected' : ''}>Ativo</option>
                     <option value="Inativo" ${statusEfetivo === 'Inativo' ? 'selected' : ''}>Inativo</option>
@@ -2400,8 +2400,8 @@ async function filterAdminList() {
                 <label class="text-[8px] font-black text-gray-400 uppercase">
                     Cargo no aplicativo
                 </label>
-                <select 
-                    onchange="updateUser('${emailSeguro}', {funcao: this.value})" 
+                <select
+                    onchange="updateUser('${emailSeguro}', {funcao: this.value})"
                     class="w-full mt-1 text-[10px] p-2 border rounded-xl bg-white font-bold"
                     ${isAuxiliar ? "disabled" : ""}>
                     <option value="Membro" ${user.funcao === 'Membro' ? 'selected' : ''}>Membro</option>
@@ -2415,8 +2415,8 @@ async function filterAdminList() {
                 <label class="text-[8px] font-black text-gray-400 uppercase">
                     Função em quadra
                 </label>
-                <select 
-                    onchange="atualizarFuncaoVolei('${emailSeguro}', this.value, this)" 
+                <select
+                    onchange="atualizarFuncaoVolei('${emailSeguro}', this.value, this)"
                     class="w-full mt-1 text-[10px] p-2 border rounded-xl bg-white font-bold">
                     ${FUNCOES_VOLEI_DVC.map(funcao => `
                         <option value="${funcao.id}" ${funcaoVoleiAtual === funcao.id ? "selected" : ""}>
@@ -2427,7 +2427,7 @@ async function filterAdminList() {
             </div>
         </div>
 
-        <button 
+        <button
             onclick="adicionarEstrela('${emailSeguro}', '${nomeSeguro}')"
             class="bg-yellow-500 text-white w-full py-3 mt-3 rounded-xl text-[9px] font-black uppercase shadow-sm">
             <i class="fa-solid fa-star mr-1"></i> Conceder Estrela
@@ -2440,8 +2440,8 @@ async function filterAdminList() {
                 </span>
 
                 ${advCount > 0 ? `
-                    <button 
-                        onclick="zerarAdvertencias('${emailSeguro}')" 
+                    <button
+                        onclick="zerarAdvertencias('${emailSeguro}')"
                         class="text-[8px] bg-red-100 text-red-800 px-2 py-1 rounded-lg font-black uppercase">
                         Zerar
                     </button>
@@ -2458,8 +2458,8 @@ async function filterAdminList() {
                         <option value="Desrespeito aos colegas ou treinadores">Desrespeito aos colegas ou treinadores</option>
                     </select>
 
-                    <button 
-                        onclick="aplicarAdvertencia('${emailSeguro}', '${advId}')" 
+                    <button
+                        onclick="aplicarAdvertencia('${emailSeguro}', '${advId}')"
                         class="bg-[#990000] text-white px-4 rounded-xl text-[9px] font-black uppercase shadow-sm">
                         OK
                     </button>
@@ -2472,7 +2472,7 @@ async function filterAdminList() {
         </div>
 
         ${!isAuxiliar ? `
-            <button 
+            <button
                 onclick="removerUsuario('${emailSeguro}')"
                 class="w-full mt-3 text-[9px] py-2 text-red-500 font-black uppercase border border-red-100 rounded-xl bg-white">
                 Excluir membro
@@ -2496,61 +2496,291 @@ async function filterAdminList() {
 }
 
 async function renderMembers() {
-    const c = document.getElementById('main-content'); 
-    
+    const c = document.getElementById('main-content');
+
     // Ícone de "carregando" enquanto conta as presenças no banco
     c.innerHTML = `<h3 class="font-bold mb-4 uppercase text-gray-800 dark:text-gray-200 flex items-center">Atletas <i class="fa-solid fa-circle-notch fa-spin text-xs ml-2 text-gray-400 dark:text-gray-500" id="loading-atletas"></i></h3>`;
-    
+
     // 1. Busca a lista de todos os usuários
-    const snap = await window.carregarUsuariosCacheMockDVC(); 
-    let uArr = []; 
+    const snap = await window.carregarUsuariosCacheMockDVC();
+    let uArr = [];
     snap.forEach(u => uArr.push(u.data()));
-    
-    // 2. Busca todos os eventos para calcular as presenças
-    let contagemPresencas = {}; 
+
+    // 2. Busca todos os eventos para calcular as presenças em tempo de execução
+    let contagemPresencas = {};
+    let ultimoTreino = {};
     const eventsSnap = await window.carregarEventosCacheMockDVC();
-    
-    // Faz a leitura de todas as listas de chamada de todos os eventos (via cache)
-    eventsSnap.docs.forEach(evDoc => {
-        const presencas = window.DVC_CACHE?.presencasPorEvento?.[evDoc.id]?.dados || [];
+
+    const promises = eventsSnap.docs.map(async (evDoc) => {
+        const evData = evDoc.data();
+        let presencas = window.DVC_CACHE?.presencasPorEvento?.[evDoc.id]?.dados;
+        if (!presencas || presencas.length === 0) {
+            if (typeof window.carregarPresencasEventoDVC === 'function') {
+                presencas = await window.carregarPresencasEventoDVC(evDoc.id);
+            } else {
+                presencas = [];
+            }
+        }
+        return { evData, presencas };
+    });
+
+    const eventosComPresencas = await Promise.all(promises);
+
+    eventosComPresencas.forEach(({ evData, presencas }) => {
+        if (!presencas) return;
+        const dataEv = evData.data; // formato YYYY-MM-DD
         presencas.forEach(p => {
-            const emailAtleta = p.id;
+            const emailAtleta = p.id || p.email;
             contagemPresencas[emailAtleta] = (contagemPresencas[emailAtleta] || 0) + 1;
+
+            if (dataEv) {
+                if (!ultimoTreino[emailAtleta] || dataEv > ultimoTreino[emailAtleta]) {
+                    ultimoTreino[emailAtleta] = dataEv;
+                }
+            }
         });
     });
 
     // 3. Ordena os nomes em ordem alfabética
-    uArr.sort((a,b) => a.nome.localeCompare(b.nome));
-    
+    uArr.sort((a,b) => (a.nome || "").localeCompare(b.nome || ""));
+
+    // Armazena no estado global para a paginação e exportação
+    window.estadoAtletasDVC = {
+        dados: uArr,
+        contagemPresencas: contagemPresencas,
+        ultimoTreino: ultimoTreino,
+        paginaAtual: 1,
+        itensPorPagina: 20
+    };
+
     // 4. Remove o ícone de carregando
     const loadingIcon = document.getElementById('loading-atletas');
     if (loadingIcon) loadingIcon.remove();
- 
-    // 5. Renderiza a lista na tela
-    uArr.forEach(user => { 
-        let corDaFaixa = "border-gray-200"; 
+
+    // 5. Renderiza a casca (Botão de Exportar e Container da Tabela)
+    c.innerHTML += `
+        <div class="flex justify-between items-center mb-4 mt-2">
+            <div></div>
+            <button onclick="window.exportarAtivosInadimplentes()" class="bg-[#990000] hover:bg-red-800 text-white border border-[#990000] dark:border-red-900/50 text-xs font-bold px-4 py-2 rounded-md transition-all flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-download"></i> Exportar Ativos Inadimplentes
+            </button>
+        </div>
+        <div id="tabela-atletas-container"></div>
+    `;
+
+    // 6. Chama a função que renderiza a página atual
+    window.renderizarPaginaAtletas();
+}
+
+window.renderizarPaginaAtletas = function() {
+    const container = document.getElementById('tabela-atletas-container');
+    if (!container) return;
+
+    const { dados, paginaAtual, itensPorPagina, contagemPresencas, ultimoTreino } = window.estadoAtletasDVC;
+    const totalPaginas = Math.ceil(dados.length / itensPorPagina) || 1;
+    const inicio = (paginaAtual - 1) * itensPorPagina;
+    const fim = inicio + itensPorPagina;
+    const paginaDados = dados.slice(inicio, fim);
+
+    let tableHtml = `
+    <div class="overflow-x-auto w-full bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-900/50 dark:bg-slate-950/40 text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-300 uppercase">
+                    <th class="py-4 px-4 whitespace-nowrap">Atleta</th>
+                    <th class="py-4 px-4 whitespace-nowrap">Badges</th>
+                    <th class="py-4 px-4 text-center whitespace-nowrap">Últ. Treino</th>
+                    <th class="py-4 px-4 text-right whitespace-nowrap">Presenças</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800/0">
+    `;
+
+    paginaDados.forEach(user => {
+        let corDaFaixa = "border-gray-200 dark:border-gray-700";
         const financeiroEfetivo = window.obterStatusFinanceiroEfetivo(user);
-        
-        if (user.sexo === "F") corDaFaixa = "border-pink-500";
-        else if (user.sexo === "M") corDaFaixa = "border-blue-500";
-        if (financeiroEfetivo === "Justificado" || financeiroEfetivo === STATUS_FINANCEIRO_CARENCIA) corDaFaixa = "border-yellow-400";
- 
-        // Pega o número de presenças calculado (ou 0 se não tiver nenhuma)
+
+        if (user.sexo === "F") corDaFaixa = "border-pink-500 dark:border-pink-900/60";
+        else if (user.sexo === "M") corDaFaixa = "border-blue-500 dark:border-blue-900/60";
+        if (financeiroEfetivo === "Justificado" || financeiroEfetivo === STATUS_FINANCEIRO_CARENCIA) corDaFaixa = "border-yellow-400 dark:border-yellow-900/60";
+
         const qtdPresencas = contagemPresencas[user.email] || 0;
- 
-        c.innerHTML += `
-        <div class="p-3 border-b border-gray-100 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 items-center mb-1 rounded shadow-sm text-gray-800 dark:text-gray-255 border-l-4 ${corDaFaixa}">
-            <div class="flex flex-col">
-                <span class="text-sm font-semibold">${user.nome}</span>
-                <span class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">${user.funcao}</span>
-            </div>
-            
-            <div class="bg-gray-50 dark:bg-gray-950 px-3 py-1 rounded-lg border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center min-w-[50px]">
-                <span class="text-[7px] text-gray-400 dark:text-gray-500 font-black uppercase mb-1">Presenças</span>
-                <span class="text-sm font-black text-[#990000] dark:text-red-400 leading-none">${qtdPresencas}</span>
-            </div>
-        </div>`; 
+
+        let ultTreinoFmt = "--";
+        if (ultimoTreino[user.email]) {
+            const dataStr = ultimoTreino[user.email];
+            const dataParts = dataStr.split('T');
+            const dataOnly = dataParts[0];
+            const timeOnly = dataParts.length > 1 ? dataParts[1].substring(0,5) : "";
+
+            const parts = dataOnly.split('-');
+            if (parts.length >= 3) {
+                const ano = parts[0];
+                const mes = parts[1].padStart(2, '0');
+                const dia = parts[2].padStart(2, '0');
+
+                if (timeOnly) {
+                    ultTreinoFmt = `${dia}/${mes} ${timeOnly}`;
+                } else {
+                    ultTreinoFmt = `${dia}/${mes}/${ano}`;
+                }
+            }
+        }
+
+        const cargo = user.funcao || "Membro";
+        const funcVolei = user.funcaoVolei || "formacao";
+        const nomeFuncaoQuadra = typeof window.getNomeFuncaoVoleiDVC === "function" ? window.getNomeFuncaoVoleiDVC(funcVolei) : "Em formação";
+        const statusStr = user.status || "Ativo";
+        let categoria = "Sub-17";
+        if (typeof window.dashboardIdadeDVC === "function") {
+            categoria = window.dashboardIdadeDVC(user) || "Adulto";
+        } else if (user.categoria) {
+            categoria = user.categoria;
+        }
+
+        let nomeExibicao = user.nome || "Sem nome";
+        if (nomeExibicao !== "Sem nome") {
+            const partes = nomeExibicao.trim().split(/\s+/);
+            if (partes.length > 1) {
+                nomeExibicao = `${partes[0]} ${partes[partes.length - 1]}`;
+            }
+        }
+
+        tableHtml += `
+        <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+            <td class="py-3 px-4 align-middle border-l-4 ${corDaFaixa}">
+                <div class="flex flex-col justify-center">
+                    <span class="text-sm font-bold text-gray-800 dark:text-gray-200">${nomeExibicao}</span>
+                    <span class="text-xs font-normal text-gray-500 dark:text-gray-300 mt-0.5 uppercase">${cargo}</span>
+                </div>
+            </td>
+            <td class="py-3 px-4 align-middle">
+                <div class="flex flex-row gap-1.5 items-center">
+                    <span class="bg-green-100 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900/40 border text-[10px] px-2 py-0.5 rounded-md uppercase font-medium">${statusStr}</span>
+                    <span class="bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/40 border text-[10px] px-2 py-0.5 rounded-md uppercase font-medium">${categoria}</span>
+                    <span class="bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-900/40 border text-[10px] px-2 py-0.5 rounded-md uppercase font-medium">${nomeFuncaoQuadra}</span>
+                </div>
+            </td>
+            <td class="py-3 px-4 align-middle text-center">
+                <span class="text-xs text-gray-600 dark:text-gray-300 font-mono">${ultTreinoFmt}</span>
+            </td>
+            <td class="py-3 px-4 align-middle text-right">
+                <span class="text-sm font-bold text-gray-800 bg-gray-100 dark:text-white dark:bg-gray-700 px-2.5 py-1 rounded-md shadow-sm">
+                    ${qtdPresencas}
+                </span>
+            </td>
+        </tr>`;
     });
+
+    tableHtml += `
+            </tbody>
+        </table>
+    </div>`;
+
+    // Controlador de Paginação Minimalista Premium
+    tableHtml += `
+    <div class="flex justify-end items-center gap-4 mt-4 mb-2">
+        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Página ${paginaAtual} de ${totalPaginas}</span>
+        <div class="flex items-center gap-2">
+            <button onclick="window.mudarPaginaAtletas(-1)" ${paginaAtual <= 1 ? 'disabled' : ''} class="text-xs font-semibold text-gray-400 dark:hover:bg-gray-800 px-3 py-1.5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed">Anterior</button>
+            <button onclick="window.mudarPaginaAtletas(1)" ${paginaAtual >= totalPaginas ? 'disabled' : ''} class="text-xs font-semibold text-gray-400 dark:hover:bg-gray-800 px-3 py-1.5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed">Próximo</button>
+        </div>
+    </div>
+    `;
+
+    container.innerHTML = tableHtml;
+}
+
+window.mudarPaginaAtletas = function(dir) {
+    const { dados, paginaAtual, itensPorPagina } = window.estadoAtletasDVC;
+    const totalPaginas = Math.ceil(dados.length / itensPorPagina) || 1;
+    let novaPagina = paginaAtual + dir;
+    if (novaPagina >= 1 && novaPagina <= totalPaginas) {
+        window.estadoAtletasDVC.paginaAtual = novaPagina;
+        window.renderizarPaginaAtletas();
+    }
+}
+
+window.exportarAtivosInadimplentes = function() {
+    if (!window.estadoAtletasDVC || !window.estadoAtletasDVC.dados) return;
+    const { dados, ultimoTreino } = window.estadoAtletasDVC;
+
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear();
+    const mesAtual = hoje.getMonth(); // 0-11
+
+    let mesAnterior = mesAtual - 1;
+    let anoAnterior = anoAtual;
+    if (mesAnterior < 0) {
+        mesAnterior = 11;
+        anoAnterior--;
+    }
+
+    const atletasExport = dados.filter(user => {
+        // Critério b) Status Financeiro "Inadimplente" ou "Aguardando Pagamento"
+        const financeiroEfetivo = window.obterStatusFinanceiroEfetivo(user);
+        if (financeiroEfetivo !== "Inadimplente" && financeiroEfetivo !== "Aguardando Pagamento") {
+            return false;
+        }
+
+        // Critério a) Último Treino no mês atual ou mês anterior
+        const dataUltimo = ultimoTreino[user.email];
+        if (!dataUltimo) return false;
+
+        const parts = dataUltimo.split('-');
+        if (parts.length >= 3) {
+            const ano = parseInt(parts[0], 10);
+            const mes = parseInt(parts[1], 10) - 1;
+
+            const ehMesAtual = (ano === anoAtual && mes === mesAtual);
+            const ehMesAnterior = (ano === anoAnterior && mes === mesAnterior);
+
+            if (ehMesAtual || ehMesAnterior) {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    if (atletasExport.length === 0) {
+        alert("Nenhum atleta inadimplente com treino recente encontrado nos critérios estabelecidos.");
+        return;
+    }
+
+    // Header do CSV
+    let csvContent = "NOME DO ALUNO;STATUS FINANCEIRO;NÚMERO DE TELEFONE\n";
+
+    atletasExport.forEach(user => {
+        const nome = user.nome || "Sem nome";
+        const financeiroEfetivo = window.obterStatusFinanceiroEfetivo(user);
+
+        // Telefone limpo e com formatação de DDD
+        let telefone = user.telefone || user.tel || user.whatsapp || "Não informado";
+
+        // Se for string, limpar e reformatar se for celular/fixo do Brasil
+        if (telefone !== "Não informado" && typeof telefone === 'string') {
+            const digitos = telefone.replace(/\D/g, '');
+            if (digitos.length === 11) {
+                telefone = `(${digitos.substring(0,2)}) ${digitos.substring(2,7)}-${digitos.substring(7,11)}`;
+            } else if (digitos.length === 10) {
+                telefone = `(${digitos.substring(0,2)}) ${digitos.substring(2,6)}-${digitos.substring(6,10)}`;
+            } else if (digitos.length > 0) {
+                telefone = digitos; // se tiver código do país, mantemos os dígitos
+            }
+        }
+
+        csvContent += `${nome};${financeiroEfetivo};${telefone}\n`;
+    });
+
+    // Download via Blob (UTF-8 com BOM para Excel não quebrar acentos)
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Inadimplentes_Ativos_${anoAtual}_${mesAtual+1}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 // Bind Stage 10B to window
@@ -2623,9 +2853,9 @@ async function aplicarAdvertencia(email, advId) {
         let advs = snap.data().advertencias || [];
 
         advs.push(motivo); // Adiciona a nova advertência à lista
-        
+
         let updates = { advertencias: advs };
-        
+
         // Se chegou a 3 advertências, avisa que foi suspenso
         if(advs.length >= 3) {
             alert(`Atenção: O atleta recebeu a 3ª advertência (${motivo}) e está SUSPENSO.`);
@@ -2671,12 +2901,12 @@ async function verDocs(email, nome) {
         if (typeof window.limparCacheContribuicoesAtleta === "function") {
             window.limparCacheContribuicoesAtleta();
         }
-        
+
         let docsGlobais = [];
         if (typeof window.carregarContribuicoesCache === "function") {
             docsGlobais = await window.carregarContribuicoesCache();
         }
-        
+
         const emailNormalizado = String(email || "").toLowerCase();
         const docsDoAtleta = docsGlobais.filter(d => String(d.email || "").toLowerCase() === emailNormalizado);
 
@@ -2716,30 +2946,30 @@ async function verDocs(email, nome) {
             return dataB - dataA;
         });
 
-        const pagos = registros.filter(r => 
+        const pagos = registros.filter(r =>
             r.status === "Validado" || r.resultadoFinanceiro === "Pago"
         ).length;
 
-        const justificados = registros.filter(r => 
+        const justificados = registros.filter(r =>
             r.status === "Justificado" || r.resultadoFinanceiro === "Justificado" || r.status === "Carência aceita"
         ).length;
 
-        const pendentes = registros.filter(r => 
+        const pendentes = registros.filter(r =>
             r.status === "Pendente" || r.status === "Em análise"
         ).length;
 
-        const ultimaRegularizacao = registros.find(r => 
-            r.status === "Validado" || 
-            r.resultadoFinanceiro === "Pago" || 
-            r.status === "Justificado" || 
+        const ultimaRegularizacao = registros.find(r =>
+            r.status === "Validado" ||
+            r.resultadoFinanceiro === "Pago" ||
+            r.status === "Justificado" ||
             r.resultadoFinanceiro === "Justificado"
         );
 
         let modal = `
             <div id="m-fin" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
                 <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 w-full max-w-sm rounded-2xl p-6 max-h-[85vh] overflow-y-auto relative shadow-2xl text-gray-900 dark:text-gray-100">
-                    <button 
-                        onclick="document.getElementById('m-fin').remove()" 
+                    <button
+                        onclick="document.getElementById('m-fin').remove()"
                         class="absolute top-4 right-4 text-red-600 font-black text-xl">
                         &times;
                     </button>
@@ -2889,8 +3119,8 @@ async function verDocs(email, nome) {
                         ${window.montarRastroFinanceiro ? window.montarRastroFinanceiro(item) : ""}
 
                         ${item.status === "Pendente" ? `
-                            <button 
-                                onclick="aprovarJustificativa('${email}', '${item.id}', this)" 
+                            <button
+                                onclick="aprovarJustificativa('${email}', '${item.id}', this)"
                                 class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-[9px] uppercase">
                                 Justificado
                             </button>
@@ -2913,16 +3143,16 @@ async function verDocs(email, nome) {
                         ${window.montarRastroFinanceiro ? window.montarRastroFinanceiro(item) : ""}
 
                         <div class="flex gap-2">
-                            <a 
-                                href="${item.comprovante}" 
-                                download="${nome}_${item.mes.replace('/','_')}.webp" 
+                            <a
+                                href="${item.comprovante}"
+                                download="${nome}_${item.mes.replace('/','_')}.webp"
                                 class="flex-1 bg-blue-600 text-white text-center py-2 rounded-lg font-bold text-[9px] uppercase">
                                 Baixar
                             </a>
 
                             ${item.status === "Pendente" ? `
-                                <button 
-                                    onclick="validarExpress('${email}', '${item.id}', this)" 
+                                <button
+                                    onclick="validarExpress('${email}', '${item.id}', this)"
                                     class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-[9px] uppercase">
                                     Verificar
                                 </button>
@@ -2961,19 +3191,19 @@ window.exportarAtletasXLS = exportarAtletasXLS;
 // Stage 10F: Relatórios Word DVC
 function formatarDataBR(dataTexto) {
     if (!dataTexto) return "Não informado";
-    
+
     if (dataTexto && typeof dataTexto.toDate === "function") {
         dataTexto = dataTexto.toDate();
     }
-    
+
     const data = new Date(dataTexto);
     if (isNaN(data.getTime())) return String(dataTexto);
-    
+
     if (typeof dataTexto === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dataTexto)) {
         const [ano, mes, dia] = dataTexto.split("-").map(Number);
         return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}/${ano}`;
     }
-    
+
     const dia = String(data.getDate()).padStart(2, "0");
     const mes = String(data.getMonth() + 1).padStart(2, "0");
     const ano = data.getFullYear();
@@ -3070,7 +3300,7 @@ async function baixarRelatorioAtletasDVC(buttonElement) {
             atletasElegiveis.push(user);
 
             totalCount++;
-            
+
             const ehAtivo = window.usuarioTemStatusConvocavel?.(user) || false;
             if (ehAtivo) {
                 ativosCount++;
@@ -3171,7 +3401,7 @@ async function baixarRelatorioAtletasDVC(buttonElement) {
         const htmlConteudo = `
             <h1>RELATÓRIO GERAL DE ATLETAS - DVC</h1>
             <p>Gerado em: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}</p>
-            
+
             <div class="card-resumo">
                 <h2>Resumo Estatístico</h2>
                 <table>
@@ -3310,8 +3540,8 @@ async function baixarRelatorioPresencasDVC(buttonElement) {
 
         const promises = eventos.map(async (ev) => {
             const presencas = await window.carregarPresencasEventoDVC(ev.id);
-            const convocados = typeof window.carregarConvocadosEventoDVC === "function" 
-                ? await window.carregarConvocadosEventoDVC(ev.id) 
+            const convocados = typeof window.carregarConvocadosEventoDVC === "function"
+                ? await window.carregarConvocadosEventoDVC(ev.id)
                 : [];
             return { ev, presencas, convocados };
         });
@@ -3353,7 +3583,7 @@ async function baixarRelatorioPresencasDVC(buttonElement) {
         let somaPercentuais = 0;
         let maxPresencas = -1;
         let minPresencas = 999999;
-        
+
         const listaAtletasPresencas = atletasElegiveis.map(atleta => {
             const count = presencasPorAtleta[atleta.email]?.count || 0;
             const taxa = totalEventos > 0 ? (count / totalEventos) * 100 : 0;
@@ -3420,7 +3650,7 @@ async function baixarRelatorioPresencasDVC(buttonElement) {
         const htmlConteudo = `
             <h1>RELATÓRIO GERAL DE PRESENÇAS - DVC</h1>
             <p>Gerado em: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}</p>
-            
+
             <div class="card-resumo">
                 <h2>Resumo de Frequência</h2>
                 <table>
@@ -3575,8 +3805,8 @@ async function carregarResumoNovosCadastros() {
                     </span>
                 </div>
 
-                <button 
-                    onclick="abrirNovosCadastros()" 
+                <button
+                    onclick="abrirNovosCadastros()"
                     class="w-full bg-[#990000] text-white py-2 rounded-lg text-[9px] font-black uppercase">
                     Ver novos cadastros
                 </button>
@@ -3679,8 +3909,8 @@ async function abrirNovosCadastros() {
                     </div>
                 </div>
 
-                <button 
-                    onclick="marcarCadastroComoVisto('${item.email}', this)" 
+                <button
+                    onclick="marcarCadastroComoVisto('${item.email}', this)"
                     class="w-full bg-gray-900 text-white py-2 rounded-lg text-[9px] font-black uppercase">
                     Marcar como visto
                 </button>
@@ -3696,8 +3926,8 @@ async function abrirNovosCadastros() {
         const modal = `
             <div id="m-novos-cadastros" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
                 <div class="bg-white w-full max-w-sm rounded-2xl p-5 max-h-[85vh] overflow-y-auto relative shadow-2xl">
-                    <button 
-                        onclick="document.getElementById('m-novos-cadastros').remove()" 
+                    <button
+                        onclick="document.getElementById('m-novos-cadastros').remove()"
                         class="absolute top-4 right-4 text-red-600 font-black text-xl">
                         &times;
                     </button>
