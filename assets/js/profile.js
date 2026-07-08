@@ -11,15 +11,15 @@
 // js/profile.js
 // Stage 7: Perfil A Modularization
 
-import { 
-    db, 
-    auth, 
-    doc, 
-    getDoc, 
-    setDoc, 
-    updateDoc, 
-    collection, 
-    getDocs, 
+import {
+    db,
+    auth,
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    collection,
+    getDocs,
     addDoc,
     writeBatch
 } from "./firebase.js";
@@ -97,10 +97,10 @@ function renderIconeLocalDVC(src, alt = "", extraClasses = "") {
     const classesSeguras = String(extraClasses || "").replace(/"/g, "");
 
     return `
-        <img 
-            src="${srcSeguro}" 
-            alt="${altSeguro}" 
-            class="inline-block object-contain ${classesSeguras}" 
+        <img
+            src="${srcSeguro}"
+            alt="${altSeguro}"
+            class="inline-block object-contain ${classesSeguras}"
             loading="lazy"
             onerror="this.style.display='none';"
         >
@@ -215,7 +215,7 @@ async function mudarSubAbaPerfil(aba) {
             }
         }, 80);
     }
-    
+
     if (window.subAbaPerfilAtiva === "presenca") {
         const emailAtual = window.modoTestePerfilEmail || (auth.currentUser ? auth.currentUser.email : "");
         if (typeof window.carregarEExibirHistoricoJogosDVC === "function" && !window._historicoPresencaCarregadoDVC) {
@@ -235,8 +235,8 @@ async function abrirMicroModalFinanceiroPerfilDVC(email) {
     const modalHtml = corrigirHtmlVisualPerfilDVC(`
         <div id="m-financeiro-micro-dvc" class="fixed inset-0 bg-black/70 z-[110] p-4 flex items-center justify-center fade-in">
             <div class="bg-white dark:bg-gray-900 border dark:border-gray-800 w-full max-w-xs rounded-2xl p-5 relative shadow-2xl">
-                <button 
-                    onclick="document.getElementById('m-financeiro-micro-dvc').remove()" 
+                <button
+                    onclick="document.getElementById('m-financeiro-micro-dvc').remove()"
                     class="absolute top-4 right-4 text-gray-400 hover:text-red-600 font-black text-lg">
                     &times;
                 </button>
@@ -301,7 +301,7 @@ async function toggleHabilidadeAccordionDVC(detailsEl, email, skillId) {
     if (!detailsEl.open) return;
     const container = detailsEl.querySelector(`.historico-criterio-container-dvc`);
     if (!container) return;
-    
+
     if (container.dataset.loaded === "true") return;
 
     if (typeof window.carregarHistoricoHabilidadeHtml === "function") {
@@ -322,7 +322,29 @@ async function toggleHabilidadeAccordionDVC(detailsEl, email, skillId) {
 
 
 
-// 3. renderProfile
+function gerarSkeletonPerfil() {
+    return `
+        <div class="px-2 fade-in text-left">
+            <h3 class="font-black mb-5 uppercase text-gray-700 dark:text-gray-300 flex items-center">
+                Perfil
+                <i class="fa-solid fa-circle-notch fa-spin text-xs ml-2 text-gray-400"></i>
+            </h3>
+
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-20 h-20 bg-gray-200 dark:bg-gray-800 rounded-full animate-pulse shrink-0"></div>
+                <div class="space-y-2">
+                    <div class="h-5 bg-gray-200 dark:bg-gray-800 rounded w-48 animate-pulse"></div>
+                    <div class="h-3 bg-gray-100 dark:bg-gray-900 rounded w-24 animate-pulse"></div>
+                </div>
+            </div>
+
+            <div class="h-24 bg-gray-100 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-xl w-full animate-pulse mb-4"></div>
+            <div class="h-16 bg-gray-50 dark:bg-gray-900/30 border border-gray-50 dark:border-gray-800/50 rounded-xl w-full animate-pulse mb-3"></div>
+            <div class="h-16 bg-gray-50 dark:bg-gray-900/30 border border-gray-50 dark:border-gray-800/50 rounded-xl w-full animate-pulse"></div>
+        </div>
+    `;
+}
+
 async function renderProfile() {
     const inicioTotalPerfil = perfInicioPerfilDVC();
     const c = document.getElementById('main-content');
@@ -334,14 +356,10 @@ async function renderProfile() {
 
     const emailPerfil = modoTestePerfilEmail || (auth.currentUser ? auth.currentUser.email : "");
     const estouEmModoTeste = !!modoTestePerfilEmail;
-    
-    // Mostra o loading inicial
-    c.innerHTML = `
-        <h3 class="font-bold mb-4 uppercase flex items-center">
-            Perfil 
-            <i class="fa-solid fa-circle-notch fa-spin text-xs ml-2 text-gray-400" id="loading-profile"></i>
-        </h3>
-    `;
+
+    // Passo 1 e 2: Limpa o container e injeta o Skeleton (simulando a interface piscando/pulsando)
+    c.innerHTML = '';
+    c.innerHTML = gerarSkeletonPerfil();
 
     try {
         // 1. Dispara buscas de usuÃ¡rios em paralelo
@@ -369,16 +387,16 @@ async function renderProfile() {
         }
 
         const userData = userSnap.data() || {};
-        
+
         const precisaAutoAvaliacaoPerfil = !estouEmModoTeste &&
             String(emailPerfil || "").trim().toLowerCase() === String(auth.currentUser?.email || "").trim().toLowerCase() &&
             await window.usuarioPrecisaAutoAvaliacaoComHistoricoDVC(userData, emailPerfil);
-            
+
         const possuiAvaliacaoTecnicaRealPerfil = window.usuarioTemAvaliacaoTecnicaRealDVC(userData);
         const projetoNome = userData.projetoNome || PROJETO_ATUAL_DVC.nome;
         const projetoSelo = userData.projetoSelo || PROJETO_ATUAL_DVC.selo;
         const projetoLogo = userData.projetoLogo || PROJETO_ATUAL_DVC.logo;
-        
+
         // 3. CÃ¡lculo da mÃ©dia tÃ©cnica preservando a lÃ³gica antiga
         const funcaoVolei = userData.funcaoVolei || "formacao";
         const inicioCalculoHabilidades = perfInicioPerfilDVC();
@@ -398,7 +416,7 @@ async function renderProfile() {
         const mediaHabilidades = possuiAvaliacaoTecnicaRealPerfil
             ? scoreGeralDVC.toFixed(1)
             : "Aguardando";
-            
+
         window.filtroRadarDVC = "todas";
         window.habilidadeSelecionadaRadarDVC = null;
         window.habilidadesRadarAtualDVC = {};
@@ -416,11 +434,35 @@ async function renderProfile() {
             ? window.renderQuizPerfilHtmlDVC(userData)
             : "";
         perfLogPerfilDVC("renderizar card Inteligencia de Quadra", inicioQuizPerfil);
-        
-        // 5. PresenÃ§as
-        const minhasPresencas = userData.presencas || 0;
-        let proximosJogosHtml = ""; 
-        let historicoJogosHtml = ""; 
+
+        // 5. PresenÃ§as Reais sincronizadas com o Firestore
+        let minhasPresencas = userData.presencas || 0;
+        try {
+            const evSnapshot = await getDocs(collection(db, "events"));
+            const promises = [];
+            const emailLimpoPerfil = String(emailPerfil).trim().toLowerCase();
+
+            evSnapshot.forEach(docEv => {
+                if (typeof window.carregarPresencasEventoDVC === "function") {
+                    promises.push(window.carregarPresencasEventoDVC(docEv.id));
+                }
+            });
+
+            if (promises.length > 0) {
+                const arrPresencas = await Promise.all(promises);
+                let contador = 0;
+                arrPresencas.forEach(lista => {
+                    if (lista.some(p => String(p.id || p.email).trim().toLowerCase() === emailLimpoPerfil)) {
+                        contador++;
+                    }
+                });
+                minhasPresencas = contador;
+            }
+        } catch (erroQueryPresencas) {
+            console.warn("Erro na sincronizaÃ§Ã£o de presenÃ§as no perfil:", erroQueryPresencas);
+        }
+        let proximosJogosHtml = "";
+        let historicoJogosHtml = "";
         const modoTesteBannerHtml = estouEmModoTeste ? `
             <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4 shadow-sm fade-in">
                 <div class="flex justify-between items-center gap-3">
@@ -433,8 +475,8 @@ async function renderProfile() {
                         </p>
                     </div>
 
-                    <button 
-                        onclick="sairModoTesteAtleta()" 
+                    <button
+                        onclick="sairModoTesteAtleta()"
                         class="bg-yellow-600 text-white px-3 py-2 rounded-lg text-[8px] font-black uppercase">
                         Sair
                     </button>
@@ -445,7 +487,7 @@ async function renderProfile() {
         const nomeFuncaoVolei = window.getNomeFuncaoVoleiDVC(funcaoVolei);
         const scoreGeralPerfilTexto = possuiAvaliacaoTecnicaRealPerfil ? scoreGeralDVC.toFixed(1) : "Aguard.";
         const scoreFuncaoPerfilTexto = possuiAvaliacaoTecnicaRealPerfil ? scoreFuncaoDVC.toFixed(1) : "Aguard.";
-        
+
         // Financial status
         const financeiroPerfilStatus = window.obterStatusFinanceiroEfetivo(userData);
         const financeiroPerfilCor = financeiroPerfilStatus === "Em dia"
@@ -588,7 +630,7 @@ async function renderProfile() {
         });
 
         const inteligenciaJogoPerfilHtml = quizPerfilHtml;
-        
+
 
         // Privacy controls
         const scoreTecnicoPublico = userData.scoreTecnicoPublico !== false;
@@ -605,11 +647,11 @@ async function renderProfile() {
                 </div>
 
                 <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold leading-relaxed mb-3">
-                    Escolha se outros atletas podem ver seu score técnico no ranking. 
+                    Escolha se outros atletas podem ver seu score técnico no ranking.
                     Treinadores sempre poderão visualizar para acompanhamento pedagógico.
                 </p>
 
-                <button 
+                <button
                     onclick="alternarPrivacidadeScoreTecnico(${!scoreTecnicoPublico})"
                     class="w-full ${scoreTecnicoPublico ? 'bg-gray-800 dark:bg-gray-950 hover:bg-black dark:border dark:border-gray-800' : 'bg-green-600 dark:bg-green-700'} text-white py-3 rounded-lg font-black text-[10px] uppercase shadow-md">
                     ${scoreTecnicoPublico ? 'Ocultar meu score dos atletas' : 'Permitir que atletas vejam meu score'}
@@ -621,7 +663,7 @@ async function renderProfile() {
         try {
             const todosAvisos = window.carregarAvisosDVCCache ? await window.carregarAvisosDVCCache() : [];
             const lidosIds = userData.comunicadosLidos || [];
-            
+
             // Filtra os avisos confirmados (lidos) pelo atleta
             const avisosConfirmados = todosAvisos
                 .filter(aviso => lidosIds.includes(aviso.id))
@@ -634,7 +676,7 @@ async function renderProfile() {
                         ${avisosConfirmados.map(aviso => {
                             const dtCriadoFormatada = aviso.criadoEm ? new Date(aviso.criadoEm).toLocaleDateString("pt-BR") : "";
                             const categoriaLabel = aviso.categoria || "Geral";
-                            
+
                             return `
                                 <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
                                     <div class="flex items-center justify-between gap-2 mb-2">
@@ -799,7 +841,7 @@ async function renderProfile() {
                     </span>
                     <span onclick="mudarSubAbaPerfil('presenca')" role="button" tabindex="0" class="cursor-pointer inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50 text-indigo-700 dark:text-indigo-400 text-[8px] font-black px-2.5 py-1 rounded-full uppercase transition hover:scale-105 active:scale-95">
                         ${renderIconeLocalDVC("assets/img/icon/Listab.webp", "Presenças", "w-3.5 h-3.5")}
-                        Presenças: ${minhasPresencas}
+                        Presenças: <span class="text-indigo-900 dark:text-white font-black text-[9px]">${minhasPresencas}</span>
                     </span>
                 </div>
             </div>
@@ -812,7 +854,7 @@ async function renderProfile() {
                 <div class="absolute -right-8 -bottom-10 opacity-10 pointer-events-none">
                     <img src="${projetoLogo}" class="w-32 h-32 object-contain">
                 </div>
-                
+
                 <div class="flex items-center gap-3 min-w-0 z-10">
                     <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center p-0.5 shrink-0 overflow-hidden">
                         <img src="${auth.currentUser?.photoURL || 'assets/img/logo2.svg'}" class="w-full h-full object-cover rounded-xl" onerror="this.src='assets/img/logo2.svg'">
@@ -854,7 +896,7 @@ async function renderProfile() {
                 : "");
 
         // ExposiÃ§Ã£o das estrelas (Protagonismo) e advertÃªncias de forma recolhÃ­vel
-        const protagonismoHtml = (userData.estrelas || []).length > 0 
+        const protagonismoHtml = (userData.estrelas || []).length > 0
             ? window.renderSecaoRecolhivelDVC({
                   id: "perfil-protagonismo-dvc",
                   titulo: "Registro de Protagonismo",
@@ -923,37 +965,37 @@ async function renderProfile() {
             aberta: false,
             conteudo: `
                 <div class="space-y-4 relative pt-4 text-left">
-                    <button 
-                        onclick="toggleEditProfile()" 
-                        id="btn-edit-toggle" 
+                    <button
+                        onclick="toggleEditProfile()"
+                        id="btn-edit-toggle"
                         class="absolute top-0 right-0 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase underline">
                         Editar
                     </button>
 
                     <div>
                         <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">Nome</label>
-                        <input 
-                            id="p-nome" 
-                            disabled 
-                            value="${userData.nome || ''}" 
+                        <input
+                            id="p-nome"
+                            disabled
+                            value="${userData.nome || ''}"
                             class="w-full text-sm font-bold border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">WhatsApp</label>
-                            <input 
-                                id="p-tel" 
-                                disabled 
-                                value="${userData.telefone || ''}" 
+                            <input
+                                id="p-tel"
+                                disabled
+                                value="${userData.telefone || ''}"
                                 class="w-full text-sm font-bold border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800">
                         </div>
 
                         <div>
                             <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">Sexo</label>
-                            <select 
-                                id="p-sexo" 
-                                disabled 
+                            <select
+                                id="p-sexo"
+                                disabled
                                 class="w-full text-sm font-bold border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800 dark:bg-gray-900">
                                 <option value="M" ${userData.sexo === 'M' ? 'selected' : ''}>M</option>
                                 <option value="F" ${userData.sexo === 'F' ? 'selected' : ''}>F</option>
@@ -968,26 +1010,26 @@ async function renderProfile() {
 
                         <div>
                             <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">Nome</label>
-                            <input 
-                                id="p-resp-nome" 
-                                disabled 
-                                value="${userData.responsavelNome || ''}" 
+                            <input
+                                id="p-resp-nome"
+                                disabled
+                                value="${userData.responsavelNome || ''}"
                                 class="w-full text-sm border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800">
                         </div>
 
                         <div>
                             <label class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase">WhatsApp</label>
-                            <input 
-                                id="p-resp-tel" 
-                                disabled 
-                                value="${userData.responsavelTel || ''}" 
+                            <input
+                                id="p-resp-tel"
+                                disabled
+                                value="${userData.responsavelTel || ''}"
                                 class="w-full text-sm border-b py-1 outline-none bg-transparent dark:text-gray-200 dark:border-gray-800">
                         </div>
                     </div>
 
-                    <button 
-                        id="btn-save-profile" 
-                        onclick="saveProfileChanges()" 
+                    <button
+                        id="btn-save-profile"
+                        onclick="saveProfileChanges()"
                         class="hidden w-full bg-blue-600 dark:bg-blue-700 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-md mt-4">
                         Confirmar Alterações
                     </button>
@@ -1064,14 +1106,14 @@ function toggleEditProfile() {
 // 5. saveProfileChanges
 async function saveProfileChanges() {
     try {
-        const upd = { 
-            nome: document.getElementById('p-nome').value, 
-            telefone: document.getElementById('p-tel').value, 
+        const upd = {
+            nome: document.getElementById('p-nome').value,
+            telefone: document.getElementById('p-tel').value,
             sexo: document.getElementById('p-sexo').value,
             responsavelNome: document.getElementById('p-resp-nome').value,
             responsavelTel: document.getElementById('p-resp-tel').value
         };
-        await updateDoc(doc(db, "users", auth.currentUser.email), upd); 
+        await updateDoc(doc(db, "users", auth.currentUser.email), upd);
         location.reload();
     } catch (e) {
         console.error("Erro ao salvar altera\u00E7\u00F5es no perfil:", e);
@@ -1182,12 +1224,12 @@ function gerarPontosRadarDVC(habilidades, listaSkills) {
 function renderizarConteudoRadarDVC(filtro = "todas") {
     const habilidades = window.normalizarHabilidadesDVC(window.habilidadesRadarAtualDVC || {});
     const mediaCategoriaObj = window.mediaCategoriaRadarDVC || null;
-    
+
     // Fallback/mock seguro para a média da categoria caso não esteja definida
     let habilidadesMediaCategoria = (mediaCategoriaObj && mediaCategoriaObj.habilidades)
         ? window.normalizarHabilidadesDVC(mediaCategoriaObj.habilidades)
         : null;
-        
+
     const listaSkills = getHabilidadesPorFiltroDVC(filtro);
 
     if (!habilidadesMediaCategoria) {
@@ -1203,15 +1245,15 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
 
     const pontos = gerarPontosRadarDVC(habilidades, listaSkills);
     const polygonPoints = pontos.map(p => `${p.x},${p.y}`).join(" ");
-    
+
     const pontosMediaCategoria = gerarPontosRadarDVC(habilidadesMediaCategoria, listaSkills);
     const polygonMediaCategoriaPoints = pontosMediaCategoria.map(p => `${p.x},${p.y}`).join(" ");
 
     const pontosMediaCategoriaHtml = pontosMediaCategoria.map(p => `
-        <circle 
-            cx="${p.x}" 
-            cy="${p.y}" 
-            r="2.5" 
+        <circle
+            cx="${p.x}"
+            cy="${p.y}"
+            r="2.5"
             fill="#3b82f6"
             stroke="white"
             stroke-width="0.75">
@@ -1232,7 +1274,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
         const ativo = filtro === item.id;
 
         return `
-            <button 
+            <button
                 onclick="atualizarRadarDVC('${item.id}')"
                 class="${ativo ? 'bg-[#990000] text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700'} px-3 py-2 rounded-full text-[8px] font-black uppercase">
                 ${item.nome}
@@ -1252,9 +1294,9 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
         }).join(" ");
 
         return `
-            <polygon 
-                points="${pontosGrade}" 
-                fill="none" 
+            <polygon
+                points="${pontosGrade}"
+                fill="none"
                 class="radar-grade-line-dvc"
                 stroke="rgba(0, 0, 0, 0.08)"
                 stroke-width="1">
@@ -1263,11 +1305,11 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
     }).join('');
 
     const eixosHtml = pontos.map(p => `
-        <line 
-            x1="110" 
-            y1="110" 
-            x2="${p.eixoX}" 
-            y2="${p.eixoY}" 
+        <line
+            x1="110"
+            y1="110"
+            x2="${p.eixoX}"
+            y2="${p.eixoY}"
             class="radar-grade-line-dvc"
             stroke="rgba(0, 0, 0, 0.08)"
             stroke-width="1">
@@ -1278,13 +1320,13 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
         const texto = window.escaparHtml ? window.escaparHtml(String(p.nome || "")) : String(p.nome || "");
 
         return `
-            <text 
-                x="${p.labelX}" 
-                y="${p.labelY}" 
-                text-anchor="${p.labelAnchor}" 
-                dominant-baseline="middle" 
-                font-size="7" 
-                font-weight="800" 
+            <text
+                x="${p.labelX}"
+                y="${p.labelY}"
+                text-anchor="${p.labelAnchor}"
+                dominant-baseline="middle"
+                font-size="7"
+                font-weight="800"
                 class="radar-label-dvc"
                 style="white-space:nowrap;">
                 ${texto}
@@ -1296,12 +1338,12 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
         const selecionado = p.id === window.habilidadeSelecionadaRadarDVC;
 
         return `
-            <circle 
-                cx="${p.x}" 
-                cy="${p.y}" 
-                r="${selecionado ? 6 : 4}" 
-                fill="${selecionado ? '#f59e0b' : '#990000'}" 
-                class="stroke-white dark:stroke-gray-900" 
+            <circle
+                cx="${p.x}"
+                cy="${p.y}"
+                r="${selecionado ? 6 : 4}"
+                fill="${selecionado ? '#f59e0b' : '#990000'}"
+                class="stroke-white dark:stroke-gray-900"
                 stroke-width="2"
                 style="cursor:pointer"
                 onclick="selecionarHabilidadeRadarDVC('${p.id}')">
@@ -1354,7 +1396,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
         const isFocoPlano = focos.some(f => f.chave === p.id);
         const plano = isFocoPlano ? getPlanoPorCriterio(p.id) : null;
         const realizados = isFocoPlano ? (contagemSemana[p.id] || 0) : 0;
-        
+
         let priorityBadge = "";
         if (p.nota <= 2.5) {
             priorityBadge = `<span class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0">Atenção</span>`;
@@ -1382,12 +1424,12 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
             interpretacao = "Nível de excelência/referência. Domínio completo e tomada de decisão refinada.";
         }
 
-        const progressColorClass = p.nota >= 4.0 
-            ? "bg-green-600" 
-            : p.nota >= 3.0 
-                ? "bg-indigo-600" 
-                : p.nota >= 2.0 
-                    ? "bg-amber-500" 
+        const progressColorClass = p.nota >= 4.0
+            ? "bg-green-600"
+            : p.nota >= 3.0
+                ? "bg-indigo-600"
+                : p.nota >= 2.0
+                    ? "bg-amber-500"
                     : "bg-red-600";
 
         return `
@@ -1446,7 +1488,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                             </div>
                             <p class="text-[9px] font-bold text-gray-800 dark:text-gray-200 uppercase mb-1">${plano.titulo}</p>
                             <p class="text-[9px] text-gray-600 dark:text-gray-400 font-medium mb-2 leading-relaxed">${plano.objetivo}</p>
-                            
+
                             <div class="bg-white border border-yellow-100 dark:border-yellow-900/30 rounded-xl p-2.5 mb-2">
                                 <p class="text-[8px] font-black text-yellow-800 dark:text-yellow-400 uppercase mb-1">Treino sugerido</p>
                                 <p class="text-[9px] text-gray-700 dark:text-gray-300 font-bold leading-normal">${plano.treino}</p>
@@ -1455,7 +1497,7 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                             <button onclick="marcarTreinoPlanoRealizado('${p.id}')" class="w-full bg-gray-950 hover:bg-gray-900 dark:bg-gray-900 dark:hover:bg-gray-800 dark:border dark:border-gray-750 text-white py-2 rounded-xl text-[9px] font-black uppercase transition active:scale-98">
                                 <i class="fa-solid fa-check mr-1"></i> Marcar treino realizado
                             </button>
-                            
+
                             <p class="text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase mt-2 text-center">
                                 Realizado ${realizados} vez(es) nesta semana
                             </p>
@@ -1509,19 +1551,19 @@ function renderizarConteudoRadarDVC(filtro = "todas") {
                     ${eixosHtml}
 
                     ${polygonMediaCategoriaPoints ? `
-                        <polygon 
-                            points="${polygonMediaCategoriaPoints}" 
-                            fill="rgba(59, 130, 246, 0.1)" 
-                            stroke="#3b82f6" 
+                        <polygon
+                            points="${polygonMediaCategoriaPoints}"
+                            fill="rgba(59, 130, 246, 0.1)"
+                            stroke="#3b82f6"
                             stroke-width="2"
                             stroke-dasharray="5 5">
                         </polygon>
                     ` : ''}
 
-                    <polygon 
-                        points="${polygonPoints}" 
-                        fill="rgba(153,0,0,0.18)" 
-                        stroke="#990000" 
+                    <polygon
+                        points="${polygonPoints}"
+                        fill="rgba(153,0,0,0.18)"
+                        stroke="#990000"
                         stroke-width="2">
                     </polygon>
 
@@ -1645,7 +1687,7 @@ async function registrarHistoricoHabilidade(emailAluno, criterio, valorAnterior,
         }
 
         const diferenca = Number((novo - anterior).toFixed(1));
-        
+
         const payloadHistorico = {
             criterio: criterio,
             valorAnterior: anterior,
@@ -1673,9 +1715,9 @@ async function registrarHistoricoHabilidade(emailAluno, criterio, valorAnterior,
                 normalizarParteIdHistorico(opcoes.eventId),
                 normalizarParteIdHistorico(criterio)
             ].join("__");
-            
+
             const historicoRef = doc(db, "users", emailNormalizado, "historicoHabilidades", historicoId);
-            
+
             if (opcoes.batch) {
                 opcoes.batch.set(historicoRef, payloadHistorico, { merge: true });
             } else {
@@ -1738,7 +1780,7 @@ async function toggleHistoricoTecnicoDVC(detailsEl, email) {
 
     try {
         const registros = await carregarHistoricoHabilidadesAtletaDVC(email);
-        
+
         if (registros.length === 0) {
             container.innerHTML = corrigirHtmlVisualPerfilDVC(`<p class="text-[10px] text-gray-400 font-bold uppercase text-center">Nenhum histórico encontrado.</p>`);
             return;
@@ -2201,15 +2243,15 @@ async function gerarPlanoEvolucaoHtml(emailAluno, habilidades) {
 
                 <div class="grid grid-cols-1 gap-2">
                     ${plano.videoUrl ? `
-                        <a 
-                            href="${plano.videoUrl}" 
-                            target="_blank" 
+                        <a
+                            href="${plano.videoUrl}"
+                            target="_blank"
                             class="block w-full text-center bg-[#990000] text-white py-2 rounded-lg text-[9px] font-black uppercase">
                             <i class="fa-solid fa-play mr-1"></i> Assistir demonstraÃ§Ã£o
                         </a>
                     ` : ''}
 
-                    <button 
+                    <button
                         onclick="marcarTreinoPlanoRealizado('${item.chave}')"
                         class="w-full bg-gray-900 text-white py-2 rounded-lg text-[9px] font-black uppercase">
                         <i class="fa-solid fa-check mr-1"></i> Marcar treino realizado
@@ -2267,8 +2309,8 @@ async function alternarPrivacidadeScoreTecnico(novoValor) {
             window.currentUserData.scoreTecnicoPublico = novoValor;
         }
 
-        alert(novoValor 
-            ? "Seu score agora estÃ¡ visÃ­vel para outros atletas no ranking." 
+        alert(novoValor
+            ? "Seu score agora estÃ¡ visÃ­vel para outros atletas no ranking."
             : "Seu score agora estÃ¡ oculto para outros atletas no ranking."
         );
 
@@ -2358,7 +2400,7 @@ async function carregarEExibirHistoricoJogosDVC(emailAtual) {
         const dadosAtleta = window.DVC_CACHE?.users?.porEmail?.get(emailLimpo) || { presencas: 0 };
         const eventsSnap = await window.carregarEventosCacheMockDVC();
         const eventosPerfil = eventsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-        
+
         let proximosJogosHtml = "";
         let historicoJogosHtml = "";
 
@@ -2502,7 +2544,7 @@ async function carregarEExibirRegistrosFinanceirosDVC(email, btn) {
     try {
         const contribuicoes = await carregarContribuicoesAtletaDVC(email);
         const registros = contribuicoes.sort((a, b) => new Date(b.enviadoEm || 0) - new Date(a.enviadoEm || 0));
-        
+
         const containerId = `dvc-historico-financeiro-container-${email.replace(/[@.]/g, '')}`;
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -2689,7 +2731,7 @@ async function gerarAvaliacoesPendentesHtml() {
                         </span>
                     </div>
 
-                    <button 
+                    <button
                         onclick="aprovarAvaliacaoEvento('${ev.id}')"
                         class="w-full bg-green-600 dark:bg-green-700 text-white py-2.5 rounded-xl text-[9px] font-black uppercase mb-3 shadow-sm hover:bg-green-700 dark:hover:bg-green-600 transition-colors">
                         ${ev.tipo === "jogo" ? "Autorizar Todas as AvaliaÃ§Ãµes Deste Jogo" : "Autorizar Todas as AvaliaÃ§Ãµes Deste Treino"}
@@ -2724,20 +2766,20 @@ async function gerarAvaliacoesPendentesHtml() {
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
-                        <button 
+                        <button
                             onclick="verDetalhesAvaliacaoPendente('${ev.id}')"
                             class="bg-gray-800 dark:bg-gray-700 text-white py-2 rounded-lg text-[9px] font-black uppercase hover:bg-gray-750 dark:hover:bg-gray-600 transition-colors">
                             Ver detalhes
                         </button>
 
-                        <button 
+                        <button
                             onclick="aprovarAvaliacaoEvento('${ev.id}')"
                             class="bg-[#990000] text-white py-2 rounded-lg text-[9px] font-black uppercase hover:bg-red-700 transition-colors">
                             Autorizar todas
                         </button>
                     </div>
 
-                    <button 
+                    <button
                         onclick="rejeitarAvaliacaoEvento('${ev.id}')"
                         class="w-full bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400 py-2 rounded-lg text-[9px] font-black uppercase mt-2 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">
                         Rejeitar avaliaÃ§Ã£o
@@ -3362,12 +3404,12 @@ async function verDetalhesAvaliacaoPendente(evId) {
                         </div>
 
                         <div class="flex gap-1 shrink-0">
-                            <button 
+                            <button
                                 onclick="autorizarAvaliacaoAtletaPendente('${evId}', '${emailSeguro}')"
                                 class="bg-green-600 dark:bg-green-700 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase hover:bg-green-700 transition-colors">
                                 Autorizar
                             </button>
-                            <button 
+                            <button
                                 onclick="rejeitarAvaliacaoAtletaPendente('${evId}', '${emailSeguro}')"
                                 class="bg-red-600 dark:bg-red-700 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase hover:bg-red-700 transition-colors">
                                 Rejeitar
@@ -3391,8 +3433,8 @@ async function verDetalhesAvaliacaoPendente(evId) {
         const modal = `
             <div id="m-detalhes-avaliacao" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
                 <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl p-5 max-h-[85vh] overflow-y-auto relative shadow-2xl text-gray-900 dark:text-gray-100">
-                    <button 
-                        onclick="document.getElementById('m-detalhes-avaliacao').remove()" 
+                    <button
+                        onclick="document.getElementById('m-detalhes-avaliacao').remove()"
                         class="absolute top-4 right-4 text-red-600 font-black text-xl hover:text-red-700 transition-colors">
                         &times;
                     </button>
@@ -3544,7 +3586,7 @@ window.repararHistoricoAvaliacaoAprovada = async (evId, emailAtleta, opcoes = {}
         }
 
         const av = avaliacaoSnap.data();
-        
+
         let tipoEventoNormalizado = opcoes.tipoEventoNormalizado || null;
         if (!tipoEventoNormalizado) {
             let eventoData = opcoes.eventoData || null;
@@ -3568,7 +3610,7 @@ window.repararHistoricoAvaliacaoAprovada = async (evId, emailAtleta, opcoes = {}
         }
 
         const criteriosAvaliados = extrairCriteriosAvaliacaoAprovada(av, tipoEventoNormalizado);
-        
+
         console.log(
             "[REPARO HISTÓRICO] Contexto identificado:",
             {
@@ -3730,7 +3772,7 @@ window.repararHistoricoAvaliacaoAprovada = async (evId, emailAtleta, opcoes = {}
         }
 
         window.limparCacheHistoricoHabilidades(emailNormalizado);
-        
+
         return resultado;
 
     } catch (e) {

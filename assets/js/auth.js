@@ -11,12 +11,12 @@
 // js/auth.js
 // Stage 11C: onAuthStateChanged / inicialização do app
 
-import { 
-    auth, 
-    provider, 
-    setPersistence, 
-    browserLocalPersistence, 
-    signInWithPopup, 
+import {
+    auth,
+    provider,
+    setPersistence,
+    browserLocalPersistence,
+    signInWithPopup,
     signOut,
     db,
     doc,
@@ -27,8 +27,8 @@ import {
     increment
 } from "./firebase.js";
 
-import { 
-    STATUS_FINANCEIRO_CARENCIA, 
+import {
+    STATUS_FINANCEIRO_CARENCIA,
     PROJETO_ATUAL_DVC,
     EMAILS_ADM_DVC
 } from "./state.js";
@@ -92,13 +92,13 @@ function mostrarConviteGrupoWhatsApp(nome) {
     const modal = `
         <div id="m-grupo-whatsapp" class="fixed inset-0 bg-black/80 z-[100] p-4 flex items-center justify-center">
             <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative shadow-2xl text-center">
-                
+
                 <h2 class="font-black text-lg text-[#990000] uppercase mb-2">
                     Cadastro concluído!
                 </h2>
 
                 <p class="text-xs text-gray-600 font-semibold leading-relaxed mb-4">
-                    ${nome}, seu cadastro foi realizado com sucesso. 
+                    ${nome}, seu cadastro foi realizado com sucesso.
                     Agora entre no grupo do WhatsApp para ser recebido pelos treinadores e acompanhar os avisos do DVC.
                 </p>
 
@@ -107,8 +107,8 @@ function mostrarConviteGrupoWhatsApp(nome) {
                         Grupo oficial do projeto
                     </p>
 
-                    <a 
-                        href="${LINK_GRUPO_WHATSAPP}" 
+                    <a
+                        href="${LINK_GRUPO_WHATSAPP}"
                         target="_blank"
                         class="block w-full bg-green-600 text-white py-3 rounded-lg font-black text-xs uppercase shadow-md">
                         Entrar no grupo do WhatsApp
@@ -119,8 +119,8 @@ function mostrarConviteGrupoWhatsApp(nome) {
                     Depois de entrar no grupo, envie uma mensagem se apresentando para que os treinadores possam te receber.
                 </p>
 
-                <button 
-                    onclick="location.reload()" 
+                <button
+                    onclick="location.reload()"
                     class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold text-xs uppercase">
                     Continuar para o app
                 </button>
@@ -161,28 +161,28 @@ async function salvarCadastro() {
         const agoraCadastro = new Date().toISOString();
         const dadosFinanceiroCadastro = obterDadosFinanceiroInicialCadastro(agoraCadastro);
 
-        await setDoc(doc(db, "users", auth.currentUser.email), { 
-            nome: nome, 
-            nascimento: nascimento, 
-            sexo: sexo, 
-            telefone: telefone, 
-            responsavelNome: responsavelNome || "N/A", 
+        await setDoc(doc(db, "users", auth.currentUser.email), {
+            nome: nome,
+            nascimento: nascimento,
+            sexo: sexo,
+            telefone: telefone,
+            responsavelNome: responsavelNome || "N/A",
             responsavelTel: responsavelTel || "N/A",
             responsavelTelefone: responsavelTel || "N/A",
-            funcao: "Membro", 
+            funcao: "Membro",
             funcaoVolei: "formacao",
             projetoId: PROJETO_ATUAL_DVC.id,
             projetoNome: PROJETO_ATUAL_DVC.nome,
             projetoSelo: PROJETO_ATUAL_DVC.selo,
             projetoLogo: PROJETO_ATUAL_DVC.logo,
-            status: "Ativo", 
+            status: "Ativo",
             ...dadosFinanceiroCadastro,
             email: auth.currentUser.email,
 
             cadastroStatus: "Novo",
             criadoEm: agoraCadastro,
 
-            comprovantesEnviados: [] 
+            comprovantesEnviados: []
         });
 
         window.currentUserData = {
@@ -207,7 +207,7 @@ async function salvarCadastro() {
             cadastroStatus: "Novo",
             criadoEm: agoraCadastro,
 
-            comprovantesEnviados: []    
+            comprovantesEnviados: []
         };
 
         mostrarConviteGrupoWhatsApp(nome);
@@ -260,9 +260,10 @@ function showAppUI() {
             : 'bg-red-500';
     dot.className = `w-3 h-3 rounded-full ${window.usuarioPodeAprovarAvaliacoes() ? 'bg-blue-500 shadow-[0_0_8px_blue]' : corFinanceiroUsuario}`;
 
-    if (window.usuarioEhEquipeTecnica()) {
+    // BYPASS DE MODO DEBUG: Sempre exibir o botão "Mais"
+    // if (window.usuarioEhEquipeTecnica()) {
         document.getElementById('nav-more')?.classList.remove('hidden');
-    }
+    // }
 
     window.changeTab('home');
     registrarAcessoDiario();

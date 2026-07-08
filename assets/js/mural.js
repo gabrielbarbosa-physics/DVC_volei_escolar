@@ -175,7 +175,7 @@ function renderCardAvisoDVC(aviso = {}, compacto = false, admin = false, ehDesta
     const isCardDestaque = ehDestaque && !admin;
 
     // DVC MURAL — DESTAQUE: diferencia o comunicado principal dos cards operacionais.
-    const cardClass = isCardDestaque 
+    const cardClass = isCardDestaque
         ? "bg-gradient-to-br from-white via-white to-red-50 dark:from-gray-900 dark:via-gray-900 dark:to-red-950/20 border border-red-200 dark:border-red-900/60 border-l-4 border-l-[#990000] rounded-2xl p-4 shadow-md relative overflow-hidden transition-colors duration-200"
         : "bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-colors duration-200";
 
@@ -248,7 +248,7 @@ function renderCardAvisoDVC(aviso = {}, compacto = false, admin = false, ehDesta
 
                 <p id="mensagem-aviso-mural-${aviso.id}" class="${msgClass}" ${isCardDestaque ? 'style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"' : ''}>${textoMensagem}</p>
                 ${readMoreAction}
-                
+
                 <p class="text-[8px] font-bold uppercase text-gray-400 dark:text-gray-500 mt-2">
                     ${dtCriadoFormatada ? `Publicado em ${dtCriadoFormatada}` : ""}
                     ${dtExpiraFormatada ? ` &bull; Válido até ${dtExpiraFormatada}` : ""}
@@ -638,22 +638,22 @@ async function renderMural() {
                 </p>
 
                 <div class="flex flex-row items-center gap-2 mt-4 overflow-x-auto [&::-webkit-scrollbar]:hidden" style="scrollbar-width: none;">
-                    <button 
-                        onclick="irParaBlocoMural('mural-sequencia-jogos')" 
+                    <button
+                        onclick="irParaBlocoMural('mural-sequencia-jogos')"
                         class="bg-white/10 hover:bg-white/20 border border-white/15 rounded-full px-3 py-1.5 flex items-center gap-1.5 active:scale-95 transition shrink-0">
                         <i class="fa-solid fa-list-ol text-white text-[10px]"></i>
                         <span class="text-[9px] font-black uppercase tracking-wider text-white/90">Jogos</span>
                     </button>
 
-                    <button 
-                        onclick="irParaBlocoMural('mural-proximo-jogo')" 
+                    <button
+                        onclick="irParaBlocoMural('mural-proximo-jogo')"
                         class="bg-white/10 hover:bg-white/20 border border-white/15 rounded-full px-3 py-1.5 flex items-center gap-1.5 active:scale-95 transition shrink-0">
                         <i class="fa-solid fa-volleyball text-white text-[10px]"></i>
                         <span class="text-[9px] font-black uppercase tracking-wider text-white/90">Amistoso</span>
                     </button>
 
-                    <button 
-                        onclick="irParaBlocoMural('mural-aniversariantes')" 
+                    <button
+                        onclick="irParaBlocoMural('mural-aniversariantes')"
                         class="bg-white/10 hover:bg-white/20 border border-white/15 rounded-full px-3 py-1.5 flex items-center gap-1.5 active:scale-95 transition shrink-0">
                         <i class="fa-solid fa-cake-candles text-white text-[10px]"></i>
                         <span class="text-[9px] font-black uppercase tracking-wider text-white/90">Aniversários</span>
@@ -859,28 +859,47 @@ async function renderMural() {
         const aniversariantesHtml = aniversariantesFiltrados.length > 0 ? `
             <div class="flex overflow-x-auto gap-3 snap-x pb-2 pt-2 [&::-webkit-scrollbar]:hidden" style="scrollbar-width: none;">
                 ${aniversariantesFiltrados.map(aniv => {
-                    const isHoje = aniv.dia === diaAtual;
-                    const cardClass = isHoje
-                        ? "bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 rounded-2xl p-3 shadow-[0_0_12px_rgba(234,179,8,0.25)] scale-105 text-center snap-start flex flex-col items-center justify-center w-28 shrink-0 relative transition-all"
-                        : "bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 shadow-sm text-center snap-start flex flex-col items-center justify-center w-28 shrink-0 transition-all";
-                    const badgeText = isHoje
-                        ? '<span class="text-[8px] font-black uppercase text-yellow-700 dark:text-yellow-400 tracking-wider">🎉 Hoje!</span>'
-                        : `<span class="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase mt-0.5">Dia ${String(aniv.dia).padStart(2, "0")}</span>`;
-                    const circleClass = isHoje
-                        ? "w-10 h-10 rounded-full bg-yellow-400 text-white flex items-center justify-center font-black text-xs shadow-sm mb-2 shrink-0 border-none"
-                        : "w-10 h-10 rounded-full bg-[#990000] text-white flex items-center justify-center font-black text-xs shadow-sm mb-2 shrink-0 border-none";
+                    let nomeExibicao = aniv.nome;
+                    if (nomeExibicao !== "Sem nome") {
+                        const partes = nomeExibicao.trim().split(/\s+/);
+                        if (partes.length > 1) {
+                            nomeExibicao = `${partes[0]} ${partes[partes.length - 1]}`;
+                        }
+                    }
 
-                    const photoHtml = aniv.photoURL
-                        ? `<img src="${aniv.photoURL}" class="w-10 h-10 rounded-full object-cover border-2 ${isHoje ? 'border-yellow-400' : 'border-[#990000]'} mb-2 shadow-sm shrink-0" onerror="this.onerror=null; this.outerHTML='<div class=\&quot;${circleClass}\&quot;>${String(aniv.dia).padStart(2, "0")}</div>';">`
-                        : `<div class="${circleClass}">${String(aniv.dia).padStart(2, "0")}</div>`;
+                    const isHoje = aniv.dia === diaAtual;
+
+                    const cardClass = isHoje
+                        ? "bg-gray-50 dark:bg-gray-900 border border-[#990000] shadow-[0_0_15px_rgba(153,0,0,0.3)] rounded-2xl p-3 text-center snap-start flex flex-col items-center justify-between w-28 min-h-[130px] shrink-0 relative transition-all scale-105"
+                        : "bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 shadow-sm text-center snap-start flex flex-col items-center justify-between w-28 min-h-[130px] shrink-0 transition-all hover:bg-gray-50 dark:hover:bg-gray-800/50";
+
+                    const badgeText = isHoje
+                        ? '<span class="text-[9px] font-black uppercase text-[#990000] dark:text-red-400 tracking-wider mt-1">🎉 Hoje!</span>'
+                        : '';
+
+                    const inicial = nomeExibicao.charAt(0).toUpperCase();
+                    const gradientClass = "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 text-gray-600 dark:text-gray-300";
+                    const borderColor = isHoje ? 'border-[#990000]' : 'border-gray-200 dark:border-gray-700';
+
+                    const avatarContent = aniv.photoURL
+                        ? `<img src="${aniv.photoURL}" class="w-12 h-12 rounded-full object-cover border-2 ${borderColor} shadow-sm shrink-0" onerror="this.onerror=null; this.outerHTML='<div class=\&quot;w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border-2 ${borderColor} shadow-sm shrink-0 ${gradientClass}\&quot;>${inicial}</div>';">`
+                        : `<div class="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border-2 ${borderColor} shadow-sm shrink-0 ${gradientClass}">${inicial}</div>`;
 
                     return `
                         <div class="${cardClass}">
-                            ${photoHtml}
-                            <p class="text-[10px] font-black text-gray-950 dark:text-gray-100 uppercase tracking-wide truncate w-full" title="${escaparHtml(aniv.nome)}">
-                                ${aniv.nome}
-                            </p>
-                            ${badgeText}
+                            <div class="relative flex flex-col items-center mb-2">
+                                ${avatarContent}
+                                <div class="absolute -bottom-2 bg-white dark:bg-gray-800 border ${borderColor} rounded-full px-2 py-0.5 shadow-sm text-[8px] font-black text-gray-700 dark:text-gray-200 leading-none">
+                                    ${String(aniv.dia).padStart(2, "0")}
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col items-center justify-center flex-1 w-full mt-2">
+                                <p class="text-[11px] font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide leading-tight line-clamp-2 w-full break-words" title="${escaparHtml(aniv.nome)}">
+                                    ${nomeExibicao}
+                                </p>
+                                ${badgeText}
+                            </div>
                         </div>
                     `;
                 }).join('')}
@@ -947,9 +966,9 @@ async function verificarComunicadosObrigatoriosDVC() {
         const lidos = window.currentUserData.comunicadosLidos || [];
 
         // Filtra avisos que estão ativos, são direcionados a este usuário e ainda não foram marcados como lidos
-        const pendentes = avisos.filter(aviso => 
-            avisoEstaAtivoDVC(aviso) && 
-            avisoEhParaUsuarioDVC(aviso) && 
+        const pendentes = avisos.filter(aviso =>
+            avisoEstaAtivoDVC(aviso) &&
+            avisoEhParaUsuarioDVC(aviso) &&
             !lidos.includes(aviso.id)
         );
 
@@ -983,10 +1002,10 @@ function abrirModalLeituraObrigatoriaDVC(aviso) {
 
                 <!-- Footer / Confirm Button -->
                 <div class="p-4 border-t dark:border-gray-800 bg-gray-50 dark:bg-gray-950 shrink-0 flex flex-col gap-2">
-                    <button 
-                        id="btn-confirmar-leitura" 
-                        disabled 
-                        onclick="confirmarLeituraComunicadoDVC('${safeEditParam(aviso.id)}')" 
+                    <button
+                        id="btn-confirmar-leitura"
+                        disabled
+                        onclick="confirmarLeituraComunicadoDVC('${safeEditParam(aviso.id)}')"
                         class="w-full bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 py-3 rounded-2xl font-black uppercase shadow-inner dark:shadow-none cursor-not-allowed transition-all duration-300" style="font-size: 9px;">
                         Confirmar Leitura (3s)
                     </button>
